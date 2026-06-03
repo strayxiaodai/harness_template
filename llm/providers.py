@@ -2,6 +2,10 @@
 import os
 from typing import Any
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 def get_llm() -> Any:
     """Return a chat model based on LLM_PROVIDER."""
@@ -22,9 +26,10 @@ def get_llm() -> Any:
     if provider == "ollama":
         from langchain_ollama import ChatOllama
 
-        return ChatOllama(model=os.getenv("OLLAMA_MODEL", "qwen3.6:27b"),
-        base_url=os.getenv("OLLAMA_BASE_URL", "http://192.168.1.107:11434"),
-        temperature=0.2,
+        return ChatOllama(
+            model=os.getenv("OLLAMA_MODEL", "qwen3.6:27b"),
+            base_url=os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+            temperature=0.2,
         )
 
     raise ValueError(f"Unsupported LLM_PROVIDER: {provider}")

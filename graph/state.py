@@ -55,3 +55,6 @@ class AgentState(TypedDict):
     refine_from: NotRequired[str]
     tool_calls: NotRequired[list[ToolCallRecord]]
     human_in_the_loop: bool
+    memory_cursor: NotRequired[int]
+    memory_context: NotRequired[str]
+    memory_context_round: NotRequired[int]

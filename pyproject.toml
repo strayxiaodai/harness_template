@@ -2,6 +2,22 @@
 name = "harness-template"
 version = "0.1.0"
 requires-python = ">=3.12"
+dependencies = [
+    "langchain-core",
+    "langchain-community",
+    "langchain-text-splitters",
+    "langchain-openai",
+    "langchain-ollama",
+    "faiss-cpu",
+    "rank-bm25",
+    "tenacity",
+    "pyyaml",
+    "python-dotenv",
+    "pydantic",
+]
+
+[project.optional-dependencies]
+rerank = ["sentence-transformers"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"

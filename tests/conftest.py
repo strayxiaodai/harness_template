@@ -100,6 +100,30 @@ def _register_app_namespace() -> None:
     agents_mod.executor = executor
     executor_spec.loader.exec_module(executor)
 
+    reviewer_path = ROOT / "agent" / "reviewer.py"
+    reviewer_spec = importlib.util.spec_from_file_location(
+        "app.agents.reviewer",
+        reviewer_path,
+    )
+    if reviewer_spec is None or reviewer_spec.loader is None:
+        raise ImportError(f"Cannot load reviewer from {reviewer_path}")
+    reviewer = importlib.util.module_from_spec(reviewer_spec)
+    sys.modules["app.agents.reviewer"] = reviewer
+    agents_mod.reviewer = reviewer
+    reviewer_spec.loader.exec_module(reviewer)
+
+    actioner_path = ROOT / "agent" / "actioner.py"
+    actioner_spec = importlib.util.spec_from_file_location(
+        "app.agents.actioner",
+        actioner_path,
+    )
+    if actioner_spec is None or actioner_spec.loader is None:
+        raise ImportError(f"Cannot load actioner from {actioner_path}")
+    actioner = importlib.util.module_from_spec(actioner_spec)
+    sys.modules["app.agents.actioner"] = actioner
+    agents_mod.actioner = actioner
+    actioner_spec.loader.exec_module(actioner)
+
 
 _ensure_root_on_path()
 _register_app_namespace()

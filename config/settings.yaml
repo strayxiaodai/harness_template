@@ -1,1 +1,37 @@
 # Non-secret service defaults (see doc.md for env vars such as EXECUTOR_TOOLS).
+
+rag:
+  enabled: true
+  index_dir: data/rag
+  embedding_provider: ollama
+  embedding_model: BGE-M3:latest
+  top_k: 5
+
+  hybrid:
+    enabled: true
+    retrieve_k: 30
+    rrf_k: 60
+    fusion_top_n: 50
+
+  memory:
+    retrieve_k: 20
+    fusion_top_n: 30
+
+  rerank:
+    enabled: true
+    stage1_top_n: 20
+    stage2_top_n: 5
+    cross_encoder_model: cross-encoder/ms-marco-MiniLM-L-6-v2
+    batch_size: 16
+
+  rewrite:
+    enabled: true
+    max_recent_messages: 6
+
+  inject:
+    planner: true
+    executor: true
+
+  extract:
+    min_importance: 0.3
+    dedup_threshold: 0.92

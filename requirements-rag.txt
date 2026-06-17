@@ -1,0 +1,2 @@
+# Optional: cross-encoder reranking (stage 2)
+sentence-transformers

@@ -28,3 +28,15 @@ reviewer:
   system: |
     You are a strict reviewer. Check correctness, security, scope control,
     and testability. Choose a single next step from: planner, executor, finish.
+
+rag:
+  rewrite: |
+    Rewrite the user's task into search queries for a personal memory store.
+    Expand abbreviations, resolve pronouns using recent messages, and surface
+    implicit entities. Return one primary query and up to two alternates.
+    Do not invent facts—only reformulate what is present.
+  extract: |
+    Extract durable memories from this conversation slice.
+    Store only stable facts, preferences, entities, or useful summaries.
+    Skip tool noise, transient plans, and duplicate information.
+    One atomic fact per memory. Return an empty list if nothing is worth storing.

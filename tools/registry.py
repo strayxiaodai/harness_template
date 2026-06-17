@@ -4,10 +4,12 @@ import os
 from langchain_core.tools import BaseTool
 
 from tools.code_tools import list_dir, read_file
+from tools.rag_tools import search_knowledge_base
 
 _ALL_TOOLS: dict[str, BaseTool] = {
     read_file.name: read_file,
     list_dir.name: list_dir,
+    search_knowledge_base.name: search_knowledge_base,
 }
 
 DEFAULT_ALLOWED_TOOLS = "read_file,list_dir"

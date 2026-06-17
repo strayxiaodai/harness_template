@@ -16,6 +16,7 @@ from graph.schemas import ExecutorResult
 from graph.state import AgentState, ToolCallRecord
 from llm.providers import get_llm
 from llm.retry import call_llm
+from rag.config import load_rag_settings
 from tools.registry import get_executor_tools, get_tool_by_name
 
 MAX_TOOL_ITERATIONS = 5
@@ -43,18 +44,22 @@ async def _run_tool_loop(
     """
     llm = get_llm()
     tools = get_executor_tools()
-    if not tools:
-        logger.info("No tools available for executor")
-    else:
+    if tools:
         llm = get_llm().bind_tools(tools)
 
     prior_review = state.get("review")
     feedback = prior_review["reason"] if prior_review else "(none)"
 
+    memory_prefix = ""
+    rag_settings = load_rag_settings()
+    if rag_settings.enabled and rag_settings.inject.executor:
+        memory_prefix = f"{state.get('memory_context', '(no relevant memories)')}\n\n"
+
     history: list[BaseMessage] = [
         SystemMessage(content=PROMPTS["executor"]["system"].strip()),
         HumanMessage(
             content=(
+                f"{memory_prefix}"
                 f"Task: {state['task']}\n"
                 f"Plan: {state['plan']}\n"
                 f"Prior review feedback: {feedback}"

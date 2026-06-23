@@ -17,6 +17,7 @@ from graph.state import AgentState, ToolCallRecord
 from llm.providers import get_llm
 from llm.retry import call_llm
 from rag.config import load_rag_settings
+from skills.inject import skill_prompt_prefix
 from tools.registry import get_executor_tools, get_tool_by_name
 
 MAX_TOOL_ITERATIONS = 5
@@ -59,6 +60,7 @@ async def _run_tool_loop(
         SystemMessage(content=PROMPTS["executor"]["system"].strip()),
         HumanMessage(
             content=(
+                f"{skill_prompt_prefix(state)}"
                 f"{memory_prefix}"
                 f"Task: {state['task']}\n"
                 f"Plan: {state['plan']}\n"

@@ -16,6 +16,7 @@ from graph.state import AgentState
 from llm.providers import get_llm
 from llm.retry import call_llm
 from rag.config import load_rag_settings
+from skills.inject import skill_prompt_prefix
 
 load_dotenv()
 
@@ -45,6 +46,7 @@ async def planner_agent(state: AgentState) -> dict[str, object]:
             SystemMessage(content=PROMPTS["planner"]["system"].strip()),
             HumanMessage(
                 content=(
+                    f"{skill_prompt_prefix(state)}"
                     f"{memory_block}"
                     f"Task: {state['task']}\n"
                     f"Current plan: {state['plan']}\n"

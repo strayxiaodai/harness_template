@@ -1,0 +1,4 @@
+psycopg[binary]
+psycopg_pool
+pgvector
+langgraph-checkpoint-postgres

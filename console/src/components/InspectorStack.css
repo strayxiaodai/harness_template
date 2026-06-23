@@ -1,0 +1,81 @@
+.inspector-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  overflow: auto;
+}
+
+.inspector-section__body {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.inspector-list {
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.inspector-prose {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.inspector-prose p {
+  margin: 0 0 var(--space-2);
+}
+
+.inspector-sub {
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.inspector-dl {
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+  font-size: 0.8125rem;
+}
+
+.inspector-dl dt {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: var(--space-1);
+}
+
+.inspector-dl dd {
+  margin: 0;
+}
+
+.inspector-json {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border-radius: var(--radius-control);
+  overflow: auto;
+  max-height: 200px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.tool-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.tool-table th,
+.tool-table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.tool-table th {
+  color: var(--muted);
+  font-weight: 500;
+}

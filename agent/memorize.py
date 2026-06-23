@@ -31,10 +31,23 @@ async def memorize_agent(state: AgentState) -> dict[str, object]:
         logger.debug("RAG service not initialized; skipping memory ingest")
         return {"role": "memorize"}
 
-    updates = await run_memory_ingest(
-        state,
-        memory_store=service.memory_store,
-        settings=settings,
-    )
-    service.save_memory_store()
-    return {"role": "memorize", **updates}
+    try:
+        updates = await run_memory_ingest(
+            state,
+            memory_store=service.memory_store,
+            settings=settings,
+        )
+        service.save_memory_store()
+        return {"role": "memorize", **updates}
+    except Exception as exc:
+        logger.warning(
+            "Memory ingest failed for thread %s; continuing graph without "
+            "storing memories: %s",
+            state.get("thread_id", ""),
+            exc,
+            exc_info=True,
+        )
+        return {
+            "role": "memorize",
+            "memory_cursor": len(state.get("messages", [])),
+        }

@@ -58,3 +58,5 @@ class AgentState(TypedDict):
     memory_cursor: NotRequired[int]
     memory_context: NotRequired[str]
     memory_context_round: NotRequired[int]
+    skill_slug: NotRequired[str]
+    skill_context: NotRequired[str]

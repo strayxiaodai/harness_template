@@ -89,6 +89,15 @@ class ExtractSettings:
 
 
 @dataclass(frozen=True)
+class MemoryStoreSettings:
+    """Memory persistence backend settings."""
+
+    backend: str = "faiss"
+    embedding_dim: int = 1536
+    database_url: str | None = None
+
+
+@dataclass(frozen=True)
 class RagSettings:
     """Top-level RAG configuration."""
 
@@ -99,6 +108,7 @@ class RagSettings:
     top_k: int = 5
     hybrid: HybridSettings = field(default_factory=HybridSettings)
     memory: MemoryRetrieveSettings = field(default_factory=MemoryRetrieveSettings)
+    memory_store: MemoryStoreSettings = field(default_factory=MemoryStoreSettings)
     rerank: RerankSettings = field(default_factory=RerankSettings)
     rewrite: RewriteSettings = field(default_factory=RewriteSettings)
     inject: InjectSettings = field(default_factory=InjectSettings)
@@ -124,6 +134,7 @@ def load_rag_settings() -> RagSettings:
 
     hybrid_raw = _section(raw, "hybrid")
     memory_raw = _section(raw, "memory")
+    memory_store_raw = _section(raw, "memory_store")
     rerank_raw = _section(raw, "rerank")
     rewrite_raw = _section(raw, "rewrite")
     inject_raw = _section(raw, "inject")
@@ -172,6 +183,17 @@ def load_rag_settings() -> RagSettings:
                 "RAG_MEMORY_FUSION_TOP_N",
                 int(memory_raw.get("fusion_top_n", 30)),
             ),
+        ),
+        memory_store=MemoryStoreSettings(
+            backend=os.getenv(
+                "RAG_MEMORY_BACKEND",
+                str(memory_store_raw.get("backend", "faiss")),
+            ).lower(),
+            embedding_dim=_env_int(
+                "RAG_MEMORY_EMBEDDING_DIM",
+                int(memory_store_raw.get("embedding_dim", 1536)),
+            ),
+            database_url=os.getenv("DATABASE_URL"),
         ),
         rerank=RerankSettings(
             enabled=_env_bool(

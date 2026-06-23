@@ -14,7 +14,7 @@ from rag.embeddings import get_embeddings
 from rag.inject.formatter import format_document_context
 from rag.retrieve.rerank.pipeline import TwoStageReranker, build_reranker
 from rag.retrieve.search import search_documents
-from rag.stores.memory import MemoryStore
+from rag.stores.memory_factory import MemoryStoreBackend, load_memory_store
 from rag.stores.sparse import load_bm25
 from rag.stores.vectorstore import load_vectorstore, validate_manifest
 
@@ -32,7 +32,7 @@ class RagService:
         embeddings: Embeddings,
         vectorstore: FAISS | None,
         bm25: BM25Retriever | None,
-        memory_store: MemoryStore,
+        memory_store: MemoryStoreBackend,
         reranker: TwoStageReranker | None,
     ) -> None:
         self._settings = settings
@@ -48,7 +48,7 @@ class RagService:
         return self._settings
 
     @property
-    def memory_store(self) -> MemoryStore:
+    def memory_store(self) -> MemoryStoreBackend:
         """Return the memory store."""
         return self._memory_store
 
@@ -89,7 +89,7 @@ class RagService:
             except RuntimeError as exc:
                 logger.warning("RAG document index not ready: %s", exc)
 
-        memory_store = MemoryStore.load(cfg.index_dir, embeddings)
+        memory_store = load_memory_store(cfg, embeddings)
         reranker = build_reranker(embeddings, cfg.rerank)
 
         return cls(cfg, embeddings, vectorstore, bm25, memory_store, reranker)

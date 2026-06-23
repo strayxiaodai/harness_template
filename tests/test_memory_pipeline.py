@@ -317,3 +317,35 @@ async def test_memorize_agent_runs_memory_ingest(
     assert result["memory_cursor"] == 3
     memorize_module.run_memory_ingest.assert_awaited_once()
     mock_service.save_memory_store.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_memorize_agent_continues_when_ingest_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Memorize node must not block the graph when embedding/storage fails."""
+    from agent import memorize as memorize_module
+    from langchain_core.messages import AIMessage
+
+    mock_service = MagicMock()
+    mock_service.memory_store = MemoryStore()
+    mock_service.save_memory_store = MagicMock()
+
+    monkeypatch.setattr(
+        memorize_module,
+        "load_rag_settings",
+        lambda: RagSettings(enabled=True),
+    )
+    monkeypatch.setattr(memorize_module, "get_rag_service", lambda: mock_service)
+    monkeypatch.setattr(
+        memorize_module,
+        "run_memory_ingest",
+        AsyncMock(side_effect=RuntimeError("embedding failed: NaN")),
+    )
+
+    messages = [AIMessage(content="done")]
+    result = await memorize_module.memorize_agent(_state(messages=messages))
+
+    assert result["role"] == "memorize"
+    assert result["memory_cursor"] == len(messages)
+    mock_service.save_memory_store.assert_not_called()

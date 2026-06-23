@@ -17,6 +17,10 @@ rag:
     retrieve_k: 20
     fusion_top_n: 30
 
+  memory_store:
+    backend: faiss          # faiss | postgres
+    embedding_dim: 1536
+
   rerank:
     enabled: true
     stage1_top_n: 20

@@ -16,26 +16,17 @@ def _ensure_root_on_path() -> None:
         sys.path.insert(0, root_s)
 
 
-def _register_audit_stub() -> None:
-    """Provide a no-op ``audit.logger`` so executor imports without a DB.
-
-    The production ``audit`` package is not part of this template, but the
-    executor imports ``write_audit_event`` at module load time. Tests that
-    need to assert on audit calls monkeypatch this stub on the executor
-    module directly.
-    """
+def _register_audit_module() -> None:
+    """Load the real audit logger (no-op when pool is unset)."""
     if "audit.logger" in sys.modules:
         return
 
-    async def write_audit_event(**_: object) -> None:
-        return None
+    import audit.logger as audit_logger
 
     audit_mod = types.ModuleType("audit")
-    logger_mod = types.ModuleType("audit.logger")
-    logger_mod.write_audit_event = write_audit_event
-    audit_mod.logger = logger_mod
+    audit_mod.logger = audit_logger
     sys.modules["audit"] = audit_mod
-    sys.modules["audit.logger"] = logger_mod
+    sys.modules["audit.logger"] = audit_logger
 
 
 def _register_app_namespace() -> None:
@@ -44,6 +35,7 @@ def _register_app_namespace() -> None:
         return
 
     import config.prompts as config_prompts
+    import graph.routing as graph_routing
     import graph.schemas as graph_schemas
     import graph.state as graph_state
     import llm.providers as llm_providers
@@ -55,9 +47,19 @@ def _register_app_namespace() -> None:
     graph_mod = types.ModuleType("app.graph")
     graph_mod.schemas = graph_schemas
     graph_mod.state = graph_state
+    graph_mod.routing = graph_routing
     sys.modules["app.graph"] = graph_mod
     sys.modules["app.graph.schemas"] = graph_schemas
     sys.modules["app.graph.state"] = graph_state
+    sys.modules["app.graph.routing"] = graph_routing
+
+    try:
+        import graph.builder as graph_builder
+
+        graph_mod.builder = graph_builder
+        sys.modules["app.graph.builder"] = graph_builder
+    except ImportError:
+        pass
 
     llm_mod = types.ModuleType("app.llm")
     llm_mod.providers = llm_providers
@@ -74,7 +76,7 @@ def _register_app_namespace() -> None:
     agents_mod = types.ModuleType("app.agents")
     sys.modules["app.agents"] = agents_mod
 
-    _register_audit_stub()
+    _register_audit_module()
 
     planner_path = ROOT / "agent" / "planner.py"
     spec = importlib.util.spec_from_file_location(
@@ -123,6 +125,18 @@ def _register_app_namespace() -> None:
     sys.modules["app.agents.actioner"] = actioner
     agents_mod.actioner = actioner
     actioner_spec.loader.exec_module(actioner)
+
+    memorize_path = ROOT / "agent" / "memorize.py"
+    memorize_spec = importlib.util.spec_from_file_location(
+        "app.agents.memorize",
+        memorize_path,
+    )
+    if memorize_spec is None or memorize_spec.loader is None:
+        raise ImportError(f"Cannot load memorize from {memorize_path}")
+    memorize = importlib.util.module_from_spec(memorize_spec)
+    sys.modules["app.agents.memorize"] = memorize
+    agents_mod.memorize = memorize
+    memorize_spec.loader.exec_module(memorize)
 
 
 _ensure_root_on_path()

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import importlib.util
 import sys
 import types
@@ -30,7 +31,7 @@ def _register_audit_module() -> None:
 
 
 def _register_app_namespace() -> None:
-    """Expose graph/, llm/, and agent/ modules under the ``app.*`` names."""
+    """Attach agent/graph aliases to the real ``app`` HTTP package."""
     if "app.agents.planner" in sys.modules:
         return
 
@@ -41,13 +42,13 @@ def _register_app_namespace() -> None:
     import llm.providers as llm_providers
     import llm.retry as llm_retry
 
-    app = types.ModuleType("app")
-    sys.modules["app"] = app
+    app_pkg = importlib.import_module("app")
 
     graph_mod = types.ModuleType("app.graph")
     graph_mod.schemas = graph_schemas
     graph_mod.state = graph_state
     graph_mod.routing = graph_routing
+    app_pkg.graph = graph_mod
     sys.modules["app.graph"] = graph_mod
     sys.modules["app.graph.schemas"] = graph_schemas
     sys.modules["app.graph.state"] = graph_state
@@ -64,16 +65,19 @@ def _register_app_namespace() -> None:
     llm_mod = types.ModuleType("app.llm")
     llm_mod.providers = llm_providers
     llm_mod.retry = llm_retry
+    app_pkg.llm = llm_mod
     sys.modules["app.llm"] = llm_mod
     sys.modules["app.llm.providers"] = llm_providers
     sys.modules["app.llm.retry"] = llm_retry
 
     config_mod = types.ModuleType("app.config")
     config_mod.prompts = config_prompts
+    app_pkg.config = config_mod
     sys.modules["app.config"] = config_mod
     sys.modules["app.config.prompts"] = config_prompts
 
     agents_mod = types.ModuleType("app.agents")
+    app_pkg.agents = agents_mod
     sys.modules["app.agents"] = agents_mod
 
     _register_audit_module()

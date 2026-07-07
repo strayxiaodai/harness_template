@@ -1,0 +1,10 @@
+# Example MCP server definitions for the harness executor.
+# Copy to mcp/servers.json or set HARNESS_MCP_CONFIG to this file.
+{
+  "mcpServers": {
+    "example": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    }
+  }
+}

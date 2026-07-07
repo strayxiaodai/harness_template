@@ -13,7 +13,6 @@ HITL_PAUSE_NODES: list[str] = [
     "planner",
     "executor",
     "reviewer",
-    "actioner",
     "memorize",
 ]
 

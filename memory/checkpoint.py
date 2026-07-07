@@ -21,6 +21,33 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
+async def _startup_mcp() -> None:
+    """Discover MCP tools when configured."""
+    try:
+        from harness_mcp.tools import init_mcp_tools
+    except ImportError:
+        logger.debug("MCP package not installed; skipping MCP tools")
+        return
+
+    try:
+        await init_mcp_tools()
+    except Exception:
+        logger.exception("MCP tool registration failed")
+
+
+async def _shutdown_mcp() -> None:
+    """Close MCP stdio sessions."""
+    try:
+        from harness_mcp.client import shutdown_mcp_manager
+    except ImportError:
+        return
+
+    try:
+        await shutdown_mcp_manager()
+    except Exception:
+        logger.exception("MCP shutdown failed")
+
+
 def _compile_graphs(app: FastAPI, saver: object) -> None:
     """Attach auto and HITL graphs to application state."""
     app.state.graph_auto = compile_with_checkpointer(
@@ -57,9 +84,11 @@ async def graph_lifespan(app: FastAPI) -> AsyncIterator[None]:
                 await saver.setup()
                 _compile_graphs(app, saver)
                 logger.info("Compiled graphs with Postgres checkpointer")
+                await _startup_mcp()
                 try:
                     yield
                 finally:
+                    await _shutdown_mcp()
                     set_audit_pool(None)
                     set_memory_pool(None)
     elif backend == "sqlite":
@@ -70,9 +99,17 @@ async def graph_lifespan(app: FastAPI) -> AsyncIterator[None]:
             await saver.setup()
             _compile_graphs(app, saver)
             logger.info("Compiled graphs with SQLite checkpointer at %s", conn_string)
-            yield
+            await _startup_mcp()
+            try:
+                yield
+            finally:
+                await _shutdown_mcp()
     else:
         saver = MemorySaver()
         _compile_graphs(app, saver)
         logger.info("Compiled graphs with in-memory checkpointer")
-        yield
+        await _startup_mcp()
+        try:
+            yield
+        finally:
+            await _shutdown_mcp()

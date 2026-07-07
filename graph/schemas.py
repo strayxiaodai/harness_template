@@ -26,3 +26,10 @@ class ReviewResult(BaseModel):
     verdict: Literal["pass", "fail"]
     reason: str = Field(min_length=1)
     suggested_step: Literal["planner", "executor", "finish"]
+
+
+class ActionScoreResult(BaseModel):
+    """Structured loop quality score produced by the actioner."""
+
+    score: int = Field(ge=0, le=100, description="Loop quality from 0-100")
+    rationale: str = Field(min_length=1)

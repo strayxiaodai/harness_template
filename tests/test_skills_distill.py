@@ -84,6 +84,8 @@ async def test_distill_skill_from_thread_creates_skill(tmp_path: Path) -> None:
                 "approved": True,
                 "execution": {"summary": "added route"},
                 "review": {"verdict": "pass", "reason": "ok"},
+                "loop_score": 85,
+                "skill_preview_ready": True,
             },
         ),
     )
@@ -127,6 +129,8 @@ async def test_distill_skill_preview_does_not_write(tmp_path: Path) -> None:
                 "max_rounds": 3,
                 "approved": True,
                 "review": {"verdict": "pass", "reason": "ok"},
+                "loop_score": 85,
+                "skill_preview_ready": True,
             },
         ),
     )
@@ -185,6 +189,8 @@ async def test_save_skill_draft_writes_file(tmp_path: Path) -> None:
                 "max_rounds": 3,
                 "approved": True,
                 "review": {"verdict": "pass", "reason": "ok"},
+                "loop_score": 85,
+                "skill_preview_ready": True,
             },
         ),
     )
@@ -233,6 +239,8 @@ async def test_distill_skill_refines_existing_skill(tmp_path: Path) -> None:
                 "approved": True,
                 "execution": {"summary": "step b"},
                 "review": {"verdict": "pass", "reason": "ok"},
+                "loop_score": 88,
+                "skill_preview_ready": True,
             },
         ),
     )

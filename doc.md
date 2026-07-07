@@ -1,5 +1,8 @@
 # Enterprise LangGraph Harness Template
 
+> **Onboarding:** start with [`README.md`](README.md) and [`AGENTS.md`](AGENTS.md).
+> This file is the full technical reference.
+
 This document describes a Python template for building multi-agent workflows
 with LangGraph. The repository includes agent nodes, graph routing/builder,
 LLM providers, executor tools, audit logging, and a full RAG subsystem.
@@ -21,8 +24,8 @@ FastAPI serving is implemented. Postgres checkpoints and Docker Compose are
 | Memory store FAISS (default) + pgvector (optional) | Implemented | `rag/stores/` |
 | Prompts and settings | Implemented | `config/` |
 | Unit tests (agents, graph, RAG, audit) | Implemented | `tests/` |
-| FastAPI `/run`, `/resume`, `/stream`, `/health` | Implemented | `api/` |
-| Skill distillation (`/skills`, `/skills/distill`) | Implemented | `skills/`, `api/server.py` |
+| FastAPI `/run`, `/resume`, `/stream`, `/health` | Implemented | `app/` |
+| Skill distillation (`/skills`, `/skills/distill`) | Implemented | `skills/`, `app/services/skills.py` |
 | Skill save gate (≥1 harness loop) | Implemented | `skills/eligibility.py` |
 | LangGraph checkpointer (SQLite default, Memory or Postgres) | Implemented | `memory/checkpoint.py` |
 | Docker Compose stack | Planned | `docker-compose.yml` |
@@ -68,9 +71,22 @@ harness_template/
 │   ├── code_tools.py
 │   ├── rag_tools.py
 │   └── registry.py
-├── api/
-│   ├── schemas.py          # RunRequest, ResumeRequest, RunResponse
-│   └── server.py           # FastAPI app (uvicorn api.server:api)
+├── app/                    # Application (API + frontend)
+│   ├── main.py             # Uvicorn entry (uvicorn app.main:app)
+│   ├── api/                # HTTP route handlers
+│   ├── core/               # App factory and config
+│   ├── services/           # Business logic
+│   ├── schemas/            # Pydantic models
+│   ├── db/                 # Graph lifespan and checkpoint accessors
+│   └── frontend/           # React + Vite harness UI (npm run dev)
+├── harness_mcp/            # MCP client: call external MCP tools from executor
+│   ├── client.py
+│   ├── config.py
+│   ├── tools.py
+│   └── schemas.py
+├── mcp/                    # MCP config and docs (servers.json)
+│   ├── README.md
+│   └── servers.example.json
 ├── skills/
 │   ├── distill.py          # thread → Cursor SKILL.md
 │   ├── store.py            # .cursor/skills/ filesystem
@@ -280,7 +296,7 @@ OLLAMA_MODEL=qwen3.6:27b
 
 ```bash
 # default — SQLite file at data/checkpoints/langgraph.db
-uvicorn api.server:api --reload --port 8000
+uvicorn app.main:app --reload --port 8000
 
 # optional overrides
 CHECKPOINT_BACKEND=sqlite
@@ -328,7 +344,7 @@ pip install -r requirements-dev.txt
 # export CHECKPOINT_BACKEND=postgres
 # export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/agents
 
-uvicorn api.server:api --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Local dev uses **SQLite** checkpoints by default (`data/checkpoints/langgraph.db`).

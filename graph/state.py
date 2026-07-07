@@ -60,3 +60,5 @@ class AgentState(TypedDict):
     memory_context_round: NotRequired[int]
     skill_slug: NotRequired[str]
     skill_context: NotRequired[str]
+    loop_score: NotRequired[int]
+    skill_preview_ready: NotRequired[bool]

@@ -26,13 +26,30 @@ def test_thread_not_eligible_without_execution_or_review() -> None:
 
 
 def test_thread_eligible_after_one_loop() -> None:
-    """Threads with one round and review output can be distilled."""
+    """Threads with one round and a passing score can be distilled."""
     eligible, reason = thread_eligible_for_skill(
         {
             "rounds": 1,
             "execution": {"summary": "implemented feature"},
             "review": {"verdict": "pass", "reason": "looks good"},
+            "loop_score": 85,
+            "skill_preview_ready": True,
         },
     )
     assert eligible is True
     assert reason == ""
+
+
+def test_thread_not_eligible_when_score_below_threshold() -> None:
+    """Skill preview requires an actioner score of at least 80."""
+    eligible, reason = thread_eligible_for_skill(
+        {
+            "rounds": 1,
+            "execution": {"summary": "partial"},
+            "review": {"verdict": "fail", "reason": "incomplete"},
+            "loop_score": 65,
+            "skill_preview_ready": False,
+        },
+    )
+    assert eligible is False
+    assert "80" in reason

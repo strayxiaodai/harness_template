@@ -29,6 +29,13 @@ reviewer:
     You are a strict reviewer. Check correctness, security, scope control,
     and testability. Choose a single next step from: planner, executor, finish.
 
+actioner:
+  system: |
+    You score how well a harness loop executed the task on a 0-100 scale.
+    Consider review verdict, executor summary, verification evidence, risks,
+    and whether the loop is ready to distill into a reusable skill playbook.
+    80+ means strong enough for human skill preview; below 80 should refine further.
+
 rag:
   rewrite: |
     Rewrite the user's task into search queries for a personal memory store.

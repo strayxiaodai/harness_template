@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 MIN_ROUNDS_FOR_SKILL = 1
+SKILL_PREVIEW_SCORE_THRESHOLD = 80
 
 
 def thread_eligible_for_skill(values: dict[str, Any]) -> tuple[bool, str]:
@@ -36,6 +37,16 @@ def thread_eligible_for_skill(values: dict[str, Any]) -> tuple[bool, str]:
             False,
             "At least one loop must produce executor and reviewer output "
             "before saving a skill.",
+        )
+
+    if not values.get("skill_preview_ready"):
+        loop_score = int(values.get("loop_score", 0))
+        return (
+            False,
+            "Loop quality score must be at least "
+            f"{SKILL_PREVIEW_SCORE_THRESHOLD} before previewing a skill "
+            f"(current score: {loop_score}). Continue refining or resume "
+            "after a stronger loop.",
         )
 
     return True, ""

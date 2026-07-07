@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from api.schemas import ResumeRequest, RunRequest, RunResponse
+from app.schemas import ResumeRequest, RunRequest, RunResponse
 
 
 def _snapshot(
@@ -46,7 +46,7 @@ def _mock_graph(
 @pytest.fixture
 def client() -> TestClient:
     """Test client with mocked graphs on app state."""
-    from api.server import api
+    from app.main import app
 
     complete_values = {
         "approved": True,
@@ -65,13 +65,13 @@ def client() -> TestClient:
         "human_in_the_loop": True,
     }
 
-    api.state.graph_auto = _mock_graph(complete_values)
-    api.state.graph_step = _mock_graph(
+    app.state.graph_auto = _mock_graph(complete_values)
+    app.state.graph_step = _mock_graph(
         hitl_values,
         next_nodes=("executor",),
     )
 
-    return TestClient(api, raise_server_exceptions=True)
+    return TestClient(app, raise_server_exceptions=True)
 
 
 def test_health_ok(client: TestClient) -> None:
@@ -97,13 +97,48 @@ def test_run_returns_complete_response(client: TestClient) -> None:
     assert body.status == "complete"
     assert body.approved is True
     assert body.result == "all done"
+    assert body.skill_eligible is False
+    assert body.skill_ineligible_reason
+
+
+@pytest.mark.asyncio
+async def test_snapshot_marks_skill_eligible_after_loop() -> None:
+    """RunResponse reflects checkpoint eligibility for skill distillation."""
+    from app.services.snapshot import snapshot_to_response
+
+    graph = _mock_graph(
+        {
+            "approved": True,
+            "result": "done",
+            "role": "memorize",
+            "rounds": 1,
+            "max_rounds": 3,
+            "human_in_the_loop": True,
+            "execution": {
+                "summary": "shipped",
+                "changes": [],
+                "risks": [],
+                "verification": [],
+            },
+            "review": {
+                "verdict": "pass",
+                "reason": "ok",
+                "suggested_step": "finish",
+            },
+            "loop_score": 85,
+            "skill_preview_ready": True,
+        },
+    )
+    response = await snapshot_to_response(graph, "thread-1")
+    assert response.skill_eligible is True
+    assert response.skill_ineligible_reason is None
 
 
 def test_resume_requires_hitl_thread(client: TestClient) -> None:
     """POST /resume returns 409 for non-HITL threads."""
-    from api.server import api
+    from app.main import app
 
-    api.state.graph_step = _mock_graph(
+    app.state.graph_step = _mock_graph(
         {
             "approved": False,
             "human_in_the_loop": False,
@@ -119,7 +154,7 @@ def test_resume_requires_hitl_thread(client: TestClient) -> None:
 
 def test_resume_applies_overrides(client: TestClient) -> None:
     """POST /resume forwards overrides to update_state."""
-    from api.server import api
+    from app.main import app
 
     graph = _mock_graph(
         {
@@ -132,7 +167,7 @@ def test_resume_applies_overrides(client: TestClient) -> None:
         next_nodes=("executor",),
     )
     graph.aupdate_state = AsyncMock()
-    api.state.graph_step = graph
+    app.state.graph_step = graph
 
     response = client.post(
         "/resume",
@@ -175,7 +210,7 @@ def test_run_request_validation() -> None:
 
 def test_list_skills_empty(client: TestClient) -> None:
     """GET /skills returns an empty list when no skills exist."""
-    with patch("api.server.list_skills", return_value=[]):
+    with patch("app.services.skills.list_skills", return_value=[]):
         response = client.get("/skills")
     assert response.status_code == 200
     assert response.json() == []
@@ -183,10 +218,10 @@ def test_list_skills_empty(client: TestClient) -> None:
 
 def test_distill_skill_endpoint(client: TestClient) -> None:
     """POST /skills/distill returns the distilled skill metadata."""
-    from api.server import api
+    from app.main import app
     from skills.schemas import DistillSkillResponse as InternalResponse
 
-    api.state.graph_auto = _mock_graph({"thread_id": "t1", "task": "demo"})
+    app.state.graph_auto = _mock_graph({"thread_id": "t1", "task": "demo"})
 
     fake = InternalResponse(
         thread_id="t1",
@@ -202,7 +237,7 @@ def test_distill_skill_endpoint(client: TestClient) -> None:
     )
 
     with patch(
-        "api.server.distill_skill_from_thread",
+        "app.services.skills.distill_skill_from_thread",
         AsyncMock(return_value=fake),
     ):
         response = client.post(
@@ -218,7 +253,7 @@ def test_distill_skill_endpoint(client: TestClient) -> None:
 
 def test_get_skill_not_found(client: TestClient) -> None:
     """GET /skills/{slug} returns 404 for missing skills."""
-    with patch("api.server.read_skill", side_effect=FileNotFoundError("missing")):
+    with patch("app.services.skills.read_skill", side_effect=FileNotFoundError("missing")):
         response = client.get("/skills/missing-skill")
     assert response.status_code == 404
 
@@ -227,11 +262,11 @@ def test_get_skill_returns_detail(client: TestClient) -> None:
     """GET /skills/{slug} returns the skill playbook."""
     with (
         patch(
-            "api.server.read_skill",
+            "app.services.skills.read_skill",
             return_value=("demo", "Demo skill", "# Demo body"),
         ),
-        patch("api.server.read_meta") as read_meta,
-        patch("api.server.skill_path", return_value="/tmp/demo/SKILL.md"),
+        patch("app.services.skills.read_meta") as read_meta,
+        patch("app.services.skills.skill_path", return_value="/tmp/demo/SKILL.md"),
     ):
         read_meta.return_value = type(
             "Meta",

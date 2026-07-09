@@ -1,0 +1,1 @@
+{"nodes": [{"id": "app_frontend_index_code", "label": "Harness Console Entry HTML", "file_type": "code", "source_file": "app/frontend/index.html"}, {"id": "frontend_jetbrains_mono", "label": "JetBrains Mono Font", "file_type": "concept", "source_file": "app/frontend/index.html"}], "edges": [], "hyperedges": []}

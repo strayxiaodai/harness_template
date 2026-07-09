@@ -23,8 +23,8 @@ apply to humans and bots.
   See [`docs/HISTORY_GUIDE.md`](docs/HISTORY_GUIDE.md).
 - Update release notes when the change is user-visible. See
   [`docs/releases/README.md`](docs/releases/README.md).
-- Verify examples in [`README.md`](README.md) and [`doc.md`](doc.md) still match
-  current behavior.
+- Verify examples in [`README.md`](README.md) and [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md)
+  still match current behavior.
 
 ## Review Expectations
 

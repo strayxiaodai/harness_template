@@ -1,0 +1,1 @@
+{"nodes": [{"id": "app_frontend_readme_document", "label": "Harness Frontend README", "file_type": "document", "source_file": "app/frontend/README.md"}, {"id": "frontend_react_vite", "label": "React & Vite Stack", "file_type": "concept", "source_file": "app/frontend/README.md"}], "edges": [], "hyperedges": []}

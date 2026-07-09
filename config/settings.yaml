@@ -1,4 +1,4 @@
-# Non-secret service defaults (see doc.md for env vars such as EXECUTOR_TOOLS).
+# Non-secret service defaults (see docs/IMPLEMENTATION.md for env vars such as EXECUTOR_TOOLS).
 
 rag:
   enabled: true

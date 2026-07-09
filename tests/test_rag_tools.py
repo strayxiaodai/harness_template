@@ -61,7 +61,7 @@ async def test_search_knowledge_base_calls_service(
 
     mock_service = MagicMock()
     mock_service.search_documents_text = AsyncMock(
-        return_value="Retrieved documents:\n- [doc.md] hello",
+        return_value="Retrieved documents:\n- [docs/IMPLEMENTATION.md] hello",
     )
     monkeypatch.setattr(
         rag_tools_module,
@@ -72,7 +72,7 @@ async def test_search_knowledge_base_calls_service(
 
     result = await search_knowledge_base.ainvoke({"query": "hello world"})
 
-    assert "doc.md" in result
+    assert "docs/IMPLEMENTATION.md" in result
     mock_service.search_documents_text.assert_awaited_once_with("hello world")
 
 

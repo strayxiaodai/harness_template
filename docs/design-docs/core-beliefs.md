@@ -20,3 +20,12 @@ These beliefs shape the repository before feature-specific rules exist.
 - Checkpoints and audit trails make agent work inspectable and resumable.
 - Skills distilled from successful threads are reusable playbooks, not
   replacements for tests and docs.
+
+**Example — agent failure loop:**
+
+```text
+Agent keeps misconfiguring CHECKPOINT_BACKEND
+→ update IMPLEMENTATION.md + LANGGRAPH.md with explicit examples
+→ add test in test_checkpoint_config.py
+→ not: add 500 words to AGENTS.md
+```

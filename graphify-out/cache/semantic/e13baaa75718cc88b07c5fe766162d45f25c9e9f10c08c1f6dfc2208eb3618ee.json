@@ -1,0 +1,1 @@
+{"nodes": [{"id": "app_frontend_src_assets_hero_image", "label": "Hero Image Asset", "file_type": "image", "source_file": "app/frontend/src/assets/hero.png"}, {"id": "frontend_hero_image", "label": "Landing Page Hero Visual", "file_type": "concept", "source_file": "app/frontend/src/assets/hero.png"}], "edges": [], "hyperedges": []}

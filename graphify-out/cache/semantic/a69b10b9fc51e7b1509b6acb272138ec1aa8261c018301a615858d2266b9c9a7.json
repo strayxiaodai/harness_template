@@ -1,0 +1,1 @@
+{"nodes": [{"id": "app_frontend_public_icons_image", "label": "Icon Sprite Sheet", "file_type": "image", "source_file": "app/frontend/public/icons.svg"}, {"id": "frontend_icons", "label": "UI Icon Set", "file_type": "concept", "source_file": "app/frontend/public/icons.svg"}], "edges": [], "hyperedges": []}

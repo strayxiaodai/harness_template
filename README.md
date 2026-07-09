@@ -47,9 +47,9 @@ pytest tests/ -q -k "not live"
 | Doc | Purpose |
 | --- | --- |
 | [`AGENTS.md`](AGENTS.md) | Agent entry point and doc routing |
-| [`doc.md`](doc.md) | Full technical reference (API, RAG, config, schemas) |
-| [`PRODUCT.md`](PRODUCT.md) | Product purpose, users, and UX principles |
-| [`DESIGN.md`](DESIGN.md) | Harness console design system |
+| [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md) | Full technical implementation (API, RAG, config, schemas) |
+| [`docs/PRODUCT.md`](docs/PRODUCT.md) | Product purpose, users, and UX principles |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | Harness console design system |
 | [`docs/`](docs/) | Collaboration, architecture, quality, and ops guides |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | PR and change expectations |
 
@@ -70,7 +70,7 @@ export CHECKPOINT_BACKEND=postgres
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/agents
 ```
 
-See [`doc.md`](doc.md) for the full configuration reference.
+See [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md) for the full implementation guide.
 
 ## License
 

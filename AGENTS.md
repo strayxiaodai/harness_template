@@ -4,8 +4,8 @@ This repository is an agent-first LangGraph harness implementation.
 
 `AGENTS.md` stays short on purpose. Treat it as a map, not the encyclopedia.
 Repository-local markdown under `docs/` is the system of record for process and
-ops. [`doc.md`](doc.md) is the system of record for runtime behavior, APIs, and
-configuration.
+ops. [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md) is the system of record for runtime behavior,
+APIs, and configuration.
 
 If a code or workflow change makes a doc stale, update the doc in the same task.
 
@@ -17,7 +17,7 @@ If a code or workflow change makes a doc stale, update the doc in the same task.
   package boundaries.
 - [`docs/design-docs/core-beliefs.md`](docs/design-docs/core-beliefs.md):
   agent-first operating principles.
-- [`doc.md`](doc.md): agent loop, RAG, API routes, env vars, and schemas.
+- [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md): agent loop, RAG, API routes, env vars, and schemas.
 
 ## Read Before Finishing A Code Change
 
@@ -30,9 +30,9 @@ If a code or workflow change makes a doc stale, update the doc in the same task.
 
 - [`docs/PLANS_GUIDE.md`](docs/PLANS_GUIDE.md): when to create an execution
   plan and how to maintain it.
-- [`PRODUCT.md`](PRODUCT.md): product purpose, users, and UX constraints.
+- [`docs/PRODUCT.md`](docs/PRODUCT.md): product purpose, users, and UX constraints.
 - [`docs/PRODUCT_SENSE.md`](docs/PRODUCT_SENSE.md): product tradeoff heuristics.
-- [`DESIGN.md`](DESIGN.md): harness console visual system and layout rules.
+- [`docs/DESIGN.md`](docs/DESIGN.md): harness console visual system and layout rules.
 - [`docs/FRONTEND.md`](docs/FRONTEND.md): frontend dev, build, and verification.
 - [`docs/RELIABILITY.md`](docs/RELIABILITY.md): logging, health, timeouts, and
   operational readiness.

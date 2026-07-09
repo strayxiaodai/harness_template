@@ -7,9 +7,11 @@ Architectural and product design documents for this repository.
 | Doc | Status | Summary |
 | --- | --- | --- |
 | [`core-beliefs.md`](core-beliefs.md) | Stable | Agent-first operating principles |
-| [`PRODUCT.md`](../../PRODUCT.md) | Active | Product purpose, users, UX principles |
-| [`DESIGN.md`](../../DESIGN.md) | Active | Console design system and tokens |
-| [`doc.md`](../../doc.md) | Active | Technical reference for runtime behavior |
+| [`PRODUCT.md`](PRODUCT.md) | Active | Product purpose, users, UX principles |
+| [`DESIGN.md`](DESIGN.md) | Active | Console design system and tokens |
+| [`IMPLEMENTATION.md`](IMPLEMENTATION.md) | Active | As-built implementation guide with per-section examples |
+| [`ARCHITECTURE.md`](../ARCHITECTURE.md) | Active | Layout, runtime topology, console mapping |
+| [`FRONTEND.md`](../FRONTEND.md) | Active | React console dev guide |
 
 ## Conventions
 

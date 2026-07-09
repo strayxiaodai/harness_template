@@ -1,0 +1,1 @@
+{"nodes": [{"id": "app_frontend_src_assets_react_image", "label": "React Logo Asset", "file_type": "image", "source_file": "app/frontend/src/assets/react.svg"}, {"id": "frontend_react_logo", "label": "React Framework Logo", "file_type": "concept", "source_file": "app/frontend/src/assets/react.svg"}], "edges": [], "hyperedges": []}

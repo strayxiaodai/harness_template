@@ -1,0 +1,86 @@
+.workplace {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.workplace--hitl {
+  border-color: color-mix(in oklch, var(--accent) 45%, var(--border));
+  background: color-mix(in oklch, var(--accent) 8%, var(--surface));
+}
+
+.workplace__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  overflow: auto;
+  min-height: 0;
+}
+
+.workplace__idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 8rem;
+  margin: var(--space-2) var(--space-3) var(--space-3);
+  padding: var(--space-4);
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-control);
+  background: color-mix(in oklch, var(--surface-raised) 55%, transparent);
+}
+
+.workplace__field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.workplace__reason,
+.workplace__hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.workplace__overrides {
+  margin-top: var(--space-2);
+  font-size: 0.8125rem;
+}
+
+.workplace__overrides > summary {
+  color: var(--muted);
+  padding: 0;
+  cursor: pointer;
+}
+
+.workplace__overrides > summary::-webkit-details-marker {
+  display: none;
+}
+
+.workplace__overrides > label,
+.workplace__overrides > textarea,
+.workplace__overrides > select {
+  margin-top: var(--space-2);
+}
+
+.workplace__overrides > label:first-of-type {
+  margin-top: var(--space-2);
+}
+
+.workplace__sub {
+  margin: 0 0 var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.workplace__payloads {
+  gap: var(--space-4);
+}

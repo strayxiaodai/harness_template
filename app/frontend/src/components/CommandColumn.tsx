@@ -235,7 +235,7 @@ export function CommandColumn({
               aria-describedby="max-rounds-hint"
             />
             <p id="max-rounds-hint" className="command-column__hint">
-              Clamped to 1–20 to match the API.
+              1–20
             </p>
           </div>
 
@@ -268,8 +268,7 @@ export function CommandColumn({
             aria-live="polite"
           >
             <p className="command-column__hint">
-              Pick a distilled skill and start a new harness thread with its
-              playbook injected into planner and executor.
+              Inject a saved playbook into a new thread.
             </p>
             <div className="command-column__row command-column__row--skill">
               <label className="field-label" htmlFor="skill-select">
@@ -345,8 +344,7 @@ export function CommandColumn({
               Run skill
             </button>
             <p className="command-column__hint">
-              Optional: add text in Task above to narrow this run. Leave Task
-              empty to use the skill description as the goal.
+              Task above is optional; empty uses the skill description.
             </p>
           </div>
         </details>
@@ -422,9 +420,8 @@ export function CommandColumn({
           </summary>
           <div className="skill-distill__body">
             <p className="command-column__hint">
-              Preview turns this thread into a skill draft after at least one
-              full loop scores 80+ at the actioner, so you can confirm the
-              workflow worked before saving.
+              Preview a skill draft after a strong completed loop (actioner
+              ≥80).
             </p>
             {!skillEligible &&
               (phase === 'complete' || phase === 'awaiting_human') &&

@@ -11,9 +11,9 @@
   display: grid;
   grid-template-columns:
     var(--col-inspector, 280px)
-    6px
+    8px
     minmax(0, 1fr)
-    6px
+    8px
     var(--col-command, 268px);
   grid-template-rows: minmax(0, 1fr);
   grid-template-areas:
@@ -26,6 +26,11 @@
   padding: var(--space-3);
   padding-left: max(var(--space-3), env(safe-area-inset-left, 0));
   padding-right: max(var(--space-3), env(safe-area-inset-right, 0));
+}
+
+.app-main--inspector-collapsed {
+  grid-template-columns: 36px minmax(0, 1fr) 8px var(--col-command, 268px);
+  grid-template-areas: "inspector center split-r command";
 }
 
 .inspector-stack {

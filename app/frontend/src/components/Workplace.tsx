@@ -112,6 +112,7 @@ export function Workplace({
             className="btn btn-accent"
             onClick={onContinue}
             disabled={streaming}
+            aria-keyshortcuts="r"
           >
             Continue
           </button>

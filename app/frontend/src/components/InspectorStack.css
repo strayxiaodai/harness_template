@@ -10,6 +10,44 @@
   gap: 0;
 }
 
+.inspector-stack--rail {
+  align-items: stretch;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  padding: var(--space-2) 0;
+}
+
+.inspector-stack__rail-button {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  cursor: pointer;
+}
+
+.inspector-stack__rail-button:hover,
+.inspector-stack__rail-button:focus-visible {
+  color: var(--ink);
+}
+
+.inspector-stack__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-right: var(--space-3);
+  flex-shrink: 0;
+}
+
 .inspector-stack__empty {
   display: flex;
   flex-direction: column;

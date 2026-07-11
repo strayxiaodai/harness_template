@@ -1,16 +1,11 @@
-import { useEffect, useState } from 'react'
 import type {
-  ClarificationAnswer,
-  ClarificationQuestion,
   DistillSkillResponse,
-  InterruptPayload,
   ResumeOverrides,
   SkillDetail,
   SkillSummary,
 } from '../types/api'
 import type { RunPhase } from '../hooks/useConsole'
 import { useNarrowViewport } from '../hooks/useNarrowViewport'
-import { clarificationQuestions } from '../lib/clarification'
 import './CommandColumn.css'
 
 interface CommandColumnProps {
@@ -29,51 +24,31 @@ interface CommandColumnProps {
   skillName: string
   distillResult: DistillSkillResponse | null
   distillBusy: boolean
-  interrupt: InterruptPayload | null
+  planOverrideText: string
+  refineOverride: ResumeOverrides['refine_from'] | ''
+  showSecondaryContinue: boolean
   onTaskChange: (value: string) => void
   onPlanChange: (value: string) => void
   onMaxRoundsChange: (value: number) => void
   onHitlChange: (value: boolean) => void
+  onPlanOverrideChange: (value: string) => void
+  onRefineOverrideChange: (
+    value: ResumeOverrides['refine_from'] | '',
+  ) => void
   onSkillNameChange: (value: string) => void
   onSkillSelect: (slug: string) => void
   onRefreshSkills: () => void
   onClearSkillsError: () => void
   onRun: () => void
   onRunSkill: () => void
-  onResume: (
-    overrides?: ResumeOverrides,
-    answers?: ClarificationAnswer[],
-  ) => void
+  onResume: () => void
   onDistillSkill: () => void
   onSaveSkill: () => void | Promise<void>
   onDiscardSkill: () => void
   onReset: () => void
   onClearError: () => void
-  nextAction: string | null
   skillEligible: boolean
   skillIneligibleReason: string
-}
-
-function parsePlanLines(text: string): string[] {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-}
-
-function buildOverrides(
-  planOverrideText: string,
-  refineFrom: ResumeOverrides['refine_from'] | '',
-): ResumeOverrides | undefined {
-  const plan = parsePlanLines(planOverrideText)
-  const overrides: ResumeOverrides = {}
-  if (plan.length > 0) {
-    overrides.plan = plan
-  }
-  if (refineFrom) {
-    overrides.refine_from = refineFrom
-  }
-  return Object.keys(overrides).length > 0 ? overrides : undefined
 }
 
 export function CommandColumn({
@@ -92,11 +67,15 @@ export function CommandColumn({
   skillName,
   distillResult,
   distillBusy,
-  interrupt,
+  planOverrideText,
+  refineOverride,
+  showSecondaryContinue,
   onTaskChange,
   onPlanChange,
   onMaxRoundsChange,
   onHitlChange,
+  onPlanOverrideChange,
+  onRefineOverrideChange,
   onSkillNameChange,
   onSkillSelect,
   onRefreshSkills,
@@ -109,53 +88,16 @@ export function CommandColumn({
   onDiscardSkill,
   onReset,
   onClearError,
-  nextAction: _nextAction,
   skillEligible,
   skillIneligibleReason,
 }: CommandColumnProps) {
   const isStreaming = phase === 'streaming'
-  const canResume =
-    (phase === 'awaiting_human' || phase === 'error') && !isStreaming
   const canDistill =
     (phase === 'complete' || phase === 'awaiting_human') &&
     !isStreaming &&
     skillEligible
   const canRunSkill = !isStreaming && Boolean(selectedSkillSlug)
   const isNarrow = useNarrowViewport()
-  const questions = clarificationQuestions(interrupt)
-
-  const [planOverrideText, setPlanOverrideText] = useState('')
-  const [refineOverride, setRefineOverride] = useState<
-    ResumeOverrides['refine_from'] | ''
-  >('')
-  const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    if (!canResume) {
-      setPlanOverrideText('')
-      setRefineOverride('')
-      setAnswerDrafts({})
-      return
-    }
-    const next: Record<string, string> = {}
-    for (const question of questions) {
-      next[question.id] = ''
-    }
-    setAnswerDrafts(next)
-  }, [canResume, interrupt?.id])
-
-  const handleResume = () => {
-    const answers: ClarificationAnswer[] | undefined =
-      questions.length > 0
-        ? questions
-            .map((question) => ({
-              question_id: question.id,
-              answer: (answerDrafts[question.id] ?? '').trim(),
-            }))
-            .filter((item) => item.answer.length > 0)
-        : undefined
-    onResume(buildOverrides(planOverrideText, refineOverride), answers)
-  }
 
   return (
     <aside className="command-column panel" aria-label="Run controls">
@@ -346,12 +288,12 @@ export function CommandColumn({
             Pause after each node (HITL)
           </label>
 
-          {canResume && phase === 'awaiting_human' && (
+          {showSecondaryContinue && (
             <>
               <button
                 type="button"
                 className="btn btn-accent"
-                onClick={handleResume}
+                onClick={onResume}
                 disabled={isStreaming}
                 aria-keyshortcuts="r"
               >
@@ -360,30 +302,10 @@ export function CommandColumn({
               <OverrideForm
                 planOverrideText={planOverrideText}
                 refineOverride={refineOverride}
-                onPlanChange={setPlanOverrideText}
-                onRefineChange={setRefineOverride}
+                onPlanChange={onPlanOverrideChange}
+                onRefineChange={onRefineOverrideChange}
                 disabled={isStreaming}
               />
-              {questions.length > 0 && (
-                <ClarificationForm
-                  questions={questions}
-                  reason={
-                    typeof interrupt?.value === 'object' &&
-                    interrupt?.value !== null &&
-                    !Array.isArray(interrupt.value)
-                      ? String(
-                          (interrupt.value as Record<string, unknown>).reason ??
-                            '',
-                        )
-                      : ''
-                  }
-                  answers={answerDrafts}
-                  onAnswerChange={(id, value) =>
-                    setAnswerDrafts((prev) => ({ ...prev, [id]: value }))
-                  }
-                  disabled={isStreaming}
-                />
-              )}
             </>
           )}
         </div>
@@ -562,47 +484,3 @@ function OverrideForm({
   )
 }
 
-function ClarificationForm({
-  questions,
-  reason,
-  answers,
-  onAnswerChange,
-  disabled,
-}: {
-  questions: ClarificationQuestion[]
-  reason: string
-  answers: Record<string, string>
-  onAnswerChange: (id: string, value: string) => void
-  disabled: boolean
-}) {
-  return (
-    <div className="override-form clarification-form">
-      <p className="override-form__summary">Clarification required</p>
-      {reason ? <p className="command-column__hint">{reason}</p> : null}
-      <div className="override-form__fields">
-        {questions.map((question) => (
-          <div key={question.id}>
-            <label className="field-label" htmlFor={`clarify-${question.id}`}>
-              {question.prompt}
-            </label>
-            {question.why ? (
-              <p className="command-column__hint">{question.why}</p>
-            ) : null}
-            <textarea
-              id={`clarify-${question.id}`}
-              className="field-textarea"
-              rows={2}
-              value={answers[question.id] ?? ''}
-              onChange={(e) => onAnswerChange(question.id, e.target.value)}
-              placeholder="Your answer"
-              disabled={disabled}
-            />
-          </div>
-        ))}
-        <p className="override-form__note">
-          Answers are sent with resume as structured question_id mappings.
-        </p>
-      </div>
-    </div>
-  )
-}

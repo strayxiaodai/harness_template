@@ -6,6 +6,9 @@ import './InspectorStack.css'
 interface InspectorStackProps {
   step: TimelineStep | null
   accumulated: AgentStateSnapshot
+  collapsed?: boolean
+  onExpand?: () => void
+  onCollapse?: () => void
 }
 
 function isSparseSnapshot(state: AgentStateSnapshot): boolean {
@@ -18,11 +21,35 @@ function isSparseSnapshot(state: AgentStateSnapshot): boolean {
   )
 }
 
-export function InspectorStack({ step, accumulated }: InspectorStackProps) {
+export function InspectorStack({
+  step,
+  accumulated,
+  collapsed = false,
+  onExpand,
+  onCollapse,
+}: InspectorStackProps) {
+  if (collapsed) {
+    return (
+      <aside
+        className="inspector-stack inspector-stack--rail panel"
+        aria-label="Inspector"
+      >
+        <button
+          type="button"
+          className="inspector-stack__rail-button"
+          onClick={onExpand}
+          aria-expanded={false}
+        >
+          Inspector
+        </button>
+      </aside>
+    )
+  }
+
   if (!step && isSparseSnapshot(accumulated)) {
     return (
       <aside className="inspector-stack panel" aria-label="Inspector">
-        <h2 className="panel-title">Inspector</h2>
+        <InspectorHeader onCollapse={onCollapse} />
         <div className="inspector-stack__empty">
           <p className="empty-state empty-state--centered">
             Select a timeline step
@@ -39,6 +66,7 @@ export function InspectorStack({ step, accumulated }: InspectorStackProps) {
 
   return (
     <aside className="inspector-stack" aria-label="Inspector">
+      <InspectorHeader onCollapse={onCollapse} />
       <InspectorSection title="Plan" empty={!state.plan?.length}>
         {state.plan?.length ? (
           <ol className="inspector-list">
@@ -160,6 +188,28 @@ export function InspectorStack({ step, accumulated }: InspectorStackProps) {
 
       <AuditPanel />
     </aside>
+  )
+}
+
+function InspectorHeader({
+  onCollapse,
+}: {
+  onCollapse?: () => void
+}) {
+  return (
+    <div className="inspector-stack__header panel">
+      <h2 className="panel-title">Inspector</h2>
+      {onCollapse ? (
+        <button
+          type="button"
+          className="btn btn-secondary btn-compact"
+          onClick={onCollapse}
+          aria-expanded
+        >
+          Collapse
+        </button>
+      ) : null}
+    </div>
   )
 }
 

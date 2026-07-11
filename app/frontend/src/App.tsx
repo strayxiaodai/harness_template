@@ -11,6 +11,9 @@ import { useHealth } from './hooks/useHealth'
 import { useResizableColumns } from './hooks/useResizableColumns'
 import { useSkills } from './hooks/useSkills'
 import {
+  isClarificationInterrupt,
+} from './lib/clarification'
+import {
   resolveSkillEligible,
   resolveSkillIneligibleReason,
 } from './lib/skillEligibility'
@@ -94,6 +97,10 @@ function App() {
   const [timelineOpen, setTimelineOpen] = useState(false)
 
   const draft = useResumeDraft(phase, runResponse?.interrupt ?? null)
+  const clarifying =
+    phase === 'awaiting_human' &&
+    isClarificationInterrupt(runResponse?.interrupt ?? null)
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(false)
 
   const handleSelectNode = useCallback(
     (node: GraphNode) => {
@@ -109,6 +116,12 @@ function App() {
     const { overrides, answers } = draft.buildPayload()
     void resume(overrides, answers)
   }, [draft, resume])
+
+  useEffect(() => {
+    if (clarifying) {
+      setInspectorCollapsed(true)
+    }
+  }, [clarifying])
 
   const phaseRef = useRef(phase)
   phaseRef.current = phase
@@ -159,7 +172,11 @@ function App() {
       />
 
       <main
-        className="app-main"
+        className={
+          desktop && inspectorCollapsed
+            ? 'app-main app-main--inspector-collapsed'
+            : 'app-main'
+        }
         id="main-content"
         style={
           {
@@ -171,15 +188,20 @@ function App() {
         <InspectorStack
           step={selectedStep}
           accumulated={accumulated}
+          collapsed={desktop && inspectorCollapsed}
+          onExpand={() => setInspectorCollapsed(false)}
+          onCollapse={() => setInspectorCollapsed(true)}
         />
 
-        <ColumnSplit
-          side="inspector"
-          disabled={!desktop}
-          label="Resize inspector column"
-          onResize={setInspectorWidth}
-          onReset={resetWidths}
-        />
+        {desktop && !inspectorCollapsed && (
+          <ColumnSplit
+            side="inspector"
+            disabled={!desktop}
+            label="Resize inspector column"
+            onResize={setInspectorWidth}
+            onReset={resetWidths}
+          />
+        )}
 
         <CenterColumn
           activeNode={activeNode}
@@ -229,17 +251,22 @@ function App() {
           skillName={skillName}
           distillResult={distillResult}
           distillBusy={distillBusy}
+          planOverrideText={draft.planOverrideText}
+          refineOverride={draft.refineOverride}
+          showSecondaryContinue={phase === 'awaiting_human'}
           onTaskChange={setTask}
           onPlanChange={setPlanText}
           onMaxRoundsChange={setMaxRounds}
           onHitlChange={setHumanInTheLoop}
+          onPlanOverrideChange={draft.setPlanOverrideText}
+          onRefineOverrideChange={draft.setRefineOverride}
           onSkillNameChange={setSkillName}
           onSkillSelect={(slug) => void selectSkill(slug)}
           onRefreshSkills={() => void refreshSkills()}
           onClearSkillsError={clearSkillsError}
           onRun={() => void run()}
           onRunSkill={() => void runSkill(selectedSlug)}
-          onResume={(o, answers) => void resume(o, answers)}
+          onResume={handleContinue}
           onDistillSkill={() => void distillSkill()}
           onSaveSkill={async () => {
             await saveSkill()
@@ -248,8 +275,6 @@ function App() {
           onDiscardSkill={discardSkill}
           onReset={resetThread}
           onClearError={clearError}
-          nextAction={runResponse?.next_action ?? null}
-          interrupt={runResponse?.interrupt ?? null}
           skillEligible={skillEligible}
           skillIneligibleReason={skillIneligibleReason}
         />

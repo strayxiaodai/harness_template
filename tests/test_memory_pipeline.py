@@ -289,10 +289,118 @@ async def test_executor_injects_memory_context_from_state(
 
 
 @pytest.mark.asyncio
+async def test_memorize_commits_approved_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agent import memorize as memorize_module
+
+    mock_service = MagicMock()
+    mock_service.memory_store = MemoryStore()
+    mock_service.save_memory_store = MagicMock()
+    commit = AsyncMock(
+        return_value={
+            "memory_cursor": 2,
+            "pending_memories": [],
+            "approved_memories": [],
+        },
+    )
+    monkeypatch.setattr(
+        memorize_module,
+        "load_rag_settings",
+        lambda: RagSettings(enabled=True),
+    )
+    monkeypatch.setattr(memorize_module, "get_rag_service", lambda: mock_service)
+    monkeypatch.setattr(memorize_module, "commit_approved_memories", commit)
+
+    state = _state(
+        messages=[HumanMessage(content="hi"), AIMessage(content="ok")],
+        approved_memories=[
+            {
+                "content": "User said hi",
+                "memory_type": "fact",
+                "importance": 0.7,
+            },
+        ],
+        pending_memories=[{"id": "m0", "content": "x"}],
+    )
+    result = await memorize_module.memorize_agent(state)
+    assert result["role"] == "memorize"
+    assert result["memory_cursor"] == 2
+    assert result["pending_memories"] == []
+    assert result["approved_memories"] == []
+    commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_memorize_skips_store_when_approved_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agent import memorize as memorize_module
+
+    mock_service = MagicMock()
+    mock_service.save_memory_store = MagicMock()
+    commit = AsyncMock(
+        return_value={
+            "memory_cursor": 1,
+            "pending_memories": [],
+            "approved_memories": [],
+        },
+    )
+    monkeypatch.setattr(
+        memorize_module,
+        "load_rag_settings",
+        lambda: RagSettings(enabled=True),
+    )
+    monkeypatch.setattr(memorize_module, "get_rag_service", lambda: mock_service)
+    monkeypatch.setattr(memorize_module, "commit_approved_memories", commit)
+
+    result = await memorize_module.memorize_agent(
+        _state(messages=[HumanMessage(content="x")], approved_memories=[]),
+    )
+    assert result["memory_cursor"] == 1
+    mock_service.save_memory_store.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_memorize_rag_disabled_advances_cursor_and_clears_lists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """RAG-disabled skip advances cursor and clears pending/approved lists."""
+    from agent import memorize as memorize_module
+
+    monkeypatch.setattr(
+        memorize_module,
+        "load_rag_settings",
+        lambda: RagSettings(enabled=False),
+    )
+
+    messages = [HumanMessage(content="x"), AIMessage(content="y")]
+    result = await memorize_module.memorize_agent(
+        _state(
+            messages=messages,
+            memory_cursor=0,
+            approved_memories=[
+                {
+                    "content": "User said x",
+                    "memory_type": "fact",
+                    "importance": 0.8,
+                },
+            ],
+            pending_memories=[{"id": "m0", "content": "User said x"}],
+        ),
+    )
+
+    assert result["role"] == "memorize"
+    assert result["memory_cursor"] == len(messages)
+    assert result["pending_memories"] == []
+    assert result["approved_memories"] == []
+
+
+@pytest.mark.asyncio
 async def test_memorize_agent_runs_memory_ingest(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Memorize node delegates to run_memory_ingest and saves the store."""
+    """Memorize node delegates to commit_approved_memories and saves the store."""
     from agent import memorize as memorize_module
 
     mock_service = MagicMock()
@@ -307,7 +415,7 @@ async def test_memorize_agent_runs_memory_ingest(
     monkeypatch.setattr(memorize_module, "get_rag_service", lambda: mock_service)
     monkeypatch.setattr(
         memorize_module,
-        "run_memory_ingest",
+        "commit_approved_memories",
         AsyncMock(return_value={"memory_cursor": 3}),
     )
 
@@ -315,7 +423,7 @@ async def test_memorize_agent_runs_memory_ingest(
 
     assert result["role"] == "memorize"
     assert result["memory_cursor"] == 3
-    memorize_module.run_memory_ingest.assert_awaited_once()
+    memorize_module.commit_approved_memories.assert_awaited_once()
     mock_service.save_memory_store.assert_called_once()
 
 
@@ -339,7 +447,7 @@ async def test_memorize_agent_continues_when_ingest_fails(
     monkeypatch.setattr(memorize_module, "get_rag_service", lambda: mock_service)
     monkeypatch.setattr(
         memorize_module,
-        "run_memory_ingest",
+        "commit_approved_memories",
         AsyncMock(side_effect=RuntimeError("embedding failed: NaN")),
     )
 
@@ -348,4 +456,109 @@ async def test_memorize_agent_continues_when_ingest_fails(
 
     assert result["role"] == "memorize"
     assert result["memory_cursor"] == len(messages)
+    assert result["pending_memories"] == []
+    assert result["approved_memories"] == []
     mock_service.save_memory_store.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_extract_memory_candidates_does_not_store(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Extract candidates assigns ids but does not write to the store."""
+    settings = RagSettings(
+        enabled=True,
+        index_dir=tmp_path / "rag",  # type: ignore[operator]
+    )
+    state = _state(
+        messages=[HumanMessage(content="I prefer pytest")],
+        memory_cursor=0,
+    )
+    monkeypatch.setattr(
+        memory_extract_module,
+        "extract_memories",
+        AsyncMock(
+            return_value=ExtractionResult(
+                memories=[
+                    ExtractedMemory(
+                        content="User prefers pytest",
+                        memory_type="preference",
+                        importance=0.9,
+                    ),
+                ],
+            ),
+        ),
+    )
+    store = MemoryStore()
+    candidates = await memory_extract_module.extract_memory_candidates(
+        state,
+        settings=settings,
+    )
+    assert candidates == [
+        {
+            "id": "m0",
+            "content": "User prefers pytest",
+            "memory_type": "preference",
+            "importance": 0.9,
+        },
+    ]
+    vector = await FakeEmbeddings(size=32).aembed_query("pytest")
+    hits = await store.search("test-thread", vector, top_k=5)
+    assert len(hits) == 0
+
+
+@pytest.mark.asyncio
+async def test_commit_approved_memories_stores_and_clears(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Commit upserts approved rows, advances cursor, and clears pending."""
+    settings = RagSettings(
+        enabled=True,
+        index_dir=tmp_path / "rag",  # type: ignore[operator]
+        embedding_provider="openai",
+        embedding_model="fake",
+    )
+    state = _state(
+        messages=[
+            HumanMessage(content="I prefer pytest"),
+            AIMessage(content="Noted."),
+        ],
+        memory_cursor=0,
+        pending_memories=[
+            {
+                "id": "m0",
+                "content": "User prefers pytest",
+                "memory_type": "preference",
+                "importance": 0.9,
+            },
+        ],
+        approved_memories=[
+            {
+                "content": "User prefers pytest",
+                "memory_type": "preference",
+                "importance": 0.9,
+            },
+        ],
+    )
+    monkeypatch.setattr(
+        memory_extract_module,
+        "get_embeddings",
+        lambda _cfg=None: FakeEmbeddings(size=32),
+    )
+
+    store = MemoryStore()
+    updates = await memory_extract_module.commit_approved_memories(
+        state,
+        memory_store=store,
+        settings=settings,
+    )
+
+    assert updates["memory_cursor"] == 2
+    assert updates["pending_memories"] == []
+    assert updates["approved_memories"] == []
+    vector = await FakeEmbeddings(size=32).aembed_query("pytest")
+    hits = await store.search("test-thread", vector, top_k=5)
+    assert len(hits) == 1
+    assert "pytest" in hits[0].page_content

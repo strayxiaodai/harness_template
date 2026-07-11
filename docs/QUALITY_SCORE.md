@@ -17,7 +17,7 @@ Track quality by area so agents and contributors prioritize the weakest layers.
 | --- | --- | --- | --- |
 | Product surface | B | [`PRODUCT.md`](PRODUCT.md), [`DESIGN.md`](DESIGN.md), React console with graph spine + inspector | Thread list API; audit panel in UI |
 | Architecture docs | **B+** | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`IMPLEMENTATION.md`](IMPLEMENTATION.md) with examples; console↔API map | Keep in sync when API changes |
-| Agent loop | B | Full loop + loop scoring + skill-preview HITL | Sandboxed write/edit executor tools |
+| Agent loop | B | Full loop + loop scoring + action-review HITL | Sandboxed write/edit executor tools |
 | Testing | B | pytest across agents, graph, RAG, API, MCP, skills | Docker integration tests; frontend e2e |
 | API / serving | B | `/run`, `/resume`, `/stream`, `/health`, `/skills` | Auth, rate limits, cancellation |
 | RAG / memory | B | Hybrid retrieve, FAISS default, pgvector optional | Recall guardrails; RAG audit events |

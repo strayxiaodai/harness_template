@@ -100,7 +100,10 @@ m1: content="Project uses FastAPI", memory_type=fact, importance=0.6
 2. `memories` contains `m0` and `m1` with stubbed fields
 3. `skill_preview_ready is False`
 4. Store spy not called
-5. `pending_memories` length 2; `approved_memories` empty or unset
+5. Interrupt `memories` length 2 (candidates live in the interrupt payload;
+   checkpoint `pending_memories` is empty/unset until actioner returns after
+   resume — LangGraph dynamic `interrupt()` semantics)
+6. `approved_memories` empty or unset on the checkpoint
 
 ### Act
 

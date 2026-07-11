@@ -14,6 +14,10 @@ import {
   isClarificationInterrupt,
 } from './lib/clarification'
 import {
+  actionReviewMeta,
+  isActionReviewInterrupt,
+} from './lib/actionReview'
+import {
   resolveSkillEligible,
   resolveSkillIneligibleReason,
 } from './lib/skillEligibility'
@@ -101,7 +105,12 @@ function App() {
   const clarifying =
     phase === 'awaiting_human' &&
     isClarificationInterrupt(runResponse?.interrupt ?? null)
-  const [inspectorCollapsed, setInspectorCollapsed] = useState(clarifying)
+  const actionReviewing =
+    phase === 'awaiting_human' &&
+    isActionReviewInterrupt(runResponse?.interrupt ?? null)
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(
+    clarifying || actionReviewing,
+  )
 
   const handleSelectNode = useCallback(
     (node: GraphNode) => {
@@ -114,15 +123,15 @@ function App() {
   )
 
   const handleContinue = useCallback(() => {
-    const { overrides, answers } = buildPayload()
-    void resume(overrides, answers)
+    const { overrides, answers, interrupt_resume } = buildPayload()
+    void resume(overrides, answers, interrupt_resume)
   }, [buildPayload, resume])
 
   useEffect(() => {
-    if (clarifying) {
+    if (clarifying || actionReviewing) {
       setInspectorCollapsed(true)
     }
-  }, [clarifying])
+  }, [clarifying, actionReviewing])
 
   const phaseRef = useRef(phase)
   phaseRef.current = phase
@@ -216,6 +225,10 @@ function App() {
           questions={draft.questions}
           answerDrafts={draft.answerDrafts}
           onAnswerChange={draft.setAnswer}
+          memories={draft.memories}
+          memoryDrafts={draft.memoryDrafts}
+          actionReviewMeta={actionReviewMeta(runResponse?.interrupt ?? null)}
+          onMemoryDraftChange={draft.setMemoryDraft}
           planOverrideText={draft.planOverrideText}
           refineOverride={draft.refineOverride}
           onPlanOverrideChange={draft.setPlanOverrideText}

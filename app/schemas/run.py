@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -56,6 +56,10 @@ class ResumeRequest(BaseModel):
     thread_id: str = Field(min_length=1)
     timeout_seconds: float = Field(default=120.0, ge=1.0, le=900.0)
     overrides: ResumeOverrides | None = None
+    interrupt_resume: Any | None = Field(
+        default=None,
+        description="Resume payload for dynamic interrupt() pauses (e.g. action_review)",
+    )
 
 
 class RunResponse(BaseModel):

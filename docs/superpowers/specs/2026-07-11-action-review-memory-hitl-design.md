@@ -278,6 +278,8 @@ v1.
 
 ## Verification
 
+- API E2E gate: `pytest tests/test_action_review_api.py::test_action_review_resume_keeps_edits_drops_and_commits -v`
+  (design: `docs/superpowers/specs/2026-07-11-action-review-api-e2e-test-design.md`)
 - Unit: `pytest tests/test_actioner.py tests/test_memory_pipeline.py tests/test_graph.py -v`
 - API: `/resume` with `interrupt_resume.memories`; bare resume keep-all
 - Frontend: Workplace action-review panel; primary + secondary Continue; `r`

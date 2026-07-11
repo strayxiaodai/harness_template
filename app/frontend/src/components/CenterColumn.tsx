@@ -5,6 +5,8 @@ import type {
   ClarificationQuestion,
   GraphNode,
   InterruptPayload,
+  MemoryResumeRow,
+  PendingMemory,
   ResumeOverrides,
   TimelineStep,
 } from '../types/api'
@@ -22,6 +24,18 @@ interface CenterColumnProps {
   questions: ClarificationQuestion[]
   answerDrafts: Record<string, string>
   onAnswerChange: (id: string, value: string) => void
+  memories: PendingMemory[]
+  memoryDrafts: Record<string, MemoryResumeRow>
+  actionReviewMeta: {
+    score?: number
+    threshold?: number
+    skillPreviewReady: boolean
+    message: string
+  }
+  onMemoryDraftChange: (
+    id: string,
+    patch: Partial<MemoryResumeRow>,
+  ) => void
   planOverrideText: string
   refineOverride: ResumeOverrides['refine_from'] | ''
   onPlanOverrideChange: (value: string) => void
@@ -48,6 +62,10 @@ export function CenterColumn({
   questions,
   answerDrafts,
   onAnswerChange,
+  memories,
+  memoryDrafts,
+  actionReviewMeta,
+  onMemoryDraftChange,
   planOverrideText,
   refineOverride,
   onPlanOverrideChange,
@@ -85,6 +103,10 @@ export function CenterColumn({
         questions={questions}
         answerDrafts={answerDrafts}
         onAnswerChange={onAnswerChange}
+        memories={memories}
+        memoryDrafts={memoryDrafts}
+        actionReviewMeta={actionReviewMeta}
+        onMemoryDraftChange={onMemoryDraftChange}
         planOverrideText={planOverrideText}
         refineOverride={refineOverride}
         onPlanOverrideChange={onPlanOverrideChange}

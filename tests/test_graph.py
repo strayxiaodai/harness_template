@@ -79,7 +79,6 @@ def test_create_workflow_has_expected_nodes() -> None:
         "planner",
         "executor",
         "reviewer",
-        "memorize",
     ]
 
 

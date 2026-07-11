@@ -12,6 +12,30 @@
   overflow: auto;
 }
 
+.command-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+}
+
+.command-section__label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.command-section--hitl.command-section--active {
+  border-color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 8%, var(--surface-raised));
+}
+
 .command-column__plan {
   min-height: 72px;
 }
@@ -58,10 +82,13 @@
   gap: var(--space-2);
 }
 
-.skill-library {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: var(--space-3);
-  margin-bottom: var(--space-1);
+.skill-library,
+.skill-distill {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  padding: 0;
+  margin: 0;
+  background: var(--surface-raised);
 }
 
 .skill-library__summary,
@@ -70,6 +97,7 @@
   min-height: 44px;
   display: flex;
   align-items: center;
+  padding: 0 var(--space-3);
   cursor: pointer;
   color: var(--ink);
   font-weight: 500;
@@ -101,10 +129,12 @@
   }
 }
 
-.skill-library__body {
-  display: grid;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
+.skill-library__body,
+.skill-distill__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--space-3) var(--space-3);
 }
 
 .skill-library__preview {
@@ -118,24 +148,13 @@
   color: var(--ink);
 }
 
-.skill-distill {
-  border-top: 1px solid var(--border);
-  padding-top: var(--space-3);
-}
-
-.skill-distill__body {
-  display: grid;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
 .skill-distill__preview {
   display: grid;
   gap: var(--space-2);
   padding: var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--surface-raised);
+  background: var(--bg);
 }
 
 .skill-distill__body-preview {
@@ -155,12 +174,12 @@
   padding: var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--surface-raised);
+  background: var(--bg);
 }
 
 .skill-distill__result--saved {
   border-color: color-mix(in oklch, var(--success) 45%, var(--border));
-  background: color-mix(in oklch, var(--success) 8%, var(--surface-raised));
+  background: color-mix(in oklch, var(--success) 8%, var(--bg));
 }
 
 .skill-distill__path {
@@ -208,6 +227,7 @@
 
 .override-form__summary {
   color: var(--muted);
+  padding: 0;
 }
 
 .override-form__fields {

@@ -10,6 +10,7 @@ import type {
 } from '../types/api'
 import type { RunPhase } from '../hooks/useConsole'
 import { useNarrowViewport } from '../hooks/useNarrowViewport'
+import { clarificationQuestions } from '../lib/clarification'
 import './CommandColumn.css'
 
 interface CommandColumnProps {
@@ -73,30 +74,6 @@ function buildOverrides(
     overrides.refine_from = refineFrom
   }
   return Object.keys(overrides).length > 0 ? overrides : undefined
-}
-
-function clarificationQuestions(
-  interrupt: InterruptPayload | null,
-): ClarificationQuestion[] {
-  const value = interrupt?.value
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return []
-  }
-  const record = value as Record<string, unknown>
-  if (record.kind !== 'clarification') {
-    return []
-  }
-  const questions = record.questions
-  if (!Array.isArray(questions)) {
-    return []
-  }
-  return questions.filter(
-    (q): q is ClarificationQuestion =>
-      typeof q === 'object' &&
-      q !== null &&
-      typeof (q as ClarificationQuestion).id === 'string' &&
-      typeof (q as ClarificationQuestion).prompt === 'string',
-  )
 }
 
 export function CommandColumn({

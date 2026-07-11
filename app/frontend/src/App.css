@@ -9,12 +9,19 @@
 
 .app-main {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 268px;
+  grid-template-columns:
+    var(--col-inspector, 280px)
+    6px
+    minmax(0, 1fr)
+    6px
+    var(--col-command, 268px);
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
-    "inspector spine command"
-    "inspector timeline command";
-  gap: var(--space-3);
+    "inspector split-l spine split-r command"
+    "inspector split-l timeline split-r command";
+  gap: var(--space-3) 0;
+  column-gap: 0;
+  row-gap: var(--space-3);
   flex: 1;
   min-height: 0;
   padding: var(--space-3);
@@ -72,6 +79,7 @@
       "timeline"
       "inspector"
       "command";
+    gap: var(--space-3);
   }
 
   .inspector-stack {

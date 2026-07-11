@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import type { CSSProperties } from 'react'
+import { ColumnSplit } from './components/ColumnSplit'
 import { CommandColumn } from './components/CommandColumn'
 import { GraphSpine } from './components/GraphSpine'
 import { InspectorStack } from './components/InspectorStack'
@@ -6,6 +8,7 @@ import { StatusBar } from './components/StatusBar'
 import { TraceTimeline } from './components/TraceTimeline'
 import { useConsole } from './hooks/useConsole'
 import { useHealth } from './hooks/useHealth'
+import { useResizableColumns } from './hooks/useResizableColumns'
 import { useSkills } from './hooks/useSkills'
 import {
   resolveSkillEligible,
@@ -16,6 +19,13 @@ import './App.css'
 
 function App() {
   const { status, detail } = useHealth()
+  const {
+    widths,
+    desktop,
+    setInspectorWidth,
+    setCommandWidth,
+    resetWidths,
+  } = useResizableColumns()
   const {
     threadId,
     task,
@@ -137,10 +147,27 @@ function App() {
         nextAction={runResponse?.next_action ?? null}
       />
 
-      <main className="app-main" id="main-content">
+      <main
+        className="app-main"
+        id="main-content"
+        style={
+          {
+            '--col-inspector': `${widths.inspector}px`,
+            '--col-command': `${widths.command}px`,
+          } as CSSProperties
+        }
+      >
         <InspectorStack
           step={selectedStep}
           accumulated={accumulated}
+        />
+
+        <ColumnSplit
+          side="inspector"
+          disabled={!desktop}
+          label="Resize inspector column"
+          onResize={setInspectorWidth}
+          onReset={resetWidths}
         />
 
         <GraphSpine
@@ -155,6 +182,14 @@ function App() {
           selectedId={selectedStepId}
           activeNode={activeNode}
           onSelect={selectStep}
+        />
+
+        <ColumnSplit
+          side="command"
+          disabled={!desktop}
+          label="Resize command column"
+          onResize={setCommandWidth}
+          onReset={resetWidths}
         />
 
         <CommandColumn
@@ -204,6 +239,8 @@ function App() {
           <kbd className="kbd">j</kbd>/<kbd className="kbd">k</kbd> timeline
           <span aria-hidden="true"> · </span>
           <kbd className="kbd">r</kbd> resume when interrupted
+          <span aria-hidden="true"> · </span>
+          drag column edges to resize
           <span aria-hidden="true"> · </span>
           Tab to skip link and panels
         </section>

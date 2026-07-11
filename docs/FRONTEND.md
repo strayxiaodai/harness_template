@@ -65,15 +65,18 @@ npm run preview   # serve production build locally
 ## Layout (three-column shell)
 
 From [`DESIGN.md`](DESIGN.md): inspector · center spine/timeline · command.
-`StatusBar` spans the top; footer holds keyboard shortcuts.
+`StatusBar` spans the top; footer holds keyboard shortcuts. On desktop
+(≥1024px), drag the vertical handles between columns to resize inspector and
+command; widths persist in `localStorage` (`harness.console.columnWidths`).
+Double-click a handle to reset.
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
 │ StatusBar — health, rounds, skill eligibility            │
-├──────────────┬───────────────────────────┬───────────────┤
-│ Inspector    │ GraphSpine + TraceTimeline│ CommandColumn │
-│  (280px)     │      (flex)               │  (268px)      │
-├──────────────┴───────────────────────────┴───────────────┤
+├──────────────┬─┬───────────────────────┬─┬───────────────┤
+│ Inspector    │⁞│ GraphSpine + Timeline │⁞│ CommandColumn │
+│  (≈280px)    │ │      (flex)           │ │  (≈268px)     │
+├──────────────┴─┴───────────────────────┴─┴───────────────┤
 │ Footer shortcuts                                         │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -84,6 +87,7 @@ Narrow (&lt;1024px): spine → timeline → inspector → command.
 
 | Component | Role | Key hooks / data |
 | --- | --- | --- |
+| `ColumnSplit` | Drag handles to resize inspector / command | `useResizableColumns` |
 | `CommandColumn` | Task, plan, max rounds, HITL toggle, run/resume, skill picker | `useConsole`, `useSkills` |
 | `GraphSpine` | Five nodes: planner → executor → reviewer → actioner → memorize | `GRAPH_NODES`, `completedNodes`, `activeNode` |
 | `TraceTimeline` | Chronological step list from stream | `timeline`, `selectStep` |

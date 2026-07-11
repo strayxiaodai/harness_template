@@ -43,18 +43,20 @@ CSS implementation: `app/frontend/src/styles/tokens.css`.
 
 ## Layout
 
-- Three-column shell ≥ 1024px: inspector 280px · center flex · command 268px
-- `< 1024px`: stack spine → timeline → inspector → command
+- Three-column shell ≥ 1024px: inspector · center · command (defaults 280px · flex · 268px)
+- Side columns are **user-resizable** via drag handles; widths persist in `localStorage`
+- Double-click a handle (or Home while focused) resets to defaults
+- `< 1024px`: stack spine → timeline → inspector → command (resize disabled)
 - Spacing scale: 4 / 8 / 12 / 16 / 24 / 32px
 - Panel radius: 12px max; buttons 8px; pills full-round
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
 │ StatusBar                                                │
-├──────────────┬───────────────────────────┬───────────────┤
-│ Inspector    │ GraphSpine + TraceTimeline│ CommandColumn │
-│  (280px)     │      (flex)               │  (268px)      │
-├──────────────┴───────────────────────────┴───────────────┤
+├──────────────┬─┬───────────────────────┬─┬───────────────┤
+│ Inspector    │⁞│ GraphSpine + Timeline │⁞│ CommandColumn │
+│  (drag)      │ │      (flex)           │ │  (drag)       │
+├──────────────┴─┴───────────────────────┴─┴───────────────┤
 │ Footer shortcuts                                         │
 └──────────────────────────────────────────────────────────┘
 ```

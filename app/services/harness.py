@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from fastapi import Request
+from langgraph.types import Command
 
 from app.db.graphs import graph_for_request, invoke_with_timeout
 from app.schemas.run import ResumeRequest, RunRequest, RunResponse
@@ -15,6 +16,23 @@ from app.services.snapshot import snapshot_to_response
 from app.services.state import initial_state
 
 logger = logging.getLogger(__name__)
+
+
+def _resume_input(
+    snapshot: Any,
+    body: ResumeRequest,
+) -> object | None:
+    """Build the graph input for a HITL resume.
+
+    Dynamic ``interrupt()`` pauses must be resumed with ``Command(resume=...)``.
+    Node-boundary ``interrupt_after`` pauses continue with ``None``.
+    """
+    interrupts = tuple(getattr(snapshot, "interrupts", None) or ())
+    if body.interrupt_resume is not None:
+        return Command(resume=body.interrupt_resume)
+    if interrupts:
+        return Command(resume=True)
+    return None
 
 
 async def run_harness(request: Request, body: RunRequest) -> RunResponse:
@@ -49,7 +67,7 @@ async def resume_harness(request: Request, body: ResumeRequest) -> RunResponse:
 
     await invoke_with_timeout(
         graph,
-        None,
+        _resume_input(snapshot, body),
         config,
         timeout_seconds=body.timeout_seconds,
     )

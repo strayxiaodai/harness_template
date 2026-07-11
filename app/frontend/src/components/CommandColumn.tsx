@@ -185,8 +185,83 @@ export function CommandColumn({
       <h2 className="panel-title">Command</h2>
 
       <div className="command-column__body">
-        <details className="skill-library" open={!isNarrow}>
-          <summary className="skill-library__summary">Run saved skill</summary>
+        <div className="command-section command-section--run">
+          <p className="command-section__label">Run</p>
+
+          <label className="field-label" htmlFor="task-input">
+            Task
+          </label>
+          <textarea
+            id="task-input"
+            className="field-textarea"
+            value={task}
+            onChange={(e) => onTaskChange(e.target.value)}
+            placeholder="Describe what the harness should accomplish"
+            disabled={isStreaming}
+            rows={4}
+            aria-describedby="task-hint"
+          />
+          <p id="task-hint" className="command-column__hint">
+            Required for Start thread. Optional when running a saved skill.
+          </p>
+
+          <label className="field-label" htmlFor="plan-input">
+            Plan steps (optional, one per line)
+          </label>
+          <textarea
+            id="plan-input"
+            className="field-textarea command-column__plan"
+            value={planText}
+            onChange={(e) => onPlanChange(e.target.value)}
+            placeholder={'Step one\nStep two'}
+            disabled={isStreaming}
+            rows={3}
+          />
+
+          <div className="command-column__row">
+            <label className="field-label" htmlFor="max-rounds">
+              Max rounds
+            </label>
+            <input
+              id="max-rounds"
+              className="field-input"
+              type="number"
+              min={1}
+              max={20}
+              step={1}
+              value={maxRounds}
+              onChange={(e) => onMaxRoundsChange(Number(e.target.value))}
+              disabled={isStreaming}
+              aria-describedby="max-rounds-hint"
+            />
+            <p id="max-rounds-hint" className="command-column__hint">
+              Clamped to 1–20 to match the API.
+            </p>
+          </div>
+
+          <div className="command-column__actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={onRun}
+              disabled={isStreaming || !task.trim()}
+              aria-busy={isStreaming}
+            >
+              {isStreaming ? 'Running…' : 'Start thread'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onReset}
+              disabled={isStreaming}
+            >
+              New thread
+            </button>
+          </div>
+        </div>
+
+        <details className="skill-library">
+          <summary className="skill-library__summary">Skills</summary>
           <div
             className="skill-library__body"
             aria-busy={skillsLoading || skillDetailLoading}
@@ -270,107 +345,72 @@ export function CommandColumn({
               Run skill
             </button>
             <p className="command-column__hint">
-              Optional: add text in Task below to narrow this run. Leave Task
+              Optional: add text in Task above to narrow this run. Leave Task
               empty to use the skill description as the goal.
             </p>
           </div>
         </details>
 
-        <label className="field-label" htmlFor="task-input">
-          Task
-        </label>
-        <textarea
-          id="task-input"
-          className="field-textarea"
-          value={task}
-          onChange={(e) => onTaskChange(e.target.value)}
-          placeholder="Describe what the harness should accomplish"
-          disabled={isStreaming}
-          rows={4}
-          aria-describedby="task-hint"
-        />
-        <p id="task-hint" className="command-column__hint">
-          Required for Start thread. Optional when running a saved skill above.
-        </p>
-
-        <label className="field-label" htmlFor="plan-input">
-          Plan steps (optional, one per line)
-        </label>
-        <textarea
-          id="plan-input"
-          className="field-textarea command-column__plan"
-          value={planText}
-          onChange={(e) => onPlanChange(e.target.value)}
-          placeholder={'Step one\nStep two'}
-          disabled={isStreaming}
-          rows={3}
-        />
-
-        <div className="command-column__row">
-          <label className="field-label" htmlFor="max-rounds">
-            Max rounds
+        <div
+          className={
+            phase === 'awaiting_human'
+              ? 'command-section command-section--hitl command-section--active'
+              : 'command-section command-section--hitl'
+          }
+        >
+          <p className="command-section__label">HITL</p>
+          <label className="command-column__check" htmlFor="hitl-toggle">
+            <input
+              id="hitl-toggle"
+              type="checkbox"
+              className="command-column__checkbox"
+              checked={humanInTheLoop}
+              onChange={(e) => onHitlChange(e.target.checked)}
+              disabled={isStreaming}
+            />
+            Pause after each node (HITL)
           </label>
-          <input
-            id="max-rounds"
-            className="field-input"
-            type="number"
-            min={1}
-            max={20}
-            step={1}
-            value={maxRounds}
-            onChange={(e) => onMaxRoundsChange(Number(e.target.value))}
-            disabled={isStreaming}
-            aria-describedby="max-rounds-hint"
-          />
-          <p id="max-rounds-hint" className="command-column__hint">
-            Clamped to 1–20 to match the API.
-          </p>
-        </div>
 
-        <label className="command-column__check" htmlFor="hitl-toggle">
-          <input
-            id="hitl-toggle"
-            type="checkbox"
-            className="command-column__checkbox"
-            checked={humanInTheLoop}
-            onChange={(e) => onHitlChange(e.target.checked)}
-            disabled={isStreaming}
-          />
-          Pause after each node (HITL)
-        </label>
-
-        <p className="command-column__hint">
-          Enable HITL to step through planner → executor → reviewer → actioner
-          → memorize and resume at each interrupt.
-        </p>
-
-        <div className="command-column__actions">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={onRun}
-            disabled={isStreaming || !task.trim()}
-            aria-busy={isStreaming}
-          >
-            {isStreaming ? 'Running…' : 'Start thread'}
-          </button>
-          <button
-            type="button"
-            className="btn btn-accent"
-            onClick={handleResume}
-            disabled={!canResume || phase !== 'awaiting_human'}
-            aria-keyshortcuts="r"
-          >
-            Continue from interrupt
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={onReset}
-            disabled={isStreaming}
-          >
-            New thread
-          </button>
+          {canResume && phase === 'awaiting_human' && (
+            <>
+              <button
+                type="button"
+                className="btn btn-accent"
+                onClick={handleResume}
+                disabled={isStreaming}
+                aria-keyshortcuts="r"
+              >
+                Continue from interrupt
+              </button>
+              <OverrideForm
+                planOverrideText={planOverrideText}
+                refineOverride={refineOverride}
+                onPlanChange={setPlanOverrideText}
+                onRefineChange={setRefineOverride}
+                disabled={isStreaming}
+              />
+              {questions.length > 0 && (
+                <ClarificationForm
+                  questions={questions}
+                  reason={
+                    typeof interrupt?.value === 'object' &&
+                    interrupt?.value !== null &&
+                    !Array.isArray(interrupt.value)
+                      ? String(
+                          (interrupt.value as Record<string, unknown>).reason ??
+                            '',
+                        )
+                      : ''
+                  }
+                  answers={answerDrafts}
+                  onAnswerChange={(id, value) =>
+                    setAnswerDrafts((prev) => ({ ...prev, [id]: value }))
+                  }
+                  disabled={isStreaming}
+                />
+              )}
+            </>
+          )}
         </div>
 
         <details
@@ -462,38 +502,6 @@ export function CommandColumn({
             )}
           </div>
         </details>
-
-        {canResume && phase === 'awaiting_human' && (
-          <>
-            <OverrideForm
-              planOverrideText={planOverrideText}
-              refineOverride={refineOverride}
-              onPlanChange={setPlanOverrideText}
-              onRefineChange={setRefineOverride}
-              disabled={isStreaming}
-            />
-            {questions.length > 0 && (
-              <ClarificationForm
-                questions={questions}
-                reason={
-                  typeof interrupt?.value === 'object' &&
-                  interrupt?.value !== null &&
-                  !Array.isArray(interrupt.value)
-                    ? String(
-                        (interrupt.value as Record<string, unknown>).reason ??
-                          '',
-                      )
-                    : ''
-                }
-                answers={answerDrafts}
-                onAnswerChange={(id, value) =>
-                  setAnswerDrafts((prev) => ({ ...prev, [id]: value }))
-                }
-                disabled={isStreaming}
-              />
-            )}
-          </>
-        )}
 
         {error && (
           <div className="command-column__error" role="alert">

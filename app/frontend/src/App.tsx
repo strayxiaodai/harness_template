@@ -138,6 +138,25 @@ function App() {
       />
 
       <main className="app-main" id="main-content">
+        <InspectorStack
+          step={selectedStep}
+          accumulated={accumulated}
+        />
+
+        <GraphSpine
+          activeNode={activeNode}
+          completedNodes={completedNodes}
+          refineFrom={refineFrom}
+          onSelectNode={handleSelectNode}
+        />
+
+        <TraceTimeline
+          steps={timeline}
+          selectedId={selectedStepId}
+          activeNode={activeNode}
+          onSelect={selectStep}
+        />
+
         <CommandColumn
           task={task}
           planText={planText}
@@ -164,7 +183,7 @@ function App() {
           onClearSkillsError={clearSkillsError}
           onRun={() => void run()}
           onRunSkill={() => void runSkill(selectedSlug)}
-          onResume={(o) => void resume(o)}
+          onResume={(o, answers) => void resume(o, answers)}
           onDistillSkill={() => void distillSkill()}
           onSaveSkill={async () => {
             await saveSkill()
@@ -174,28 +193,9 @@ function App() {
           onReset={resetThread}
           onClearError={clearError}
           nextAction={runResponse?.next_action ?? null}
+          interrupt={runResponse?.interrupt ?? null}
           skillEligible={skillEligible}
           skillIneligibleReason={skillIneligibleReason}
-        />
-
-        <div className="app-center">
-          <GraphSpine
-            activeNode={activeNode}
-            completedNodes={completedNodes}
-            refineFrom={refineFrom}
-            onSelectNode={handleSelectNode}
-          />
-          <TraceTimeline
-            steps={timeline}
-            selectedId={selectedStepId}
-            activeNode={activeNode}
-            onSelect={selectStep}
-          />
-        </div>
-
-        <InspectorStack
-          step={selectedStep}
-          accumulated={accumulated}
         />
       </main>
 

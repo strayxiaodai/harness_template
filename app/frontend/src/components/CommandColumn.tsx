@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react'
-import type { DistillSkillResponse, ResumeOverrides, SkillDetail, SkillSummary } from '../types/api'
+import type {
+  ClarificationAnswer,
+  ClarificationQuestion,
+  DistillSkillResponse,
+  InterruptPayload,
+  ResumeOverrides,
+  SkillDetail,
+  SkillSummary,
+} from '../types/api'
 import type { RunPhase } from '../hooks/useConsole'
 import { useNarrowViewport } from '../hooks/useNarrowViewport'
 import './CommandColumn.css'
@@ -20,6 +28,7 @@ interface CommandColumnProps {
   skillName: string
   distillResult: DistillSkillResponse | null
   distillBusy: boolean
+  interrupt: InterruptPayload | null
   onTaskChange: (value: string) => void
   onPlanChange: (value: string) => void
   onMaxRoundsChange: (value: number) => void
@@ -30,7 +39,10 @@ interface CommandColumnProps {
   onClearSkillsError: () => void
   onRun: () => void
   onRunSkill: () => void
-  onResume: (overrides?: ResumeOverrides) => void
+  onResume: (
+    overrides?: ResumeOverrides,
+    answers?: ClarificationAnswer[],
+  ) => void
   onDistillSkill: () => void
   onSaveSkill: () => void | Promise<void>
   onDiscardSkill: () => void
@@ -63,6 +75,30 @@ function buildOverrides(
   return Object.keys(overrides).length > 0 ? overrides : undefined
 }
 
+function clarificationQuestions(
+  interrupt: InterruptPayload | null,
+): ClarificationQuestion[] {
+  const value = interrupt?.value
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return []
+  }
+  const record = value as Record<string, unknown>
+  if (record.kind !== 'clarification') {
+    return []
+  }
+  const questions = record.questions
+  if (!Array.isArray(questions)) {
+    return []
+  }
+  return questions.filter(
+    (q): q is ClarificationQuestion =>
+      typeof q === 'object' &&
+      q !== null &&
+      typeof (q as ClarificationQuestion).id === 'string' &&
+      typeof (q as ClarificationQuestion).prompt === 'string',
+  )
+}
+
 export function CommandColumn({
   task,
   planText,
@@ -79,6 +115,7 @@ export function CommandColumn({
   skillName,
   distillResult,
   distillBusy,
+  interrupt,
   onTaskChange,
   onPlanChange,
   onMaxRoundsChange,
@@ -95,7 +132,7 @@ export function CommandColumn({
   onDiscardSkill,
   onReset,
   onClearError,
-  nextAction,
+  nextAction: _nextAction,
   skillEligible,
   skillIneligibleReason,
 }: CommandColumnProps) {
@@ -108,21 +145,39 @@ export function CommandColumn({
     skillEligible
   const canRunSkill = !isStreaming && Boolean(selectedSkillSlug)
   const isNarrow = useNarrowViewport()
+  const questions = clarificationQuestions(interrupt)
 
   const [planOverrideText, setPlanOverrideText] = useState('')
   const [refineOverride, setRefineOverride] = useState<
     ResumeOverrides['refine_from'] | ''
   >('')
+  const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!canResume) {
       setPlanOverrideText('')
       setRefineOverride('')
+      setAnswerDrafts({})
+      return
     }
-  }, [canResume])
+    const next: Record<string, string> = {}
+    for (const question of questions) {
+      next[question.id] = ''
+    }
+    setAnswerDrafts(next)
+  }, [canResume, interrupt?.id])
 
   const handleResume = () => {
-    onResume(buildOverrides(planOverrideText, refineOverride))
+    const answers: ClarificationAnswer[] | undefined =
+      questions.length > 0
+        ? questions
+            .map((question) => ({
+              question_id: question.id,
+              answer: (answerDrafts[question.id] ?? '').trim(),
+            }))
+            .filter((item) => item.answer.length > 0)
+        : undefined
+    onResume(buildOverrides(planOverrideText, refineOverride), answers)
   }
 
   return (
@@ -408,14 +463,36 @@ export function CommandColumn({
           </div>
         </details>
 
-        {canResume && nextAction && phase === 'awaiting_human' && (
-          <OverrideForm
-            planOverrideText={planOverrideText}
-            refineOverride={refineOverride}
-            onPlanChange={setPlanOverrideText}
-            onRefineChange={setRefineOverride}
-            disabled={isStreaming}
-          />
+        {canResume && phase === 'awaiting_human' && (
+          <>
+            <OverrideForm
+              planOverrideText={planOverrideText}
+              refineOverride={refineOverride}
+              onPlanChange={setPlanOverrideText}
+              onRefineChange={setRefineOverride}
+              disabled={isStreaming}
+            />
+            {questions.length > 0 && (
+              <ClarificationForm
+                questions={questions}
+                reason={
+                  typeof interrupt?.value === 'object' &&
+                  interrupt?.value !== null &&
+                  !Array.isArray(interrupt.value)
+                    ? String(
+                        (interrupt.value as Record<string, unknown>).reason ??
+                          '',
+                      )
+                    : ''
+                }
+                answers={answerDrafts}
+                onAnswerChange={(id, value) =>
+                  setAnswerDrafts((prev) => ({ ...prev, [id]: value }))
+                }
+                disabled={isStreaming}
+              />
+            )}
+          </>
         )}
 
         {error && (
@@ -500,5 +577,50 @@ function OverrideForm({
         </p>
       </div>
     </details>
+  )
+}
+
+function ClarificationForm({
+  questions,
+  reason,
+  answers,
+  onAnswerChange,
+  disabled,
+}: {
+  questions: ClarificationQuestion[]
+  reason: string
+  answers: Record<string, string>
+  onAnswerChange: (id: string, value: string) => void
+  disabled: boolean
+}) {
+  return (
+    <div className="override-form clarification-form">
+      <p className="override-form__summary">Clarification required</p>
+      {reason ? <p className="command-column__hint">{reason}</p> : null}
+      <div className="override-form__fields">
+        {questions.map((question) => (
+          <div key={question.id}>
+            <label className="field-label" htmlFor={`clarify-${question.id}`}>
+              {question.prompt}
+            </label>
+            {question.why ? (
+              <p className="command-column__hint">{question.why}</p>
+            ) : null}
+            <textarea
+              id={`clarify-${question.id}`}
+              className="field-textarea"
+              rows={2}
+              value={answers[question.id] ?? ''}
+              onChange={(e) => onAnswerChange(question.id, e.target.value)}
+              placeholder="Your answer"
+              disabled={disabled}
+            />
+          </div>
+        ))}
+        <p className="override-form__note">
+          Answers are sent with resume as structured question_id mappings.
+        </p>
+      </div>
+    </div>
   )
 }

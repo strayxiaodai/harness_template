@@ -7,6 +7,8 @@ interface TraceTimelineProps {
   selectedId: string | null
   activeNode: string | null
   onSelect: (id: string) => void
+  expanded: boolean
+  onToggle: () => void
 }
 
 function formatTime(ts: number): string {
@@ -22,60 +24,85 @@ export function TraceTimeline({
   selectedId,
   activeNode,
   onSelect,
+  expanded,
+  onToggle,
 }: TraceTimelineProps) {
   const listRef = useRef<HTMLUListElement>(null)
 
   useEffect(() => {
-    if (!selectedId || !listRef.current) {
+    if (!expanded || !selectedId || !listRef.current) {
       return
     }
     const row = listRef.current.querySelector(
       `[data-step-id="${selectedId}"]`,
     )
     row?.scrollIntoView({ block: 'nearest' })
-  }, [selectedId, steps.length])
+  }, [expanded, selectedId, steps.length])
 
   return (
-    <section className="trace-timeline panel" aria-label="Trace timeline">
-      <h2 className="panel-title">Trace timeline</h2>
-      {steps.length === 0 ? (
-        <div className="trace-timeline__empty">
-          <p className="empty-state empty-state--centered">
-            No steps yet.
-          </p>
-          <p className="empty-state__hint">
-            Start a thread from Command, or run a saved skill.
-          </p>
+    <section
+      className={`trace-timeline panel ${
+        expanded ? 'trace-timeline--expanded' : 'trace-timeline--collapsed'
+      }`}
+      aria-label="Trace timeline"
+    >
+      <button
+        type="button"
+        className="trace-timeline__toggle"
+        aria-expanded={expanded}
+        onClick={onToggle}
+      >
+        <span className="panel-title">Trace timeline</span>
+        <span className="trace-timeline__meta mono">
+          {steps.length} step{steps.length === 1 ? '' : 's'}
+          {activeNode ? ` · ${activeNode}` : ''}
+        </span>
+        <span className="trace-timeline__chevron" aria-hidden="true">
+          {expanded ? '▾' : '▴'}
+        </span>
+      </button>
+      {expanded && (
+        <div className="trace-timeline__body">
+          {steps.length === 0 ? (
+            <div className="trace-timeline__empty">
+              <p className="empty-state empty-state--centered">
+                No steps yet.
+              </p>
+              <p className="empty-state__hint">
+                Start a thread from Command, or run a saved skill.
+              </p>
+            </div>
+          ) : (
+            <ul ref={listRef} className="trace-timeline__list">
+              {steps.map((step) => {
+                const isSelected = step.id === selectedId
+                const isLive = step.node === activeNode
+                const preview = previewForStep(step)
+                return (
+                  <li key={step.id} data-step-id={step.id}>
+                    <button
+                      type="button"
+                      className={`trace-row ${
+                        isSelected ? 'trace-row--selected' : ''
+                      } ${isLive ? 'trace-row--live' : ''}`}
+                      onClick={() => onSelect(step.id)}
+                      aria-pressed={isSelected}
+                      aria-label={`${step.node} at ${formatTime(step.timestamp)}, ${step.source}${isLive ? ', running' : ''}. ${preview}`}
+                    >
+                      <span className="trace-row__lane mono">{step.node}</span>
+                      <span className="trace-row__meta">
+                        {formatTime(step.timestamp)} · {step.source}
+                      </span>
+                      <span className="trace-row__preview mono">
+                        {previewForStep(step)}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </div>
-      ) : (
-        <ul ref={listRef} className="trace-timeline__list">
-          {steps.map((step) => {
-            const isSelected = step.id === selectedId
-            const isLive = step.node === activeNode
-            const preview = previewForStep(step)
-            return (
-              <li key={step.id} data-step-id={step.id}>
-                <button
-                  type="button"
-                  className={`trace-row ${
-                    isSelected ? 'trace-row--selected' : ''
-                  } ${isLive ? 'trace-row--live' : ''}`}
-                  onClick={() => onSelect(step.id)}
-                  aria-pressed={isSelected}
-                  aria-label={`${step.node} at ${formatTime(step.timestamp)}, ${step.source}${isLive ? ', running' : ''}. ${preview}`}
-                >
-                  <span className="trace-row__lane mono">{step.node}</span>
-                  <span className="trace-row__meta">
-                    {formatTime(step.timestamp)} · {step.source}
-                  </span>
-                  <span className="trace-row__preview mono">
-                    {previewForStep(step)}
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
       )}
     </section>
   )

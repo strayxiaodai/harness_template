@@ -15,10 +15,9 @@
     minmax(0, 1fr)
     6px
     var(--col-command, 268px);
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   grid-template-areas:
-    "inspector split-l spine split-r command"
-    "inspector split-l timeline split-r command";
+    "inspector split-l center split-r command";
   gap: var(--space-3) 0;
   column-gap: 0;
   row-gap: var(--space-3);
@@ -31,14 +30,6 @@
 
 .inspector-stack {
   grid-area: inspector;
-}
-
-.graph-spine {
-  grid-area: spine;
-}
-
-.trace-timeline {
-  grid-area: timeline;
 }
 
 .command-column {
@@ -75,8 +66,7 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto;
     grid-template-areas:
-      "spine"
-      "timeline"
+      "center"
       "inspector"
       "command";
     gap: var(--space-3);

@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { CenterColumn } from './components/CenterColumn'
 import { ColumnSplit } from './components/ColumnSplit'
 import { CommandColumn } from './components/CommandColumn'
-import { GraphSpine } from './components/GraphSpine'
 import { InspectorStack } from './components/InspectorStack'
 import { StatusBar } from './components/StatusBar'
-import { TraceTimeline } from './components/TraceTimeline'
 import { useConsole } from './hooks/useConsole'
+import { useResumeDraft } from './hooks/useResumeDraft'
 import { useHealth } from './hooks/useHealth'
 import { useResizableColumns } from './hooks/useResizableColumns'
 import { useSkills } from './hooks/useSkills'
@@ -91,6 +91,10 @@ function App() {
   )
   const skillIneligibleReason = resolveSkillIneligibleReason(runResponse)
 
+  const [timelineOpen, setTimelineOpen] = useState(false)
+
+  const draft = useResumeDraft(phase, runResponse?.interrupt ?? null)
+
   const handleSelectNode = useCallback(
     (node: GraphNode) => {
       const match = [...timeline].reverse().find((s) => s.node === node)
@@ -100,6 +104,11 @@ function App() {
     },
     [selectStep, timeline],
   )
+
+  const handleContinue = useCallback(() => {
+    const { overrides, answers } = draft.buildPayload()
+    void resume(overrides, answers)
+  }, [draft, resume])
 
   const phaseRef = useRef(phase)
   phaseRef.current = phase
@@ -116,10 +125,12 @@ function App() {
       if (e.key === 'j') {
         e.preventDefault()
         selectAdjacent(1)
+        setTimelineOpen(true)
       }
       if (e.key === 'k') {
         e.preventDefault()
         selectAdjacent(-1)
+        setTimelineOpen(true)
       }
       if (e.key === 'r' && phaseRef.current === 'awaiting_human') {
         e.preventDefault()
@@ -170,18 +181,28 @@ function App() {
           onReset={resetWidths}
         />
 
-        <GraphSpine
+        <CenterColumn
           activeNode={activeNode}
           completedNodes={completedNodes}
           refineFrom={refineFrom}
           onSelectNode={handleSelectNode}
-        />
-
-        <TraceTimeline
+          phase={phase}
+          interrupt={runResponse?.interrupt ?? null}
+          selectedStep={selectedStep}
+          questions={draft.questions}
+          answerDrafts={draft.answerDrafts}
+          onAnswerChange={draft.setAnswer}
+          planOverrideText={draft.planOverrideText}
+          refineOverride={draft.refineOverride}
+          onPlanOverrideChange={draft.setPlanOverrideText}
+          onRefineOverrideChange={draft.setRefineOverride}
+          onContinue={handleContinue}
+          streaming={phase === 'streaming'}
           steps={timeline}
-          selectedId={selectedStepId}
-          activeNode={activeNode}
-          onSelect={selectStep}
+          selectedStepId={selectedStepId}
+          onSelectStep={selectStep}
+          timelineOpen={timelineOpen}
+          onTimelineOpenChange={setTimelineOpen}
         />
 
         <ColumnSplit

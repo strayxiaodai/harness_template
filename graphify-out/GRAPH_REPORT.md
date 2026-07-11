@@ -1,16 +1,16 @@
 # Graph Report - action-review-memory-hitl  (2026-07-11)
 
 ## Corpus Check
-- 477 files · ~780,495 words
+- 478 files · ~781,475 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 9680 nodes · 20221 edges · 792 communities (398 shown, 394 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 546 edges (avg confidence: 0.71)
+- 9691 nodes · 20293 edges · 790 communities (404 shown, 386 thin omitted)
+- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 525 edges (avg confidence: 0.71)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `bd8da1ea`
+- Built from commit: `7ec4fc23`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -429,7 +429,6 @@
 - Heuristics Scoring Guide
 - shutdown_mcp_manager
 - TestClient
-- syncEditBadgeHitProxies
 - memory_dir
 - Release Notes Guide
 - MCP integration for the harness
@@ -713,10 +712,9 @@
 - FastAPI
 - Request
 - Any
-- Request
-- ResumeRequest
-- RunRequest
-- RunResponse
+- checkElementHeroEyebrow
+- shutdown_mcp_manager
+- qualify_tool_name
 - DistillSkillRequest
 - DistillSkillResponse
 - Request
@@ -775,8 +773,8 @@
 - Any
 - Path
 - SkillSummary
+- parse_mcp_tool_name
 - feature-release-notes.md
-- cross_encoder.py
 - Any
 - MonkeyPatch
 - Any
@@ -806,16 +804,16 @@
 10. `load_rag_settings()` - 29 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `create_workflow()` --indirect_call--> `actioner_agent()`  [INFERRED]
-  graph/builder.py → agent/actioner.py
-- `_run_tool_loop()` --calls--> `write_audit_event()`  [INFERRED]
-  agent/executor.py → audit/logger.py
 - `_run_tool_loop()` --calls--> `load_rag_settings()`  [INFERRED]
   agent/executor.py → rag/config.py
+- `_run_tool_loop()` --calls--> `skill_prompt_prefix()`  [INFERRED]
+  agent/executor.py → skills/inject.py
 - `_run_tool_loop()` --calls--> `get_executor_tools()`  [INFERRED]
   agent/executor.py → tools/registry.py
 - `_run_tool_loop()` --calls--> `get_tool_by_name()`  [INFERRED]
   agent/executor.py → tools/registry.py
+- `planner_agent()` --calls--> `assemble_context()`  [INFERRED]
+  agent/planner.py → context/pipeline.py
 
 ## Import Cycles
 - None detected.
@@ -828,43 +826,43 @@
 - **** — cursor_skills_impeccable_reference_craft_doc, cursor_skills_impeccable_reference_codex_doc, cursor_skills_impeccable_reference_clarify_doc, cursor_skills_impeccable_reference_colorize_doc, cursor_skills_impeccable_reference_critique_doc, cursor_skills_impeccable_reference_delight_doc, cursor_skills_impeccable_reference_distill_doc, cursor_skills_impeccable_reference_document_doc [INFERRED]
 - **Impeccable Skill Reference Documentation** — gemini_skills_impeccable_reference_document_spec, gemini_skills_impeccable_reference_extract_flow, gemini_skills_impeccable_reference_harden_flow, gemini_skills_impeccable_reference_hooks_spec, gemini_skills_impeccable_reference_init_flow [EXTRACTED 1.00]
 
-## Communities (792 total, 394 thin omitted)
+## Communities (790 total, 386 thin omitted)
 
 ### Community 0 - "live-browser.js"
 Cohesion: 0.03
-Nodes (134): acceptedDomAlreadyClean(), applyPlaceholderSizingStyles(), applySvelteComponentVariantStyle(), attachSteerFocusGuard(), averageRgb01(), bufferToBase64(), buildCollapsible(), buildColorModels() (+126 more)
+Nodes (122): acceptedDomAlreadyClean(), addManualContextText(), applyPlaceholderSizingStyles(), applySvelteComponentVariantStyle(), bindEditBadgeProxy(), bufferToBase64(), buildCollapsible(), buildColorModels() (+114 more)
 
 ### Community 1 - "live-browser.js"
 Cohesion: 0.03
-Nodes (131): acceptedDomAlreadyClean(), addManualContextText(), applyPlaceholderSizingStyles(), applySvelteComponentVariantStyle(), averageRgb01(), bufferToBase64(), buildCollapsible(), buildColorModels() (+123 more)
+Nodes (134): acceptedDomAlreadyClean(), applyPlaceholderSizingStyles(), applySvelteComponentVariantStyle(), attachSteerFocusGuard(), averageRgb01(), bufferToBase64(), buildCollapsible(), buildColorModels() (+126 more)
 
 ### Community 2 - "live-browser.js"
 Cohesion: 0.03
-Nodes (128): acceptedDomAlreadyClean(), addManualContextText(), applyPlaceholderSizingStyles(), applySvelteComponentVariantStyle(), averageRgb01(), bindEditBadgeProxy(), bufferToBase64(), buildColorModels() (+120 more)
+Nodes (131): acceptedDomAlreadyClean(), addManualContextText(), applyPlaceholderSizingStyles(), applySvelteComponentVariantStyle(), averageRgb01(), bindEditBadgeProxy(), bufferToBase64(), buildColorModels() (+123 more)
 
 ### Community 3 - "Design System Validation Checks"
 Cohesion: 0.04
 Nodes (102): borderColorsFromStyle(), borderWidthsFromStyle(), checkBorders(), checkClippedOverflow(), checkColors(), checkCreamPalette(), checkElementAIPaletteDOM(), checkElementBorders() (+94 more)
 
 ### Community 4 - "checks.mjs"
-Cohesion: 0.04
-Nodes (106): borderColorsFromStyle(), borderWidthsFromStyle(), checkBorders(), checkClippedOverflow(), checkColors(), checkCreamPalette(), checkElementAIPaletteDOM(), checkElementBorders() (+98 more)
+Cohesion: 0.05
+Nodes (83): borderColorsFromStyle(), borderWidthsFromStyle(), checkBorders(), checkClippedOverflow(), checkCreamPalette(), checkElementBorders(), checkElementBordersDOM(), checkElementClippedOverflow() (+75 more)
 
 ### Community 5 - "Design System Validation Checks"
 Cohesion: 0.04
-Nodes (106): borderColorsFromStyle(), borderWidthsFromStyle(), checkBorders(), checkClippedOverflow(), checkColors(), checkCreamPalette(), checkElementAIPaletteDOM(), checkElementBorders() (+98 more)
+Nodes (104): borderColorsFromStyle(), borderWidthsFromStyle(), checkBorders(), checkClippedOverflow(), checkColors(), checkCreamPalette(), checkElementAIPaletteDOM(), checkElementBorders() (+96 more)
 
 ### Community 6 - "AI Agent Tool Execution"
-Cohesion: 0.05
-Nodes (42): ExecutionRecord, Serialized form of a ReviewResult stored in the graph state., Compact record of one tool call made by the executor., Serialized form of an ExecutorResult stored in state., ReviewRecord, ToolCallRecord, StateGraph, TypedDict (+34 more)
+Cohesion: 0.04
+Nodes (74): actioner_agent(), _format_score_context(), _heuristic_loop_score(), Score the loop, optionally pause for HITL action review, then route.      Human-, Derive a loop score without calling the LLM., Build the actioner scoring prompt from harness state., Score loop quality with structured LLM output and heuristic fallback., score_loop() (+66 more)
 
 ### Community 7 - "Graph Run API Routes"
-Cohesion: 0.06
-Nodes (39): BaseModel, Schemas for harness run and resume endpoints., Request body for graph execution., Require a task and/or a skill slug., Typed review override for HITL correction., Allowed state edits before a HITL thread resumes., Request body for /resume during human-in-the-loop runs., Response body for graph execution and resume. (+31 more)
+Cohesion: 0.20
+Nodes (22): checkColors(), checkElementAIPaletteDOM(), checkElementColors(), checkElementColorsDOM(), checkElementGlow(), checkElementGlowDOM(), checkElementIconTile(), checkElementIconTileDOM() (+14 more)
 
 ### Community 8 - "React Graph UI Components"
-Cohesion: 0.13
-Nodes (31): App(), newThreadId(), parsePlan(), useConsole(), useSkills(), fetchSkill(), fetchSkills(), mergeNodeUpdate() (+23 more)
+Cohesion: 0.17
+Nodes (26): App(), newThreadId(), parsePlan(), useConsole(), useSkills(), fetchSkill(), fetchSkills(), mergeNodeUpdate() (+18 more)
 
 ### Community 9 - "Skill Library Context API"
 Cohesion: 0.05
@@ -884,7 +882,7 @@ Nodes (68): addBrowserFindings(), addVisualContrastFindings(), addVisualContrast
 
 ### Community 13 - "resumeSession"
 Cohesion: 0.09
-Nodes (69): abortSvelteComponentInjection(), applyEditing(), buildLocatorForLeaf(), buildPickedAnchorSnapshot(), cancelEditing(), cancelEditingToPicking(), cancelInsertConfigure(), cleanup() (+61 more)
+Nodes (68): abortSvelteComponentInjection(), applyEditing(), buildLocatorForLeaf(), buildPickedAnchorSnapshot(), cancelEditing(), cancelEditingToPicking(), cancelInsertConfigure(), cleanup() (+60 more)
 
 ### Community 14 - "Live Editing State Management"
 Cohesion: 0.09
@@ -896,7 +894,7 @@ Nodes (69): abortSvelteComponentInjection(), applyEditing(), buildLocatorForLeaf
 
 ### Community 16 - "context.mjs"
 Cohesion: 0.07
-Nodes (65): buildMissingTargetDirective(), buildResolvedContextDirective(), buildTargetSelectionDirective(), buildUpdateDirective(), cli(), compareSemver(), computeUpdateDirective(), contextSourcePath() (+57 more)
+Nodes (51): buildMissingTargetDirective(), buildResolvedContextDirective(), buildTargetSelectionDirective(), buildUpdateDirective(), cli(), compareSemver(), computeUpdateDirective(), contextSourcePath() (+43 more)
 
 ### Community 17 - "Context Directive CLI Tools"
 Cohesion: 0.07
@@ -939,12 +937,12 @@ Cohesion: 0.09
 Nodes (47): actionLabel(), applyConfigureBarChrome(), bindConfigureCountPillTooltip(), bindConfigureInlineControlHover(), bindConfigureModifierPillHover(), buildConfigureActionControl(), buildConfigureCountControl(), buildConfigureRow() (+39 more)
 
 ### Community 27 - "RAG Memory Schemas Extraction"
-Cohesion: 0.07
-Nodes (62): FakeEmbeddings, collect_new_messages(), commit_approved_memories(), extract_memories(), format_messages_for_extraction(), BaseMessage, Extract memories from chat history and store them., Upsert approved_memories and advance memory_cursor.      Args:         state: Cu (+54 more)
+Cohesion: 0.06
+Nodes (71): FakeEmbeddings, Any, MonkeyPatch, Path, Tests for memory extract, recall, inject, and memorize agent., Recall pipeline rewrites the query and formats memories., Same round reuses memory_context without calling rewrite., Planner prepends assembled memory context to the human prompt. (+63 more)
 
 ### Community 28 - "Screenshot Library Utilities"
-Cohesion: 0.09
-Nodes (53): ae(), be(), bt(), Ce(), Ct(), de(), dt(), _e() (+45 more)
+Cohesion: 0.06
+Nodes (86): buildColor(), CANONICAL_SECTIONS, collectBullets(), collectColorValues(), collectParagraphs(), detectFormat(), extractColors(), extractComponents() (+78 more)
 
 ### Community 29 - "Screenshot Library Utilities"
 Cohesion: 0.09
@@ -955,16 +953,16 @@ Cohesion: 0.09
 Nodes (54): latestCritique(), ae(), be(), bt(), Ce(), Ct(), de(), dt() (+46 more)
 
 ### Community 31 - "Project Path Resolution Utilities"
-Cohesion: 0.08
-Nodes (44): resolveProjectRoot(), firstExisting(), getDesignSidecarCandidates(), getDesignSidecarPath(), getImpeccableDir(), getLegacyLiveAnnotationsDir(), getLegacyLiveConfigPath(), getLegacyLiveServerPath() (+36 more)
+Cohesion: 0.11
+Nodes (35): resolveProjectRoot(), firstExisting(), getDesignSidecarCandidates(), getDesignSidecarPath(), getImpeccableDir(), getLegacyLiveAnnotationsDir(), getLegacyLiveConfigPath(), getLegacyLiveServerPath() (+27 more)
 
 ### Community 32 - "Manual Edit Commit Rollback"
 Cohesion: 0.10
 Nodes (49): allEntryIds(), argVal(), buildRepairBatch(), candidatesForEntry(), changedFilesSinceSnapshot(), clearAppliedEntries(), collectApplyOwnedFiles(), collectRollbackFiles() (+41 more)
 
 ### Community 33 - "Manual Edit Commit Rollback"
-Cohesion: 0.11
-Nodes (48): allEntryIds(), argVal(), buildRepairBatch(), candidatesForEntry(), changedFilesSinceSnapshot(), collectApplyOwnedFiles(), collectRollbackFiles(), commitManualEdits() (+40 more)
+Cohesion: 0.10
+Nodes (49): allEntryIds(), argVal(), buildRepairBatch(), candidatesForEntry(), changedFilesSinceSnapshot(), collectApplyOwnedFiles(), collectRollbackFiles(), commitManualEdits() (+41 more)
 
 ### Community 34 - "Manual Edit Commit Rollback"
 Cohesion: 0.10
@@ -987,12 +985,12 @@ Cohesion: 0.10
 Nodes (47): applyDetectionConfigSource(), clampByte(), cleanIgnoreValueDisplay(), cloneDetectionConfig(), cloneRawDetectionConfig(), colorIgnoreKey(), DEFAULT_DETECTION_CONFIG, DETECTOR_CONFIG_KEYS (+39 more)
 
 ### Community 39 - "Design System Token Management"
-Cohesion: 0.09
-Nodes (48): addColorObject(), addDesignColor(), addRoundedScale(), addRoundedToken(), addSidecarColors(), addSidecarRadii(), addTypographyFonts(), canonicalDesignFindingKey() (+40 more)
+Cohesion: 0.10
+Nodes (47): addColorObject(), addDesignColor(), addRoundedScale(), addRoundedToken(), addSidecarColors(), addSidecarRadii(), addTypographyFonts(), canonicalDesignFindingKey() (+39 more)
 
 ### Community 40 - "Detection Configuration Management"
 Cohesion: 0.10
-Nodes (47): applyDetectionConfigSource(), clampByte(), cleanIgnoreValueDisplay(), cloneDetectionConfig(), cloneRawDetectionConfig(), colorIgnoreKey(), DEFAULT_DETECTION_CONFIG, DETECTOR_CONFIG_KEYS (+39 more)
+Nodes (46): applyDetectionConfigSource(), clampByte(), cleanIgnoreValueDisplay(), cloneDetectionConfig(), cloneRawDetectionConfig(), colorIgnoreKey(), DEFAULT_DETECTION_CONFIG, DETECTOR_CONFIG_KEYS (+38 more)
 
 ### Community 41 - "Live Browser Script Assembly"
 Cohesion: 0.09
@@ -1015,16 +1013,16 @@ Cohesion: 0.09
 Nodes (47): actionLabel(), applyConfigureBarChrome(), bindConfigureCountPillTooltip(), bindConfigureInlineControlHover(), bindConfigureModifierPillHover(), buildConfigureActionControl(), buildConfigureCountControl(), buildConfigureRow() (+39 more)
 
 ### Community 46 - "Page Chat Voice UI"
-Cohesion: 0.09
-Nodes (46): applyGlobalBarLabelState(), armPageChatForTyping(), attachSteerFocusDebug(), buildSteerProcessingDots(), clearSteerAwaitTimer(), collapsePageChat(), configureVoiceContext(), expandPageChat() (+38 more)
-
-### Community 47 - "Browser Antipattern Detection"
-Cohesion: 0.08
-Nodes (38): checkBorders(), checkClippedOverflow(), checkElementBorders(), checkElementBordersDOM(), checkElementClippedOverflow(), checkElementClippedOverflowDOM(), checkElementItalicSerif(), checkElementItalicSerifDOM() (+30 more)
-
-### Community 48 - "initPageChat"
 Cohesion: 0.07
 Nodes (53): applyGlobalBarLabelState(), armPageChatForTyping(), attachSteerFocusDebug(), attachSteerFocusGuard(), buildSteerProcessingDots(), clearSteerAwaitTimer(), clearSteerFocusRecoverTimer(), collapsePageChat() (+45 more)
+
+### Community 47 - "Browser Antipattern Detection"
+Cohesion: 0.07
+Nodes (41): checkBorders(), checkClippedOverflow(), checkElementBorders(), checkElementBordersDOM(), checkElementClippedOverflow(), checkElementClippedOverflowDOM(), checkElementItalicSerif(), checkElementItalicSerifDOM() (+33 more)
+
+### Community 48 - "initPageChat"
+Cohesion: 0.09
+Nodes (46): applyGlobalBarLabelState(), armPageChatForTyping(), attachSteerFocusDebug(), buildSteerProcessingDots(), clearSteerAwaitTimer(), collapsePageChat(), configureVoiceContext(), expandPageChat() (+38 more)
 
 ### Community 49 - "Design Animation Guidelines"
 Cohesion: 0.10
@@ -1059,8 +1057,8 @@ Cohesion: 0.11
 Nodes (40): hasGeneratedHeader(), HEADER_MARKERS, isGeneratedFile(), isGitIgnored(), argVal(), buildInsertWrapperLines(), computeInsertLine(), INSERT_POSITIONS (+32 more)
 
 ### Community 58 - "Svelte Component CSS Props"
-Cohesion: 0.11
-Nodes (41): applyLegacyDeferredAcceptsOnStartup(), appendCssToSvelteStyle(), appendSanitizedCssRule(), applyDeferredSvelteComponentAccepts(), bakeParamValuesInCss(), buildInsertVariantStub(), buildPropContract(), buildPropsScript() (+33 more)
+Cohesion: 0.10
+Nodes (43): applyLegacyDeferredAcceptsOnStartup(), appendCssToSvelteStyle(), appendSanitizedCssRule(), applyDeferredSvelteComponentAccepts(), bakeParamValuesInCss(), buildInsertVariantStub(), buildPropContract(), buildPropsScript() (+35 more)
 
 ### Community 59 - "Browser Antipattern Detection"
 Cohesion: 0.08
@@ -1079,36 +1077,36 @@ Cohesion: 0.11
 Nodes (19): CheckpointBackend, Checkpoint backend selection for local dev and production., Return the configured LangGraph checkpoint backend.      Priority:     1. ``CHEC, Return the filesystem path or URI for the SQLite checkpointer., resolve_checkpoint_backend(), sqlite_checkpoint_path(), Tests for checkpoint backend selection., Local dev defaults to SQLite when backend is not explicit. (+11 more)
 
 ### Community 63 - "detect-antipatterns.mjs"
-Cohesion: 0.10
-Nodes (35): confirm(), detectCli(), formatFindings(), formatFindingSummary(), handleStdin(), printUsage(), loadDesignSystemForCwd(), parseFrontmatter() (+27 more)
+Cohesion: 0.11
+Nodes (34): confirm(), detectCli(), formatFindings(), formatFindingSummary(), handleStdin(), printUsage(), loadDesignSystemForCwd(), parseFrontmatter() (+26 more)
 
 ### Community 64 - "Antipattern Detection CLI"
 Cohesion: 0.10
-Nodes (35): confirm(), detectCli(), formatFindings(), formatFindingSummary(), handleStdin(), printUsage(), loadDesignSystemForCwd(), parseFrontmatter() (+27 more)
+Nodes (36): confirm(), detectCli(), formatFindings(), formatFindingSummary(), handleStdin(), printUsage(), loadDesignSystemForCwd(), parseFrontmatter() (+28 more)
 
 ### Community 65 - "Static Content Style Analysis"
 Cohesion: 0.12
 Nodes (34): mergeDesignSystemFindings(), detectUrl(), runVisualContrastFallback(), serializeDesignSystemForBrowser(), runRegexMatchers(), runTextContentAnalyzers(), buildStaticStyleMap(), buildStaticWindow() (+26 more)
 
 ### Community 66 - "Live Script Injection Utilities"
-Cohesion: 0.10
-Nodes (39): appendOriginToDirective(), buildTagBlock(), commentClose(), commentOpen(), CONFIG_PATH, detectLineEnding(), __dirname, ensureLiveGitIgnores() (+31 more)
+Cohesion: 0.14
+Nodes (25): appendOriginToDirective(), buildTagBlock(), commentClose(), commentOpen(), CONFIG_PATH, detectLineEnding(), __dirname, ensureLiveGitIgnores() (+17 more)
 
 ### Community 67 - "detect-html.mjs"
-Cohesion: 0.13
-Nodes (33): mergeDesignSystemFindings(), detectUrl(), runVisualContrastFallback(), serializeDesignSystemForBrowser(), runRegexMatchers(), runTextContentAnalyzers(), buildStaticStyleMap(), buildStaticWindow() (+25 more)
+Cohesion: 0.07
+Nodes (54): mergeDesignSystemFindings(), detectUrl(), runVisualContrastFallback(), serializeDesignSystemForBrowser(), CSS_IN_JS_EXTENSIONS, detectText(), extFromFilePath(), extractCSSinJS() (+46 more)
 
 ### Community 68 - "Manual Apply Batch Processing"
 Cohesion: 0.10
 Nodes (36): addOpToManualApplyChunk(), APPLY_EVENT_HARD_TIMEOUT_MS, APPLY_EVENT_SOFT_DEADLINE_MS, buildManualApplyAgentAction(), clearManualApplyTransaction(), collectManualApplyFiles(), compactManualApplyBatch(), compactManualApplyCandidates() (+28 more)
 
 ### Community 69 - "Static Content Style Analysis"
-Cohesion: 0.13
-Nodes (33): mergeDesignSystemFindings(), detectUrl(), runVisualContrastFallback(), serializeDesignSystemForBrowser(), runRegexMatchers(), runTextContentAnalyzers(), buildStaticStyleMap(), buildStaticWindow() (+25 more)
+Cohesion: 0.07
+Nodes (55): mergeDesignSystemFindings(), detectUrl(), runVisualContrastFallback(), serializeDesignSystemForBrowser(), CSS_IN_JS_EXTENSIONS, detectText(), extFromFilePath(), extractCSSinJS() (+47 more)
 
 ### Community 70 - "Live Script Injection Utilities"
 Cohesion: 0.10
-Nodes (37): appendOriginToDirective(), buildTagBlock(), commentClose(), commentOpen(), CONFIG_PATH, detectLineEnding(), __dirname, ensureLiveGitIgnores() (+29 more)
+Nodes (39): appendOriginToDirective(), buildTagBlock(), commentClose(), commentOpen(), CONFIG_PATH, detectLineEnding(), __dirname, ensureLiveGitIgnores() (+31 more)
 
 ### Community 71 - "Manual Apply Batch Processing"
 Cohesion: 0.10
@@ -1135,8 +1133,8 @@ Cohesion: 0.12
 Nodes (21): CSS_IN_JS_EXTENSIONS, detectText(), extFromFilePath(), extractCSSinJS(), extractStyleBlocks(), isNeutralBorderColor(), PAGE_ANALYZER_EXTS, REGEX_ANALYZERS (+13 more)
 
 ### Community 77 - "Event Edit Validation"
-Cohesion: 0.08
-Nodes (22): FORBIDDEN_MANUAL_EDIT_TEXT_CHARS, INSERT_POSITIONS, isValidId(), isValidVariantId(), validateAnnotationFields(), validateEvent(), validateInsertGenerate(), validateManualEditEvent() (+14 more)
+Cohesion: 0.11
+Nodes (10): canCreateInsert(), clampPlaceholderSize(), computeInsertPosition(), groupSiblingRows(), hitSiblingInsertGap(), horizontalOverlap(), insertCreateDisabledReason(), insertLineCoords() (+2 more)
 
 ### Community 78 - "Event Edit Validation"
 Cohesion: 0.08
@@ -1160,27 +1158,27 @@ Nodes (35): allow(), bumpCursorDenial(), deny(), done(), escapeRegExp(), finding
 
 ### Community 84 - "Design Document Parser"
 Cohesion: 0.12
-Nodes (31): clear_pending_cache(), Any, MonkeyPatch, Tests for the actioner agent node., Missing review should default refine_from to finish., High-scoring HITL loops pause at the actioner for action review., HITL loops pause for memory review even below the skill threshold., Actioner must not re-extract memories when re-entered after interrupt. (+23 more)
+Nodes (27): Any, MonkeyPatch, Tests for the actioner agent node., Missing review should default refine_from to finish., High-scoring HITL loops pause at the actioner for action review., HITL loops pause for memory review even below the skill threshold., Actioner must not re-extract memories when re-entered after interrupt., Non-HITL loops approve extracted memories without interrupting. (+19 more)
 
 ### Community 85 - "Design Document Parser"
-Cohesion: 0.25
-Nodes (6): Reciprocal rank fusion for hybrid retrieval., Fuse multiple ranked document lists with reciprocal rank fusion.      Args:, reciprocal_rank_fusion(), Tests for reciprocal rank fusion., Documents ranked in both lists should score higher., test_rrf_promotes_documents_in_both_lists()
+Cohesion: 0.07
+Nodes (31): BaseModel, DistillSkillRequest, DistillSkillResponse, Schemas for skill library endpoints., Request body for POST /skills/distill., Request body for POST /skills/save after preview., Response body for POST /skills/distill and POST /skills/save., Summary row for GET /skills. (+23 more)
 
 ### Community 86 - "Design Document Parser"
-Cohesion: 0.08
-Nodes (30): addManualContextText(), canRestoreManualEditElement(), collectManualContextPieces(), contextElementForManualEdit(), copyEditContainerContext(), copyEditLeafContext(), cssIdent(), directMixedTextRestoreNodes() (+22 more)
+Cohesion: 0.17
+Nodes (24): completionAckForAcceptResult(), completionTypeForAcceptResult(), augmentEventWithAcceptHandling(), buildAcceptScriptArgs(), buildPollReplyPayload(), EVENT_TYPES_NEEDING_AGENT_REPLY, fetchNextEvent(), fetchServerStatus() (+16 more)
 
 ### Community 87 - "Manual Edit Context Restoration"
 Cohesion: 0.15
 Nodes (21): applyPlaceholderDimensions(), beginEditPin(), buildAnnotationsForCapture(), buildPinElement(), cancelEditingPin(), clampPlaceholderSize(), finalizeEditingPin(), initAnnotOverlay() (+13 more)
 
 ### Community 88 - "Page Chat State Management"
-Cohesion: 0.07
-Nodes (56): applyGlobalBarLabelState(), armPageChatForTyping(), attachSteerFocusDebug(), attachSteerFocusGuard(), buildSteerProcessingDots(), clearSteerAwaitTimer(), clearSteerFocusRecoverTimer(), collapsePageChat() (+48 more)
+Cohesion: 0.10
+Nodes (40): applyGlobalBarLabelState(), armPageChatForTyping(), buildSteerProcessingDots(), clearSteerAwaitTimer(), collapsePageChat(), configureVoiceContext(), expandPageChat(), finishVoiceSession() (+32 more)
 
 ### Community 89 - "FastAPI Service Tests"
-Cohesion: 0.08
-Nodes (29): client(), _mock_graph(), Tests for the FastAPI service., POST /resume returns 409 for non-HITL threads., POST /resume forwards overrides to update_state., ResumeRequest must reject non-allowlisted override keys., POST /stream returns text/event-stream., Build a fake LangGraph state snapshot. (+21 more)
+Cohesion: 0.07
+Nodes (31): client(), _mock_graph(), Tests for the FastAPI service., RunResponse reflects checkpoint eligibility for skill distillation., POST /resume returns 409 for non-HITL threads., POST /resume forwards overrides to update_state., ResumeRequest must reject non-allowlisted override keys., POST /stream returns text/event-stream. (+23 more)
 
 ### Community 90 - "Live Accept CLI Utilities"
 Cohesion: 0.13
@@ -1191,16 +1189,16 @@ Cohesion: 0.14
 Nodes (32): acceptCli(), argVal(), buildCarbonizeReplacement(), decodeHtmlAttr(), deindentContent(), detectCommentSyntax(), escapeRegExp(), expandReplaceRange() (+24 more)
 
 ### Community 92 - "Live Accept CLI Utilities"
-Cohesion: 0.13
-Nodes (34): acceptCli(), argVal(), buildCarbonizeReplacement(), decodeHtmlAttr(), deindentContent(), detectCommentSyntax(), escapeRegExp(), expandReplaceRange() (+26 more)
+Cohesion: 0.14
+Nodes (32): acceptCli(), argVal(), buildCarbonizeReplacement(), decodeHtmlAttr(), deindentContent(), detectCommentSyntax(), escapeRegExp(), expandReplaceRange() (+24 more)
 
 ### Community 93 - "session-store.mjs"
-Cohesion: 0.12
-Nodes (26): isLiveServerPidReachable(), readLiveServerInfo(), completeCli(), completeThroughServer(), parseArgs(), readServerInfo(), collectManualApplyFiles(), manualApplyReplyCommand() (+18 more)
+Cohesion: 0.15
+Nodes (20): collectManualApplyFiles(), manualApplyReplyCommand(), manualApplyResumeHint(), parseArgs(), resumeCli(), summarizeManualApplyEvent(), applyEvent(), baseSnapshot() (+12 more)
 
 ### Community 94 - "Copy Edit Agent Logic"
-Cohesion: 0.14
-Nodes (31): applyMockWrites(), buildCopyEditBatchPrompt(), checkFrameworkSourceSyntax(), chooseCopyEditAgent(), COMMAND_AUTH_CACHE, commandAuthed(), commandExists(), compactBatchForPrompt() (+23 more)
+Cohesion: 0.13
+Nodes (30): applyMockWrites(), buildCopyEditBatchPrompt(), checkFrameworkSourceSyntax(), chooseCopyEditAgent(), COMMAND_AUTH_CACHE, commandAuthed(), commandExists(), compactBatchForPrompt() (+22 more)
 
 ### Community 95 - "impeccable-paths.mjs"
 Cohesion: 0.15
@@ -1223,24 +1221,24 @@ Cohesion: 0.13
 Nodes (31): analyzeVisualContrast(), analyzeVisualContrastCandidate(), checkColors(), checkElementAIPaletteDOM(), checkElementColors(), checkElementColorsDOM(), checkElementGlow(), checkElementGlowDOM() (+23 more)
 
 ### Community 100 - "css-cascade.mjs"
-Cohesion: 0.12
-Nodes (26): applyStaticDeclaration(), buildBorderOverrideMap(), collectStaticCssRules(), compareStaticPriority(), cssPropToCamel(), expandStaticBoxValues(), expandStaticDeclaration(), extractStaticColor() (+18 more)
+Cohesion: 0.10
+Nodes (29): applyStaticDeclaration(), buildBorderOverrideMap(), buildStaticStyleMap(), collectStaticCssRules(), compareStaticPriority(), cssPropToCamel(), expandStaticBoxValues(), expandStaticDeclaration() (+21 more)
 
 ### Community 101 - "Visual Contrast Analysis"
 Cohesion: 0.13
 Nodes (31): analyzeVisualContrast(), analyzeVisualContrastCandidate(), checkColors(), checkElementAIPaletteDOM(), checkElementColors(), checkElementColorsDOM(), checkElementGlow(), checkElementGlowDOM() (+23 more)
 
 ### Community 102 - "Static CSS Processing"
-Cohesion: 0.12
-Nodes (26): applyStaticDeclaration(), buildBorderOverrideMap(), collectStaticCssRules(), compareStaticPriority(), cssPropToCamel(), expandStaticBoxValues(), expandStaticDeclaration(), extractStaticColor() (+18 more)
+Cohesion: 0.10
+Nodes (29): applyStaticDeclaration(), buildBorderOverrideMap(), buildStaticStyleMap(), collectStaticCssRules(), compareStaticPriority(), cssPropToCamel(), expandStaticBoxValues(), expandStaticDeclaration() (+21 more)
 
 ### Community 103 - "Copy Edit Agent"
 Cohesion: 0.14
 Nodes (31): applyMockWrites(), buildCopyEditBatchPrompt(), checkFrameworkSourceSyntax(), chooseCopyEditAgent(), COMMAND_AUTH_CACHE, commandAuthed(), commandExists(), compactBatchForPrompt() (+23 more)
 
 ### Community 104 - "Action Loop Scoring"
-Cohesion: 0.07
-Nodes (30): StreamingResponse, Harness run, resume, and stream routes., Start or continue a graph run for the given thread., Resume a human-in-the-loop thread., Stream graph updates for a run (Server-Sent Events)., resume_agent(), run_agent(), stream_agent() (+22 more)
+Cohesion: 0.08
+Nodes (34): Any, Request, ResumeRequest, RunRequest, RunResponse, Business logic for harness graph runs., Build the graph input for a HITL resume.      Dynamic ``interrupt()`` pauses mus, Start a new harness thread and return the latest checkpoint snapshot. (+26 more)
 
 ### Community 105 - "Design System Guidelines"
 Cohesion: 0.08
@@ -1255,8 +1253,8 @@ Cohesion: 0.07
 Nodes (24): Apply Clarity Principles, Assess Current Copy, Button & CTA Text, Confirmation Dialogs, Empty States, Error Messages, Form Labels & Instructions, Help Text & Tooltips (+16 more)
 
 ### Community 109 - "documentRefForElement"
-Cohesion: 0.12
-Nodes (21): CSS_IN_JS_EXTENSIONS, detectText(), extFromFilePath(), extractCSSinJS(), extractStyleBlocks(), isNeutralBorderColor(), PAGE_ANALYZER_EXTS, REGEX_ANALYZERS (+13 more)
+Cohesion: 0.10
+Nodes (26): canRestoreManualEditElement(), copyEditContainerContext(), copyEditLeafContext(), cssIdent(), directMixedTextRestoreNodes(), documentRefClassSuffix(), documentRefForElement(), documentRefIdSuffix() (+18 more)
 
 ### Community 110 - "MCP Client Management"
 Cohesion: 0.18
@@ -1264,7 +1262,7 @@ Nodes (12): format_document_context(), format_documents(), format_memory_context
 
 ### Community 111 - "Conversational Memory Storage"
 Cohesion: 0.04
-Nodes (35): Protocol, Embedding provider factory for RAG., Hybrid document and memory search., Run hybrid document retrieval with optional reranking.      Args:         query:, Search and rerank memories for a thread.      Args:         thread_id: Conversat, search_documents(), search_memories(), RagService (+27 more)
+Nodes (37): Protocol, get_embeddings(), Embedding provider factory for RAG., Return an embeddings model based on RAG settings.      Args:         settings: O, get_rag_service(), init_rag_service(), RagService, RAG service singleton. (+29 more)
 
 ### Community 112 - "Project Dependencies"
 Cohesion: 0.07
@@ -1279,16 +1277,16 @@ Cohesion: 0.15
 Nodes (26): analyzeSourceHint(), buildCandidatesForOp(), buildContextHintsByRef(), buildManualEditEvidence(), collectSearchFiles(), countOps(), decodeBasicHtml(), escapeRegExp() (+18 more)
 
 ### Community 115 - "Text & Style Detection"
-Cohesion: 0.18
-Nodes (12): create_app(), FastAPI application factory., Build and configure the harness HTTP application., _compile_graphs(), graph_lifespan(), Graph checkpointer and FastAPI lifespan., Discover MCP tools when configured., Close MCP stdio sessions. (+4 more)
+Cohesion: 0.09
+Nodes (21): create_app(), FastAPI application factory., Build and configure the harness HTTP application., Install a pooled connection used by all audit writes.      The pool is owned by, set_audit_pool(), _compile_graphs(), graph_lifespan(), Graph checkpointer and FastAPI lifespan. (+13 more)
 
 ### Community 116 - "Manual Edit Evidence"
 Cohesion: 0.15
 Nodes (26): analyzeSourceHint(), buildCandidatesForOp(), buildContextHintsByRef(), buildManualEditEvidence(), collectSearchFiles(), countOps(), decodeBasicHtml(), escapeRegExp() (+18 more)
 
 ### Community 117 - "Text & Style Detection"
-Cohesion: 0.12
-Nodes (21): CSS_IN_JS_EXTENSIONS, detectText(), extFromFilePath(), extractCSSinJS(), extractStyleBlocks(), isNeutralBorderColor(), PAGE_ANALYZER_EXTS, REGEX_ANALYZERS (+13 more)
+Cohesion: 0.15
+Nodes (19): averageRgb01(), captureAndEmit(), captureElementFromRenderedAncestor(), captureElementToBlob(), compileShader(), cssColorToRgb01(), dominantRgb01(), findBackdropAncestor() (+11 more)
 
 ### Community 118 - "Manual Edit Evidence"
 Cohesion: 0.15
@@ -1303,8 +1301,8 @@ Cohesion: 0.19
 Nodes (24): clearStoredManualApplyState(), fetchPendingCount(), handleManualEditActivity(), hidePendingApplyDock(), manualApplyLoadingText(), manualApplyStateKey(), manualEditEventForCurrentPage(), numberOrNull() (+16 more)
 
 ### Community 121 - "Live Polling & Completion"
-Cohesion: 0.17
-Nodes (24): completionAckForAcceptResult(), completionTypeForAcceptResult(), augmentEventWithAcceptHandling(), buildAcceptScriptArgs(), buildPollReplyPayload(), EVENT_TYPES_NEEDING_AGENT_REPLY, fetchNextEvent(), fetchServerStatus() (+16 more)
+Cohesion: 0.26
+Nodes (14): applySvelteKitLiveAdapter(), buildSvelteLiveRootComponent(), defaultSvelteLayout(), detectSvelteKitProject(), ensureSvelteLiveRootComponent(), escapeRegExp(), fileIncludes(), findSvelteKitAppHtml() (+6 more)
 
 ### Community 122 - "Live Polling & Completion"
 Cohesion: 0.17
@@ -1359,8 +1357,8 @@ Cohesion: 0.12
 Nodes (21): borderColorsFromStyle(), borderWidthsFromStyle(), browserColorsClose(), browserHasDirectText(), browserRadiusTokens(), browserSampleText(), checkCreamPalette(), checkElementDesignSystemDOM() (+13 more)
 
 ### Community 135 - "Pin & Annotation Editing"
-Cohesion: 0.15
-Nodes (33): buildColor(), CANONICAL_SECTIONS, collectBullets(), collectColorValues(), collectParagraphs(), detectFormat(), extractColors(), extractComponents() (+25 more)
+Cohesion: 0.23
+Nodes (14): directChildDirs(), discoverRootsForPattern(), discoverTargetCandidates(), escapeRegExp(), expandSimplePattern(), findTargetExample(), isExcludedByWorkspacePattern(), isIgnoredWorkspaceDiscoveryDir() (+6 more)
 
 ### Community 136 - "Manual Edit Routing"
 Cohesion: 0.17
@@ -1383,8 +1381,8 @@ Cohesion: 0.15
 Nodes (21): applyPlaceholderDimensions(), beginEditPin(), buildAnnotationsForCapture(), buildPinElement(), cancelEditingPin(), clampPlaceholderSize(), finalizeEditingPin(), initAnnotOverlay() (+13 more)
 
 ### Community 141 - "Browser Style Validation"
-Cohesion: 0.12
-Nodes (21): borderColorsFromStyle(), borderWidthsFromStyle(), browserColorsClose(), browserHasDirectText(), browserRadiusTokens(), browserSampleText(), checkCreamPalette(), checkElementDesignSystemDOM() (+13 more)
+Cohesion: 0.13
+Nodes (21): borderColorsFromStyle(), borderWidthsFromStyle(), browserColorsClose(), checkCreamPalette(), checkElementGptBorderShadow(), checkElementGptBorderShadowDOM(), checkGptThinBorderWideShadow(), checkQuality() (+13 more)
 
 ### Community 142 - "Pin & Annotation Editing"
 Cohesion: 0.15
@@ -1396,7 +1394,7 @@ Nodes (25): Assess Adaptation Challenge, Breakpoints: Content-Driven, Content Ad
 
 ### Community 145 - "impeccable-paths.mjs"
 Cohesion: 0.19
-Nodes (15): loadContext(), resolveTargetSelection(), safeRead(), parseTargetOptions(), parseTargetPath(), TargetArgError, __dirname, ensureServerRunning() (+7 more)
+Nodes (15): loadContext(), parseCliOptions(), safeRead(), parseTargetOptions(), parseTargetPath(), TargetArgError, __dirname, ensureServerRunning() (+7 more)
 
 ### Community 146 - "captureElementToBlob"
 Cohesion: 0.11
@@ -1415,16 +1413,16 @@ Cohesion: 0.15
 Nodes (13): Component translation rules, Narrative mapping, Scan mode (approach C: auto-extract, then confirm descriptive language), Schema, Step 1: Find the design assets, Step 2: Auto-extract what can be auto-extracted, Step 2b: Stage the frontmatter, Step 3: Ask the user for qualitative language (+5 more)
 
 ### Community 150 - "CSP & Security Detection"
-Cohesion: 0.13
-Nodes (11): detectCsp(), INLINE_HEADER_SIGNALS, LAYOUT_EXTS, MONOREPO_HELPER_SIGNALS, NUXT_ROUTE_RULES_SIGNALS, NUXT_SECURITY_SIGNALS, SCAN_EXTS, SKIP_DIRS (+3 more)
+Cohesion: 0.18
+Nodes (10): detectCsp(), INLINE_HEADER_SIGNALS, LAYOUT_EXTS, MONOREPO_HELPER_SIGNALS, NUXT_ROUTE_RULES_SIGNALS, NUXT_SECURITY_SIGNALS, SCAN_EXTS, SKIP_DIRS (+2 more)
 
 ### Community 151 - "CLI Target Resolution"
-Cohesion: 0.17
-Nodes (17): loadContext(), resolveTargetSelection(), safeRead(), parseTargetOptions(), parseTargetPath(), TargetArgError, __dirname, ensureServerRunning() (+9 more)
+Cohesion: 0.19
+Nodes (15): loadContext(), resolveTargetSelection(), safeRead(), parseTargetOptions(), parseTargetPath(), TargetArgError, __dirname, ensureServerRunning() (+7 more)
 
 ### Community 152 - "CSP & Security Detection"
-Cohesion: 0.13
-Nodes (11): detectCsp(), INLINE_HEADER_SIGNALS, LAYOUT_EXTS, MONOREPO_HELPER_SIGNALS, NUXT_ROUTE_RULES_SIGNALS, NUXT_SECURITY_SIGNALS, SCAN_EXTS, SKIP_DIRS (+3 more)
+Cohesion: 0.18
+Nodes (10): detectCsp(), INLINE_HEADER_SIGNALS, LAYOUT_EXTS, MONOREPO_HELPER_SIGNALS, NUXT_ROUTE_RULES_SIGNALS, NUXT_SECURITY_SIGNALS, SCAN_EXTS, SKIP_DIRS (+2 more)
 
 ### Community 153 - "Element Quality Checks"
 Cohesion: 0.15
@@ -1443,8 +1441,8 @@ Cohesion: 0.50
 Nodes (4): Before Opening A Pull Request, Contributing, Review Expectations, Working Agreement
 
 ### Community 157 - "Parameter Panel UI"
-Cohesion: 0.14
-Nodes (20): ActionRoute, Finish or refine after the memorize step., route_after_action(), Tests for graph routing and builder shape., Build a minimal AgentState dict for routing tests., Approved checks should finish., Failed checks should resume execution by default., Planning suggestions should restart refinement from planning. (+12 more)
+Cohesion: 0.13
+Nodes (22): ActionRoute, Tests for graph routing and builder shape., Build a minimal AgentState dict for routing tests., Approved checks should finish., Failed checks should resume execution by default., Planning suggestions should restart refinement from planning., The loop must finish once the round budget is exhausted., The default budget must terminate after three rounds. (+14 more)
 
 ### Community 158 - "Parameter Panel UI"
 Cohesion: 0.20
@@ -1468,7 +1466,7 @@ Nodes (15): blendRgba(), clampByte(), firstCssUrl(), getLayerValue(), loadVisual
 
 ### Community 164 - "Element Quality Checks"
 Cohesion: 0.15
-Nodes (18): checkElementQuality(), checkElementQualityDOM(), checkQuality(), checkRepeatedSectionKickers(), checkRepeatedSectionKickersDOM(), checkRepeatedSectionKickersFromDoc(), cleanInlineText(), collectRepeatedSectionKickerCandidates() (+10 more)
+Nodes (15): checkElementHeroEyebrow(), checkElementHeroEyebrowDOM(), checkElementQualityDOM(), checkHeroEyebrow(), checkRepeatedSectionKickers(), checkRepeatedSectionKickersDOM(), checkRepeatedSectionKickersFromDoc(), cleanInlineText() (+7 more)
 
 ### Community 165 - "Skill Eligibility Rules"
 Cohesion: 0.08
@@ -1495,8 +1493,8 @@ Cohesion: 0.15
 Nodes (33): buildColor(), CANONICAL_SECTIONS, collectBullets(), collectColorValues(), collectParagraphs(), detectFormat(), extractColors(), extractComponents() (+25 more)
 
 ### Community 172 - "Critique Snapshot Storage"
-Cohesion: 0.32
-Nodes (11): kebab(), listSnapshotsForSlug(), main(), nowFilenameStamp(), parseFrontmatter(), readLatestSnapshot(), readTrend(), serializeFrontmatter() (+3 more)
+Cohesion: 0.20
+Nodes (16): applyParamDefaults(), applyParamValue(), buildCyclingRow(), closedClipPath(), cycleVariant(), getVisibleVariantEl(), hideParamsPanel(), navBtn() (+8 more)
 
 ### Community 173 - "Visual Contrast Reporting"
 Cohesion: 0.18
@@ -1527,12 +1525,12 @@ Cohesion: 0.18
 Nodes (13): addBrowserFindings(), addVisualContrastFindings(), addVisualContrastResult(), clearOverlays(), detachOverlay(), disconnectLazyVisualContrastObserver(), postExtensionError(), rememberVisualContrastAnalysis() (+5 more)
 
 ### Community 181 - "Browser Design Analysis"
-Cohesion: 0.18
-Nodes (13): browserDesignSystemConfig(), browserFindingsFromMap(), browserPrimaryFont(), checkBrowserDesignSystemSources(), checkHtmlPatterns(), checkPageQualityDOM(), checkPageQualityFromDoc(), checkTypography() (+5 more)
+Cohesion: 0.19
+Nodes (13): browserDesignSystemConfig(), browserFindingsFromMap(), browserHasDirectText(), browserPrimaryFont(), browserRadiusTokens(), browserSampleText(), checkBrowserDesignSystemSources(), checkElementDesignSystemDOM() (+5 more)
 
 ### Community 183 - "MCP Session Management"
-Cohesion: 0.21
-Nodes (18): CenterColumnProps, formatTime(), previewForStep(), TraceTimeline(), TraceTimelineProps, Workplace(), WorkplaceProps, parsePlanLines() (+10 more)
+Cohesion: 0.20
+Nodes (22): CenterColumnProps, ActionReviewMeta, MEMORY_TYPES, Workplace(), WorkplaceProps, RunPhase, parsePlanLines(), useResumeDraft() (+14 more)
 
 ### Community 184 - "Configuration Management"
 Cohesion: 0.18
@@ -1607,8 +1605,8 @@ Cohesion: 0.36
 Nodes (10): cleanIgnoreValueDisplay(), extractFindingIgnoreValue(), extractFindingIgnoreValueRaw(), extractMotionIgnoreValue(), filterFindings(), formatFindingIgnoreCommand(), isIgnoredFindingValue(), normalizeIgnoreRule() (+2 more)
 
 ### Community 203 - "store.py"
-Cohesion: 0.13
-Nodes (20): get_skill_detail(), Return a saved skill playbook., _resolve_slug(), meta_path(), normalize_slug(), Filesystem helpers for harness skill library., Return the directory where distilled skills are written., Convert arbitrary text into a kebab-case skill slug. (+12 more)
+Cohesion: 0.10
+Nodes (31): get_skill_detail(), Return a saved skill playbook., _build_user_prompt(), distill_skill_from_thread(), _draft_skill(), Distill a harness thread checkpoint into a reusable Cursor skill., Persist a previewed skill draft without re-running the LLM., Raised when a thread has not completed enough work to distill. (+23 more)
 
 ### Community 204 - "MCP LangChain Tool Integration"
 Cohesion: 0.18
@@ -1616,7 +1614,7 @@ Nodes (12): StructuredTool, _build_langchain_tool(), get_cached_mcp_tool(), get_
 
 ### Community 205 - "Project Initialization & Documentation"
 Cohesion: 0.04
-Nodes (57): Pitfalls, Seed mode, Step 1: Confirm seed mode, Step 2: Five questions, Step 3: Write seed DESIGN.md, Step 4: Confirm, Style guidelines, The frontmatter: token schema (+49 more)
+Nodes (59): Pitfalls, Seed mode, Step 1: Confirm seed mode, Step 2: Five questions, Step 3: Write seed DESIGN.md, Step 4: Confirm, Style guidelines, The frontmatter: token schema (+51 more)
 
 ### Community 206 - "Browser Finding Serialization"
 Cohesion: 0.25
@@ -1631,8 +1629,8 @@ Cohesion: 0.25
 Nodes (9): buildSelectorSegment(), generateSelector(), isElementHidden(), isLikelyHashedClass(), postSerializedFindings(), renderBrowserFindings(), scanResultMeta(), serializeFindings() (+1 more)
 
 ### Community 210 - "RAG Document Rank Fusion"
-Cohesion: 0.14
-Nodes (24): distill_skill_from_thread(), Read a thread checkpoint and optionally write a Cursor-compatible skill.      Ar, Structured output from the skill distillation LLM., SkillDraft, list_skills(), Write SKILL.md and update harness provenance., List distilled skills in the library., Read name, description, and body from an on-disk skill.      Returns:         Tu (+16 more)
+Cohesion: 0.13
+Nodes (22): Structured output from the skill distillation LLM., SkillDraft, list_skills(), List distilled skills in the library., Read name, description, and body from an on-disk skill.      Returns:         Tu, read_skill(), Tests for harness skill distillation., distill_skill_from_thread with save=False returns draft without writing. (+14 more)
 
 ### Community 211 - "DOM Element Metric Utilities"
 Cohesion: 0.32
@@ -1667,8 +1665,8 @@ Cohesion: 0.10
 Nodes (18): Extract Flow, Step 1: Discover the Design System, Step 2: Identify Patterns, Step 3: Plan Extraction, Step 4: Extract & Enrich, Step 5: Migrate, Step 6: Document, Constraints (+10 more)
 
 ### Community 222 - "Hero Element & Color Checks"
-Cohesion: 0.40
-Nodes (5): checkElementHeroEyebrow(), checkElementHeroEyebrowDOM(), checkHeroEyebrow(), isAccentColor(), resolveVarRefs()
+Cohesion: 0.29
+Nodes (14): attachSteerFocusDebug(), attachSteerFocusGuard(), clearSteerFocusRecoverTimer(), focusConfigureInput(), focusSteerChat(), notePagePointerDown(), pageHasHostTextSelection(), scheduleSteerFocusRecover() (+6 more)
 
 ### Community 223 - "Software Quality & Resilience"
 Cohesion: 0.17
@@ -1679,8 +1677,8 @@ Cohesion: 0.40
 Nodes (5): checkElementHeroEyebrow(), checkElementHeroEyebrowDOM(), checkHeroEyebrow(), isAccentColor(), resolveVarRefs()
 
 ### Community 227 - "Hero Element & Color Checks"
-Cohesion: 0.10
-Nodes (26): canRestoreManualEditElement(), copyEditContainerContext(), copyEditLeafContext(), cssIdent(), directMixedTextRestoreNodes(), documentRefClassSuffix(), documentRefForElement(), documentRefIdSuffix() (+18 more)
+Cohesion: 0.08
+Nodes (30): addManualContextText(), canRestoreManualEditElement(), collectManualContextPieces(), contextElementForManualEdit(), copyEditContainerContext(), copyEditLeafContext(), cssIdent(), directMixedTextRestoreNodes() (+22 more)
 
 ### Community 229 - "UI Interaction & Positioning"
 Cohesion: 0.12
@@ -1743,24 +1741,24 @@ Cohesion: 0.10
 Nodes (19): Clean Up, Code Quality, Color & Contrast, Content & Copy, Design System Discovery, Edge Cases & Error States, Final Verification, Forms & Inputs (+11 more)
 
 ### Community 262 - "RAG Retrieval & Reranking"
-Cohesion: 0.10
-Nodes (19): Accessibility, Assess Animation Opportunities, CSS Animations, Delight Moments, Entrance Animations, Feedback & Guidance, Implement Animations, JavaScript Animation (+11 more)
+Cohesion: 0.06
+Nodes (28): Accessibility, Assess Animation Opportunities, CSS Animations, Delight Moments, Entrance Animations, Feedback & Guidance, Implement Animations, JavaScript Animation (+20 more)
 
 ### Community 263 - "RAG Vector & Memory Stores"
 Cohesion: 0.10
 Nodes (19): Clean Up, Code Quality, Color & Contrast, Content & Copy, Design System Discovery, Edge Cases & Error States, Final Verification, Forms & Inputs (+11 more)
 
 ### Community 264 - "Python Package Initialization"
-Cohesion: 0.13
-Nodes (19): list_dir(), ListDirInput, Read up to ``max_bytes`` bytes from a workspace file., Input schema for the list_dir tool., List entries inside a workspace directory., Input schema for the read_file tool., read_file(), ReadFileInput (+11 more)
+Cohesion: 0.16
+Nodes (16): list_dir(), Read up to ``max_bytes`` bytes from a workspace file., List entries inside a workspace directory., read_file(), _allowlist(), _builtin_tools(), _executor_tool_map(), get_cached_mcp_tools() (+8 more)
 
 ### Community 269 - "Cursor IDE Skill Reference"
 Cohesion: 0.20
 Nodes (10): Craft Flow, Gates: do not compress, Production bar, Step 0: Project Foundation, Step 1: Shape the Design, Step 2: Load References, Step 3: Visual Direction & Assets (Harness-Gated), Step 4: Build to Production Quality (+2 more)
 
 ### Community 270 - "Python Package Initialization"
-Cohesion: 0.22
-Nodes (18): resolveProjectRoot(), firstExisting(), getDesignSidecarCandidates(), getDesignSidecarPath(), getImpeccableDir(), getLegacyLiveAnnotationsDir(), getLegacyLiveConfigPath(), getLegacyLiveServerPath() (+10 more)
+Cohesion: 0.16
+Nodes (24): resolveProjectRoot(), firstExisting(), getDesignSidecarCandidates(), getDesignSidecarPath(), getImpeccableDir(), getLegacyLiveAnnotationsDir(), getLegacyLiveConfigPath(), getLegacyLiveServerPath() (+16 more)
 
 ### Community 271 - "Python Package Initialization"
 Cohesion: 0.16
@@ -1807,8 +1805,8 @@ Cohesion: 0.11
 Nodes (17): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib, module, moduleDetection, moduleResolution, noEmit (+9 more)
 
 ### Community 284 - "assemble_context"
-Cohesion: 0.11
-Nodes (26): _env_bool(), _env_float(), _env_int(), ExtractSettings, HybridSettings, load_rag_settings(), _load_yaml(), MemoryRetrieveSettings (+18 more)
+Cohesion: 0.25
+Nodes (12): FORBIDDEN_MANUAL_EDIT_TEXT_CHARS, INSERT_POSITIONS, isValidId(), isValidVariantId(), validateAnnotationFields(), validateEvent(), validateInsertGenerate(), validateManualEditEvent() (+4 more)
 
 ### Community 285 - "Interaction Design"
 Cohesion: 0.12
@@ -1819,8 +1817,8 @@ Cohesion: 0.12
 Nodes (17): CSS Anchor Positioning, Destructive Actions: Undo > Confirm, Dropdown & Overlay Positioning, Fixed Positioning Fallback, Focus Rings: Do Them Right, Form Design: The Non-Obvious, Gesture Discoverability, Interaction Design (+9 more)
 
 ### Community 287 - "McpClientManager"
-Cohesion: 0.11
-Nodes (16): get_mcp_manager(), init_mcp_manager(), McpClientManager, qualify_tool_name(), MCP client session manager and tool invocation., List tools from every connected MCP server., Invoke a tool on a connected MCP server., Return the process-wide MCP manager when configured. (+8 more)
+Cohesion: 0.15
+Nodes (11): get_mcp_manager(), init_mcp_manager(), McpClientManager, MCP client session manager and tool invocation., List tools from every connected MCP server., Invoke a tool on a connected MCP server., Return the process-wide MCP manager when configured., Create the global MCP manager when servers are configured. (+3 more)
 
 ### Community 288 - "UX Writing"
 Cohesion: 0.12
@@ -1839,8 +1837,8 @@ Cohesion: 0.12
 Nodes (16): Accessibility Considerations, Anti-reflexes worth defending against, Classic Typography Principles, Fluid Type, Font Selection & Pairing, Modern Web Typography, Modular Scale & Hierarchy, OpenType Features (+8 more)
 
 ### Community 292 - "App.tsx"
-Cohesion: 0.19
-Nodes (11): CenterColumn(), ColumnSplit(), ColumnSplitProps, SplitSide, PHASE_LABEL, StatusBar(), StatusBarProps, RunPhase (+3 more)
+Cohesion: 0.20
+Nodes (10): CenterColumn(), ColumnSplit(), ColumnSplitProps, SplitSide, PHASE_LABEL, StatusBar(), StatusBarProps, HealthStatus (+2 more)
 
 ### Community 293 - "UX Writing"
 Cohesion: 0.12
@@ -1863,8 +1861,8 @@ Cohesion: 0.12
 Nodes (16): CenterColumn, Color Strategy, Command bar, Console ↔ Artifact Mapping, Design System — Harness Console, Inspector rail, Layout, Mood (+8 more)
 
 ### Community 298 - "Improve Copy Systematically"
-Cohesion: 0.07
-Nodes (24): Apply Clarity Principles, Assess Current Copy, Button & CTA Text, Confirmation Dialogs, Empty States, Error Messages, Form Labels & Instructions, Help Text & Tooltips (+16 more)
+Cohesion: 0.12
+Nodes (15): Apply Clarity Principles, Assess Current Copy, Button & CTA Text, Confirmation Dialogs, Empty States, Error Messages, Form Labels & Instructions, Help Text & Tooltips (+7 more)
 
 ### Community 299 - "UX Writing"
 Cohesion: 0.12
@@ -1883,8 +1881,8 @@ Cohesion: 0.12
 Nodes (16): Accessibility Considerations, Anti-reflexes worth defending against, Classic Typography Principles, Fluid Type, Font Selection & Pairing, Modern Web Typography, Modular Scale & Hierarchy, OpenType Features (+8 more)
 
 ### Community 303 - "map_resume_to_approved"
-Cohesion: 0.08
-Nodes (44): actioner_agent(), _format_score_context(), _heuristic_loop_score(), Score the loop, optionally pause for HITL action review, then route.      Human-, Derive a loop score without calling the LLM., Build the actioner scoring prompt from harness state., Score loop quality with structured LLM output and heuristic fallback., score_loop() (+36 more)
+Cohesion: 0.14
+Nodes (23): clear_pending(), load_pending(), map_resume_to_approved(), Any, Map HITL action-review resume payloads to approved memories., Return a pending memory dict without its stable id.      Args:         item: Pen, Store pending memories for actioner interrupt re-entry.      Args:         threa, Load pending memories cached before an action-review interrupt.      Args: (+15 more)
 
 ### Community 304 - "Generate Report"
 Cohesion: 0.13
@@ -1935,8 +1933,8 @@ Cohesion: 0.14
 Nodes (13): Animation Performance, Assess Performance Issues, Core Web Vitals Optimization, Cumulative Layout Shift (CLS < 0.1), First Input Delay (FID < 100ms) / INP (< 200ms), Largest Contentful Paint (LCP < 2.5s), Loading Performance, Network Optimization (+5 more)
 
 ### Community 316 - "api.ts"
-Cohesion: 0.19
-Nodes (12): graphNodeLabel(), GraphSpine(), GraphSpineProps, ExecutionRecord, GRAPH_NODES, GraphNode, ReviewOverride, ReviewRecord (+4 more)
+Cohesion: 0.13
+Nodes (17): graphNodeLabel(), GraphSpine(), GraphSpineProps, DistillSkillRequest, ExecutionRecord, GRAPH_NODES, GraphNode, ResumeRequest (+9 more)
 
 ### Community 317 - "Brand register"
 Cohesion: 0.13
@@ -1971,8 +1969,8 @@ Cohesion: 0.18
 Nodes (10): [2026-07-11 02:11] | Task: Action Review Memory HITL, [2026-07-11 02:17] | Task: Persist Pending Memories On Resume, Changes Overview, Changes Overview, Design Intent, Design Intent, Execution Context, Files Modified (+2 more)
 
 ### Community 325 - "vectorstore.py"
-Cohesion: 0.20
-Nodes (16): applyParamDefaults(), applyParamValue(), buildCyclingRow(), closedClipPath(), cycleVariant(), getVisibleVariantEl(), hideParamsPanel(), navBtn() (+8 more)
+Cohesion: 0.14
+Nodes (11): Reciprocal rank fusion for hybrid retrieval., Fuse multiple ranked document lists with reciprocal rank fusion.      Args:, reciprocal_rank_fusion(), Hybrid document and memory search., Run hybrid document retrieval with optional reranking.      Args:         query:, Search and rerank memories for a thread.      Args:         thread_id: Conversat, search_documents(), search_memories() (+3 more)
 
 ### Community 326 - "thread_eligible_for_skill"
 Cohesion: 0.18
@@ -2015,8 +2013,8 @@ Cohesion: 0.17
 Nodes (11): Accessibility Resilience, Assess Hardening Needs, Edge Cases & Boundary Conditions, Error Handling, Hardening Dimensions, Input Validation & Sanitization, Internationalization (i18n), Performance Resilience (+3 more)
 
 ### Community 336 - "test_mcp.py"
-Cohesion: 0.13
-Nodes (15): format_call_tool_result(), Serialize an MCP CallToolResult for LLM tool messages., parse_mcp_tool_name(), Parse ``mcp__{server}__{tool}`` back into server and tool names., Tests for MCP client integration., Qualified names are stable and namespaced., Qualified MCP tool names parse back to server and tool., Text MCP content is flattened for executor tool messages. (+7 more)
+Cohesion: 0.18
+Nodes (11): format_call_tool_result(), Serialize an MCP CallToolResult for LLM tool messages., Tests for MCP client integration., Text MCP content is flattened for executor tool messages., MCP errors are prefixed for the executor., Explicit disable returns no servers., Inline JSON env configures MCP servers., test_format_call_tool_result_error() (+3 more)
 
 ### Community 337 - "test_planner.py"
 Cohesion: 0.21
@@ -2091,8 +2089,8 @@ Cohesion: 0.20
 Nodes (9): Color, Components, Layout, Motion, Product bans (on top of the shared absolute bans), Product permissions, Product register, The product slop test (+1 more)
 
 ### Community 355 - "syncEditBadgeHitProxies"
-Cohesion: 0.09
-Nodes (26): _clear_memory_lists(), memorize_agent(), Memorize agent node: commit approved memories after each round., Return empty pending and approved memory lists., Return memorize updates when commit cannot run., Commit approved memories from state to the memory store.      Args:         stat, _skip_memorize_updates(), action_review_client() (+18 more)
+Cohesion: 0.32
+Nodes (11): kebab(), listSnapshotsForSlug(), main(), nowFilenameStamp(), parseFrontmatter(), readLatestSnapshot(), readTrend(), serializeFrontmatter() (+3 more)
 
 ### Community 356 - "Product register"
 Cohesion: 0.20
@@ -2115,12 +2113,12 @@ Cohesion: 0.20
 Nodes (10): Craft Flow, Gates: do not compress, Production bar, Step 0: Project Foundation, Step 1: Shape the Design, Step 2: Load References, Step 3: Visual Direction & Assets (Harness-Gated), Step 4: Build to Production Quality (+2 more)
 
 ### Community 361 - "load_mcp_server_configs"
-Cohesion: 0.29
-Nodes (7): load_mcp_server_configs(), _parse_servers_payload(), Load MCP server definitions from env or config files., Normalize JSON into server configs., Load MCP server configs when MCP is enabled., Explicit disable returns no servers., test_load_mcp_server_configs_disabled()
+Cohesion: 0.27
+Nodes (10): bindEditBadgeProxy(), editBadgeProxyTargets(), initEditBadge(), initEditBadgeHitProxies(), positionEditBadge(), proxyMouseEvent(), setImportantStyle(), styleEditBadgeProxy() (+2 more)
 
 ### Community 362 - "distill.py"
-Cohesion: 0.24
-Nodes (10): _build_user_prompt(), _draft_skill(), Distill a harness thread checkpoint into a reusable Cursor skill., Persist a previewed skill draft without re-running the LLM., Raised when a thread has not completed enough work to distill., Raise when the thread cannot yet be distilled into a skill., _require_skill_eligible(), save_skill_draft() (+2 more)
+Cohesion: 0.26
+Nodes (9): applyEvent(), baseSnapshot(), COMPLETED_PHASES, getJournalPath(), getSnapshotPath(), rebuildSnapshotFromJournal(), safeSessionId(), toPendingEvent() (+1 more)
 
 ### Community 363 - "Common Cognitive Load Violations"
 Cohesion: 0.22
@@ -2155,8 +2153,8 @@ Cohesion: 0.25
 Nodes (8): 1. Impatient Power User: "Alex", 2. Confused First-Timer: "Jordan", 3. Accessibility-Dependent User: "Sam", 4. Deliberate Stress Tester: "Riley", 5. Distracted Mobile User: "Casey", Persona-Based Design Testing, Project-Specific Personas, Selecting Personas
 
 ### Community 371 - "InspectorStack.tsx"
-Cohesion: 0.32
-Nodes (4): InspectorStack(), InspectorStackProps, isSparseSecondarySnapshot(), AgentStateSnapshot
+Cohesion: 0.21
+Nodes (9): InspectorStack(), InspectorStackProps, isSparseSecondarySnapshot(), formatTime(), previewForStep(), TraceTimeline(), TraceTimelineProps, AgentStateSnapshot (+1 more)
 
 ### Community 372 - "Persona-Based Design Testing"
 Cohesion: 0.25
@@ -2203,12 +2201,12 @@ Cohesion: 0.26
 Nodes (9): applyEvent(), baseSnapshot(), COMPLETED_PHASES, getJournalPath(), getSnapshotPath(), rebuildSnapshotFromJournal(), safeSessionId(), toPendingEvent() (+1 more)
 
 ### Community 383 - "McpServersDocument"
-Cohesion: 0.17
-Nodes (11): McpServersDocument, McpStdioServerConfig, McpToolDescriptor, Schemas for MCP server configuration., Stdio transport settings for one MCP server., Cursor-compatible MCP servers file shape., One tool exposed by an MCP server., LangChain MCP tools call through the shared manager. (+3 more)
+Cohesion: 0.22
+Nodes (9): load_mcp_server_configs(), _parse_servers_payload(), Load MCP server definitions from env or config files., Normalize JSON into server configs., Load MCP server configs when MCP is enabled., McpStdioServerConfig, Stdio transport settings for one MCP server., Manager delegates tool calls to the server session. (+1 more)
 
 ### Community 384 - "memory_dir"
-Cohesion: 0.27
-Nodes (10): bindEditBadgeProxy(), editBadgeProxyTargets(), initEditBadge(), initEditBadgeHitProxies(), positionEditBadge(), proxyMouseEvent(), setImportantStyle(), styleEditBadgeProxy() (+2 more)
+Cohesion: 0.22
+Nodes (8): Inject distilled skills into harness agent prompts., Return a markdown block for skill context, or empty when unset., skill_prompt_prefix(), Tests for skill prompt injection., skill_prompt_prefix formats the harness skill block., skill_prompt_prefix returns empty when no skill is loaded., test_skill_prompt_prefix_empty_without_context(), test_skill_prompt_prefix_includes_slug_and_body()
 
 ### Community 385 - "Cognitive Load Assessment"
 Cohesion: 0.29
@@ -2339,12 +2337,8 @@ Cohesion: 0.50
 Nodes (4): Heuristics Scoring Guide, Issue Severity (P0–P3), Reference Material, Score Summary
 
 ### Community 417 - "shutdown_mcp_manager"
-Cohesion: 0.40
-Nodes (5): checkElementHeroEyebrow(), checkElementHeroEyebrowDOM(), checkHeroEyebrow(), isAccentColor(), resolveVarRefs()
-
-### Community 419 - "syncEditBadgeHitProxies"
-Cohesion: 0.27
-Nodes (10): bindEditBadgeProxy(), editBadgeProxyTargets(), initEditBadge(), initEditBadgeHitProxies(), positionEditBadge(), proxyMouseEvent(), setImportantStyle(), styleEditBadgeProxy() (+2 more)
+Cohesion: 0.29
+Nodes (8): Any, TestClient, Keep+edit m0, drop m1; store once; clear pending; no memorize HITL pause., Minimal AgentState values for seeding past reviewer., Seed past reviewer and run until actioner's action_review interrupt., seed_action_review_interrupt(), _seed_values(), test_action_review_resume_keeps_edits_drops_and_commits()
 
 ### Community 420 - "memory_dir"
 Cohesion: 0.25
@@ -2358,21 +2352,49 @@ Nodes (3): Release Notes Guide, Rules, Suggested Columns
 Cohesion: 0.67
 Nodes (3): Config, Enable, MCP integration for the harness
 
+### Community 431 - "__init__.py"
+Cohesion: 0.10
+Nodes (15): Schemas for harness run and resume endpoints., Request body for graph execution., Require a task and/or a skill slug., Typed review override for HITL correction., Allowed state edits before a HITL thread resumes., Request body for /resume during human-in-the-loop runs., Response body for graph execution and resume., ResumeOverrides (+7 more)
+
+### Community 432 - "__init__.py"
+Cohesion: 0.40
+Nodes (5): checkElementOversizedH1(), checkElementOversizedH1DOM(), checkElementQuality(), checkOversizedH1(), resolveFontSizePx()
+
 ### Community 443 - "cross_encoder.py"
-Cohesion: 0.11
-Nodes (14): BiEncoderReranker, _cosine(), Stage-1 bi-encoder reranker using embedding cosine similarity., Rerank documents with bi-encoder cosine similarity., Rerank documents by embedding similarity to the query.          Args:, CrossEncoderReranker, Rerank documents with a cross-encoder model., Rerank documents with cross-encoder scores.          Args:             query: Se (+6 more)
+Cohesion: 0.10
+Nodes (15): BiEncoderReranker, _cosine(), Stage-1 bi-encoder reranker using embedding cosine similarity., Rerank documents with bi-encoder cosine similarity., Rerank documents by embedding similarity to the query.          Args:, CrossEncoderReranker, Stage-2 cross-encoder reranker., Rerank documents with a cross-encoder model. (+7 more)
+
+### Community 709 - "Any"
+Cohesion: 0.25
+Nodes (7): McpServersDocument, McpToolDescriptor, Schemas for MCP server configuration., Cursor-compatible MCP servers file shape., One tool exposed by an MCP server., LangChain MCP tools call through the shared manager., test_build_langchain_tool_invokes_manager()
+
+### Community 711 - "checkElementHeroEyebrow"
+Cohesion: 0.40
+Nodes (5): checkElementHeroEyebrow(), checkElementHeroEyebrowDOM(), checkHeroEyebrow(), isAccentColor(), resolveVarRefs()
+
+### Community 712 - "shutdown_mcp_manager"
+Cohesion: 0.50
+Nodes (3): Close the global MCP manager., Close all MCP sessions., shutdown_mcp_manager()
+
+### Community 713 - "qualify_tool_name"
+Cohesion: 0.50
+Nodes (4): qualify_tool_name(), Build a stable executor tool name for an MCP tool., Qualified names are stable and namespaced., test_qualify_tool_name()
+
+### Community 775 - "parse_mcp_tool_name"
+Cohesion: 0.50
+Nodes (4): parse_mcp_tool_name(), Parse ``mcp__{server}__{tool}`` back into server and tool names., Qualified MCP tool names parse back to server and tool., test_parse_mcp_tool_name_round_trip()
 
 ## Knowledge Gaps
-- **2358 isolated node(s):** `COMMON_DEV_PORTS`, `SCANNABLE_EXT`, `SOURCE_DIRS`, `PRODUCT_NAMES`, `DESIGN_NAMES` (+2353 more)
+- **2360 isolated node(s):** `COMMON_DEV_PORTS`, `SCANNABLE_EXT`, `SOURCE_DIRS`, `PRODUCT_NAMES`, `DESIGN_NAMES` (+2355 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **394 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **386 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `el()` connect `Configuration Bar UI Controls` to `Antipattern Detection CLI`, `live-browser.js`, `UI Toolbar & Themes`, `Element Quality Checks`, `Visual Contrast Analysis`, `Static CSS Processing`, `Design System Token Management`, `Static Content Style Analysis`, `Design System Validation Checks`, `Browser Visual Contrast Analysis`, `Browser Style Validation`, `Browser Antipattern Detection`, `initPageChat`, `Browser Finding Serialization`, `Live Editing State Management`, `Browser Design Analysis`, `Parameter Panel UI`?**
+- **Why does `el()` connect `Configuration Bar UI Controls` to `live-browser.js`, `UI Toolbar & Themes`, `Element Quality Checks`, `Visual Contrast Analysis`, `Static CSS Processing`, `Design System Token Management`, `Static Content Style Analysis`, `Design System Validation Checks`, `Browser Visual Contrast Analysis`, `Browser Style Validation`, `Browser Antipattern Detection`, `initPageChat`, `Browser Finding Serialization`, `Live Editing State Management`, `Browser Design Analysis`, `Parameter Panel UI`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **Why does `el()` connect `Configuration Bar UI Controls` to `live-browser.js`, `Visual Contrast Analysis`, `css-cascade.mjs`, `design-system.mjs`, `detect-html.mjs`, `checks.mjs`, `vectorstore.py`, `Browser Visual Contrast Analysis`, `parseAnyColor`, `Page Chat Voice UI`, `Live Editing State Management`, `Browser Finding Serialization`, `collectBrowserFindings`, `resolveLengthPx`, `detect-antipatterns-browser.js`, `UI Toolbar & Themes`, `detect-antipatterns.mjs`?**
+- **Why does `el()` connect `Configuration Bar UI Controls` to `live-browser.js`, `Visual Contrast Analysis`, `css-cascade.mjs`, `design-system.mjs`, `detect-html.mjs`, `checks.mjs`, `Browser Visual Contrast Analysis`, `parseAnyColor`, `Critique Snapshot Storage`, `Page Chat Voice UI`, `Live Editing State Management`, `Browser Finding Serialization`, `collectBrowserFindings`, `resolveLengthPx`, `detect-antipatterns-browser.js`, `UI Toolbar & Themes`, `detect-antipatterns.mjs`?**
   _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **Why does `el()` connect `el` to `Visual Contrast Element Checks`, `CSS Cascade Style Parsing`, `Design System Token Management`, `Static Content Style Analysis`, `Design System Validation Checks`, `Browser Style Validation`, `live-browser.js`, `Parameter Panel UI`, `Browser Visual Contrast Analysis`, `resumeSession`, `Browser Design Analysis`, `Browser Finding Serialization`, `UI Theme Design Panel`, `Page Chat State Management`, `Element Quality Checks`, `Browser Antipattern Detection`, `Antipattern Detection CLI`?**
   _High betweenness centrality (0.011) - this node is a cross-community bridge._
@@ -2383,4 +2405,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 29 inferred relationships involving `el()` (e.g. with `browserFindingsFromMap()` and `collectVisualContrastCandidates()`) actually correct?**
   _`el()` has 29 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `COMMON_DEV_PORTS`, `SCANNABLE_EXT`, `SOURCE_DIRS` to the rest of the system?**
-  _2782 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _2785 weakly-connected nodes found - possible documentation gaps or missing edges._

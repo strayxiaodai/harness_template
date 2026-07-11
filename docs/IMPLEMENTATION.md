@@ -93,11 +93,12 @@ One **round** = all five nodes. The actioner increments `rounds` and sets
 
 Two interrupt mechanisms:
 
-1. **Node interrupts** — `interrupt_after` on `planner`, `executor`, `reviewer`,
-   `memorize` when `human_in_the_loop: true`.
-2. **Action-review interrupt** — actioner calls `interrupt()` when HITL is on
-   and either pending memories exist or `loop_score >= 80`, so the operator can
-   review memories and preview a skill from one pause.
+1. **Node interrupts** — `interrupt_after` on `planner`, `executor`, and
+   `reviewer` when `human_in_the_loop: true`. `memorize` is not a pause node;
+   it commits approved memories after the actioner returns.
+2. **Action-review interrupt** — actioner calls in-node `interrupt()` when HITL
+   is on and either pending memories exist or `loop_score >= 80`, so the
+   operator can review memories and preview a skill from one pause.
 
 Action-review memory candidates are stashed in-process by
 `(thread_id, memory_cursor)` before interrupting. This keeps local/dev
@@ -132,13 +133,16 @@ curl -s -X POST http://localhost:8000/run \
 }
 ```
 
-Resume with:
+Resume a **node-boundary** pause with a bare thread id (no `interrupt_resume`):
 
 ```bash
 curl -s -X POST http://localhost:8000/resume \
   -H "Content-Type: application/json" \
   -d '{"thread_id": "hitl-demo"}' | jq
 ```
+
+For an **action-review** dynamic interrupt, pass `interrupt_resume` (see
+`POST /resume` below).
 
 ### Graph builder
 
@@ -149,14 +153,16 @@ from graph.builder import compile_with_checkpointer
 # Auto-run graph (no per-node pause)
 graph_auto = compile_with_checkpointer(MemorySaver())
 
-# HITL graph (pause after planner, executor, reviewer, memorize)
+# HITL graph (pause after planner, executor, reviewer)
 graph_step = compile_with_checkpointer(
     MemorySaver(),
     human_in_the_loop=True,
 )
 ```
 
-`HITL_PAUSE_NODES`: `planner`, `executor`, `reviewer`, `memorize`.
+`HITL_PAUSE_NODES`: `planner`, `executor`, `reviewer`. Actioner uses in-node
+`interrupt()` for `action_review`; memorize always runs through without
+`interrupt_after`.
 
 ---
 
@@ -437,7 +443,27 @@ Skill body is injected into planner/executor prompts via `skills/inject.py`.
 
 Resume a HITL thread. Optional `overrides` patch checkpoint state first.
 
-**Request:**
+**Node-boundary resume** — omit `interrupt_resume` (or pass `null`). The graph
+continues from the last `interrupt_after` pause on planner, executor, or
+reviewer.
+
+**Dynamic interrupt resume** — when the thread is paused on an actioner
+`action_review` interrupt, pass `interrupt_resume` with the operator's memory
+decisions. The harness forwards it as `Command(resume=interrupt_resume)` to
+LangGraph.
+
+| `interrupt_resume` | Effect on pending memories |
+| --- | --- |
+| omitted / `null` / `{}` / missing `memories` | **Keep all** pending candidates as extracted |
+| `{ "memories": [] }` | Store nothing |
+| `{ "memories": [...] }` | Per-id keep / edit / drop (see example) |
+
+Bare resume (`{"thread_id": "..."}` only) is correct for node-boundary pauses.
+For action review, include `interrupt_resume.memories` when the operator edits
+candidates; a bare resume at an action-review interrupt still **keeps all**
+pending memories.
+
+**Request — node-boundary with overrides:**
 
 ```json
 {
@@ -453,6 +479,30 @@ Resume a HITL thread. Optional `overrides` patch checkpoint state first.
   }
 }
 ```
+
+**Request — action-review keep / edit / drop:**
+
+```json
+{
+  "thread_id": "hitl-demo",
+  "interrupt_resume": {
+    "memories": [
+      {
+        "id": "m0",
+        "keep": true,
+        "content": "User prefers focused pytest verification.",
+        "memory_type": "preference",
+        "importance": 0.9
+      },
+      { "id": "m1", "keep": false }
+    ]
+  }
+}
+```
+
+Resume rows with `keep: true` may override `content`, `memory_type`, and
+`importance`; pending ids omitted from `memories` are dropped when any array was
+sent.
 
 **Response — still paused:**
 

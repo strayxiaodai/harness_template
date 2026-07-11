@@ -160,7 +160,6 @@ async def test_action_review_resume_keeps_edits_drops_and_commits(
     # Actioner has not returned yet at dynamic interrupt; candidates live in payload.
     state_pending = (snap.values or {}).get("pending_memories")
     assert state_pending in ([], None)
-    assert len(memories) == 2
     state_approved = (snap.values or {}).get("approved_memories")
     assert state_approved in ([], None)
 

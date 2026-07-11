@@ -14,7 +14,7 @@ RAG, skills, tools, and configuration. Each section includes a concrete example.
 | Area | Status | Location |
 |------|--------|----------|
 | Agent loop (planner → executor → reviewer → actioner → memorize) | Implemented | `agent/`, `graph/` |
-| Loop quality scoring + skill-preview HITL gate | Implemented | `agent/actioner.py` |
+| Loop quality scoring + action-review HITL gate | Implemented | `agent/actioner.py` |
 | RAG (hybrid retrieve, memory ingest, rerank, inject) | Implemented | `rag/`, `context/` |
 | FastAPI `/run`, `/resume`, `/stream`, `/health` | Implemented | `app/api/` |
 | Skill distillation + save eligibility gate | Implemented | `skills/`, `app/api/skills.py` |
@@ -95,8 +95,9 @@ Two interrupt mechanisms:
 
 1. **Node interrupts** — `interrupt_after` on `planner`, `executor`, `reviewer`,
    `memorize` when `human_in_the_loop: true`.
-2. **Skill-preview interrupt** — actioner calls `interrupt()` when
-   `loop_score >= 80` and HITL is on, so the operator can preview a skill.
+2. **Action-review interrupt** — actioner calls `interrupt()` when HITL is on
+   and either pending memories exist or `loop_score >= 80`, so the operator can
+   review memories and preview a skill from one pause.
 
 **Example — start a HITL thread:**
 
@@ -329,18 +330,32 @@ def route_after_action(state: AgentState) -> ActionRoute:
   "approved": false,
   "loop_score": 85,
   "skill_preview_ready": true,
-  "score_rationale": "Strong verification evidence."
+  "score_rationale": "Strong verification evidence.",
+  "pending_memory_count": 1,
+  "approved_memory_count": 1,
+  "action_review_interrupted": true
 }
 ```
 
-When `skill_preview_ready` and HITL are on, the actioner interrupt payload:
+When HITL is on and memories or a skill preview need review, the actioner
+interrupt payload:
 
 ```json
 {
-  "kind": "skill_preview",
+  "kind": "action_review",
+  "node": "actioner",
   "score": 85,
   "threshold": 80,
-  "message": "Loop scored 85/100 (>= 80). Review output and preview a skill, or resume to continue."
+  "skill_preview_ready": true,
+  "message": "Review memories before they are stored. Skill preview is available.",
+  "memories": [
+    {
+      "id": "m0",
+      "content": "User prefers focused pytest verification.",
+      "memory_type": "preference",
+      "importance": 0.8
+    }
+  ]
 }
 ```
 

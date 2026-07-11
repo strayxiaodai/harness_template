@@ -67,7 +67,8 @@ Client (curl / React console)
 | `graph_auto` | `false` | `/run` default; runs to completion or max rounds |
 | `graph_step` | `true` | `/resume`; pauses after planner, executor, reviewer, memorize |
 
-Actioner may also call `interrupt()` for skill-preview when `loop_score >= 80`.
+Actioner may also call `interrupt()` for action review when HITL is on and
+there are pending memories or `loop_score >= 80`.
 
 ## Console ↔ API Mapping
 

@@ -289,10 +289,83 @@ async def test_executor_injects_memory_context_from_state(
 
 
 @pytest.mark.asyncio
+async def test_memorize_commits_approved_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agent import memorize as memorize_module
+
+    mock_service = MagicMock()
+    mock_service.memory_store = MemoryStore()
+    mock_service.save_memory_store = MagicMock()
+    commit = AsyncMock(
+        return_value={
+            "memory_cursor": 2,
+            "pending_memories": [],
+            "approved_memories": [],
+        },
+    )
+    monkeypatch.setattr(
+        memorize_module,
+        "load_rag_settings",
+        lambda: RagSettings(enabled=True),
+    )
+    monkeypatch.setattr(memorize_module, "get_rag_service", lambda: mock_service)
+    monkeypatch.setattr(memorize_module, "commit_approved_memories", commit)
+
+    state = _state(
+        messages=[HumanMessage(content="hi"), AIMessage(content="ok")],
+        approved_memories=[
+            {
+                "content": "User said hi",
+                "memory_type": "fact",
+                "importance": 0.7,
+            },
+        ],
+        pending_memories=[{"id": "m0", "content": "x"}],
+    )
+    result = await memorize_module.memorize_agent(state)
+    assert result["role"] == "memorize"
+    assert result["memory_cursor"] == 2
+    assert result["pending_memories"] == []
+    assert result["approved_memories"] == []
+    commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_memorize_skips_store_when_approved_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agent import memorize as memorize_module
+
+    mock_service = MagicMock()
+    mock_service.save_memory_store = MagicMock()
+    commit = AsyncMock(
+        return_value={
+            "memory_cursor": 1,
+            "pending_memories": [],
+            "approved_memories": [],
+        },
+    )
+    monkeypatch.setattr(
+        memorize_module,
+        "load_rag_settings",
+        lambda: RagSettings(enabled=True),
+    )
+    monkeypatch.setattr(memorize_module, "get_rag_service", lambda: mock_service)
+    monkeypatch.setattr(memorize_module, "commit_approved_memories", commit)
+
+    result = await memorize_module.memorize_agent(
+        _state(messages=[HumanMessage(content="x")], approved_memories=[]),
+    )
+    assert result["memory_cursor"] == 1
+    mock_service.save_memory_store.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_memorize_agent_runs_memory_ingest(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Memorize node delegates to run_memory_ingest and saves the store."""
+    """Memorize node delegates to commit_approved_memories and saves the store."""
     from agent import memorize as memorize_module
 
     mock_service = MagicMock()
@@ -307,7 +380,7 @@ async def test_memorize_agent_runs_memory_ingest(
     monkeypatch.setattr(memorize_module, "get_rag_service", lambda: mock_service)
     monkeypatch.setattr(
         memorize_module,
-        "run_memory_ingest",
+        "commit_approved_memories",
         AsyncMock(return_value={"memory_cursor": 3}),
     )
 
@@ -315,7 +388,7 @@ async def test_memorize_agent_runs_memory_ingest(
 
     assert result["role"] == "memorize"
     assert result["memory_cursor"] == 3
-    memorize_module.run_memory_ingest.assert_awaited_once()
+    memorize_module.commit_approved_memories.assert_awaited_once()
     mock_service.save_memory_store.assert_called_once()
 
 
@@ -339,7 +412,7 @@ async def test_memorize_agent_continues_when_ingest_fails(
     monkeypatch.setattr(memorize_module, "get_rag_service", lambda: mock_service)
     monkeypatch.setattr(
         memorize_module,
-        "run_memory_ingest",
+        "commit_approved_memories",
         AsyncMock(side_effect=RuntimeError("embedding failed: NaN")),
     )
 
@@ -348,6 +421,8 @@ async def test_memorize_agent_continues_when_ingest_fails(
 
     assert result["role"] == "memorize"
     assert result["memory_cursor"] == len(messages)
+    assert result["pending_memories"] == []
+    assert result["approved_memories"] == []
     mock_service.save_memory_store.assert_not_called()
 
 

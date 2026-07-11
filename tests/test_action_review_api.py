@@ -154,11 +154,14 @@ async def test_action_review_resume_keeps_edits_drops_and_commits(
     assert value.get("node") == "actioner"
     assert value.get("skill_preview_ready") is False
     memories = value.get("memories") or []
+    assert len(memories) == 2
     assert {m["id"] for m in memories} == {"m0", "m1"}
     assert commit_spy.await_count == 0
     # Actioner has not returned yet at dynamic interrupt; candidates live in payload.
     pending = (snap.values or {}).get("pending_memories") or value.get("memories") or []
     assert len(pending) == 2
+    approved = (snap.values or {}).get("approved_memories")
+    assert approved in ([], None)
 
     response = action_review_client.post(
         "/resume",

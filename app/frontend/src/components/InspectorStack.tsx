@@ -8,7 +8,26 @@ interface InspectorStackProps {
   accumulated: AgentStateSnapshot
 }
 
+function isSparseSnapshot(state: AgentStateSnapshot): boolean {
+  return (
+    !state.plan?.length &&
+    !state.execution &&
+    !state.tool_calls?.length &&
+    !state.review &&
+    !state.result
+  )
+}
+
 export function InspectorStack({ step, accumulated }: InspectorStackProps) {
+  if (!step && isSparseSnapshot(accumulated)) {
+    return (
+      <aside className="inspector-stack panel" aria-label="Inspector">
+        <h2 className="panel-title">Inspector</h2>
+        <p className="empty-state">Select a timeline step</p>
+      </aside>
+    )
+  }
+
   const state = step?.state ?? accumulated
 
   return (

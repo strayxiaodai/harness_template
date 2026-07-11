@@ -6,6 +6,15 @@
   overflow: auto;
 }
 
+.inspector-stack.panel {
+  gap: 0;
+}
+
+.inspector-stack .empty-state {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-4);
+}
+
 .inspector-section__body {
   padding: var(--space-3) var(--space-4) var(--space-4);
 }

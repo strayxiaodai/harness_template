@@ -43,7 +43,7 @@ CSS implementation: `app/frontend/src/styles/tokens.css`.
 
 ## Layout
 
-- Three-column shell ≥ 1024px: inspector 300px · center flex · command 220px
+- Three-column shell ≥ 1024px: inspector 280px · center flex · command 268px
 - `< 1024px`: stack spine → timeline → inspector → command
 - Spacing scale: 4 / 8 / 12 / 16 / 24 / 32px
 - Panel radius: 12px max; buttons 8px; pills full-round
@@ -53,7 +53,7 @@ CSS implementation: `app/frontend/src/styles/tokens.css`.
 │ StatusBar                                                │
 ├──────────────┬───────────────────────────┬───────────────┤
 │ Inspector    │ GraphSpine + TraceTimeline│ CommandColumn │
-│  (300px)     │      (flex)               │  (220px)      │
+│  (280px)     │      (flex)               │  (268px)      │
 ├──────────────┴───────────────────────────┴───────────────┤
 │ Footer shortcuts                                         │
 └──────────────────────────────────────────────────────────┘

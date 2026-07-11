@@ -29,63 +29,58 @@ export function GraphSpine({
   refineFrom,
   onSelectNode,
 }: GraphSpineProps) {
+  const showRefineLoop =
+    refineFrom === 'planner' || refineFrom === 'executor'
+
   return (
     <section className="graph-spine panel" aria-label="Agent graph">
       <h2 className="panel-title">Graph spine</h2>
-      <p className="graph-spine__scroll-hint">Scroll horizontally for the full flow</p>
+      <p className="graph-spine__scroll-hint">
+        Scroll horizontally for the full flow
+      </p>
       <div
         className="graph-spine__track"
         tabIndex={0}
         aria-label="Graph node list, scroll horizontally on small screens"
       >
-        <svg
-          className="graph-spine__svg"
-          viewBox="0 0 720 120"
-          role="img"
-          aria-label="LangGraph node flow"
-        >
-          <defs>
-            <marker
-              id="arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="6"
-              refY="3"
-              orient="auto"
-            >
-              <path d="M0,0 L6,3 L0,6 Z" fill="var(--muted)" />
-            </marker>
-          </defs>
-          {GRAPH_NODES.slice(0, -1).map((node, index) => {
-            const x1 = 60 + index * 130
-            const x2 = x1 + 90
-            return (
-              <line
-                key={`edge-${node}`}
-                x1={x1}
-                y1={60}
-                x2={x2}
-                y2={60}
-                className="graph-spine__edge"
-                markerEnd="url(#arrow)"
-              />
-            )
-          })}
-          {(refineFrom === 'planner' || refineFrom === 'executor') && (
+        {showRefineLoop && (
+          <svg
+            className="graph-spine__svg"
+            viewBox="0 0 720 40"
+            role="img"
+            aria-label="Refine loop back to earlier node"
+          >
+            <defs>
+              <marker
+                id="arrow"
+                markerWidth="8"
+                markerHeight="8"
+                refX="6"
+                refY="3"
+                orient="auto"
+              >
+                <path d="M0,0 L6,3 L0,6 Z" fill="var(--muted)" />
+              </marker>
+            </defs>
             <path
-              d="M 580 78 Q 360 110 70 78"
+              d="M 580 28 Q 360 38 70 28"
               className="graph-spine__loop"
               fill="none"
               markerEnd="url(#arrow)"
             />
-          )}
-        </svg>
+          </svg>
+        )}
         <ol className="graph-spine__nodes">
-          {GRAPH_NODES.map((node) => {
+          {GRAPH_NODES.map((node, index) => {
             const isActive = activeNode === node
             const isDone = completedNodes.has(node)
             return (
-              <li key={node}>
+              <li key={node} className="graph-spine__node-item">
+                {index > 0 && (
+                  <span className="graph-spine__chevron" aria-hidden="true">
+                    →
+                  </span>
+                )}
                 <button
                   type="button"
                   className={`graph-node ${

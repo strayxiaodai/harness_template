@@ -23,7 +23,14 @@ export function InspectorStack({ step, accumulated }: InspectorStackProps) {
     return (
       <aside className="inspector-stack panel" aria-label="Inspector">
         <h2 className="panel-title">Inspector</h2>
-        <p className="empty-state">Select a timeline step</p>
+        <div className="inspector-stack__empty">
+          <p className="empty-state empty-state--centered">
+            Select a timeline step
+          </p>
+          <p className="empty-state__hint">
+            Payloads for plan, tools, and review appear here.
+          </p>
+        </div>
       </aside>
     )
   }

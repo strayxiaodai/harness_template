@@ -9,7 +9,7 @@
 
 .app-main {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr) 220px;
+  grid-template-columns: 280px minmax(0, 1fr) 268px;
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     "inspector spine command"
@@ -44,6 +44,7 @@
   font-size: 0.75rem;
   color: var(--muted);
   text-align: center;
+  background: var(--surface);
 }
 
 .app-footer__shortcuts {

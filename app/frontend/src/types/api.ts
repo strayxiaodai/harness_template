@@ -67,6 +67,31 @@ export interface ReviewOverride {
   suggested_step: 'planner' | 'executor' | 'finish'
 }
 
+export interface ClarificationQuestion {
+  id: string
+  prompt: string
+  why?: string
+}
+
+export interface ClarificationAnswer {
+  question_id: string
+  answer: string
+}
+
+export interface InterruptPayload {
+  id?: string | null
+  value?: {
+    kind?: string
+    node?: string
+    reason?: string
+    message?: string
+    score?: number
+    threshold?: number
+    questions?: ClarificationQuestion[]
+    [key: string]: unknown
+  } | unknown
+}
+
 export interface ResumeOverrides {
   plan?: string[]
   task?: string
@@ -79,6 +104,8 @@ export interface ResumeRequest {
   thread_id: string
   timeout_seconds?: number
   overrides?: ResumeOverrides
+  answers?: ClarificationAnswer[]
+  interrupt_resume?: unknown
 }
 
 export interface RunResponse {
@@ -93,6 +120,7 @@ export interface RunResponse {
   max_rounds: number
   skill_eligible: boolean
   skill_ineligible_reason: string | null
+  interrupt?: InterruptPayload | null
 }
 
 export interface DistillSkillRequest {

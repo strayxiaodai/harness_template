@@ -5,6 +5,21 @@
   flex: 1;
 }
 
+.trace-timeline__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 10rem;
+  margin: var(--space-3) var(--space-4) var(--space-4);
+  padding: var(--space-5);
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-control);
+  background: color-mix(in oklch, var(--surface-raised) 55%, transparent);
+}
+
 .trace-timeline__list {
   margin: 0;
   padding: var(--space-2);

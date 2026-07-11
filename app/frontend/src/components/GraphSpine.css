@@ -14,7 +14,7 @@
 
 .graph-spine__track {
   position: relative;
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-4);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scroll-padding-inline: var(--space-4);
@@ -35,8 +35,8 @@
 .graph-spine__svg {
   width: 100%;
   min-width: 520px;
-  height: 72px;
-  margin-bottom: var(--space-2);
+  height: 32px;
+  margin-bottom: var(--space-1);
 }
 
 .graph-spine__edge {
@@ -53,10 +53,24 @@
 .graph-spine__nodes {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.graph-spine__node-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.graph-spine__chevron {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1;
+  user-select: none;
 }
 
 .graph-node {

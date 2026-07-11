@@ -198,7 +198,7 @@ export function CommandColumn({
             onChange={(e) => onTaskChange(e.target.value)}
             placeholder="Describe what the harness should accomplish"
             disabled={isStreaming}
-            rows={4}
+            rows={3}
             aria-describedby="task-hint"
           />
           <p id="task-hint" className="command-column__hint">
@@ -215,7 +215,7 @@ export function CommandColumn({
             onChange={(e) => onPlanChange(e.target.value)}
             placeholder={'Step one\nStep two'}
             disabled={isStreaming}
-            rows={3}
+            rows={2}
           />
 
           <div className="command-column__row">
@@ -418,7 +418,7 @@ export function CommandColumn({
           open={!isNarrow && canDistill}
         >
           <summary className="skill-distill__summary">
-            Distill skill from thread
+            Distill
           </summary>
           <div className="skill-distill__body">
             <p className="command-column__hint">

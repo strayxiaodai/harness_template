@@ -39,9 +39,14 @@ export function TraceTimeline({
     <section className="trace-timeline panel" aria-label="Trace timeline">
       <h2 className="panel-title">Trace timeline</h2>
       {steps.length === 0 ? (
-        <p className="empty-state">
-          No steps yet — start a thread or run a saved skill.
-        </p>
+        <div className="trace-timeline__empty">
+          <p className="empty-state empty-state--centered">
+            No steps yet.
+          </p>
+          <p className="empty-state__hint">
+            Start a thread from Command, or run a saved skill.
+          </p>
+        </div>
       ) : (
         <ul ref={listRef} className="trace-timeline__list">
           {steps.map((step) => {

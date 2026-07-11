@@ -15,6 +15,7 @@ import {
 } from '../lib/skillEligibility'
 import type {
   AgentStateSnapshot,
+  ClarificationAnswer,
   DistillSkillResponse,
   ResumeOverrides,
   RunResponse,
@@ -220,7 +221,7 @@ export function useConsole() {
   )
 
   const resume = useCallback(
-    async (overrides?: ResumeOverrides) => {
+    async (overrides?: ResumeOverrides, answers?: ClarificationAnswer[]) => {
       if (busyRef.current) {
         return
       }
@@ -239,6 +240,7 @@ export function useConsole() {
         const response = await postResume({
           thread_id: threadId,
           overrides: overrides ?? undefined,
+          answers: answers ?? undefined,
         })
         const step = responseToTimelineStep(response)
         setTimeline((prev) => [...prev, step])

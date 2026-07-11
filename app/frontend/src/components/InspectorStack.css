@@ -10,9 +10,28 @@
   gap: 0;
 }
 
+.inspector-stack__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 10rem;
+  margin: var(--space-3) var(--space-4) var(--space-4);
+  padding: var(--space-5);
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-control);
+  background: color-mix(in oklch, var(--surface-raised) 55%, transparent);
+}
+
 .inspector-stack .empty-state {
   margin: 0;
   padding: 0 var(--space-4) var(--space-4);
+}
+
+.inspector-stack__empty .empty-state {
+  padding: 0;
 }
 
 .inspector-section__body {

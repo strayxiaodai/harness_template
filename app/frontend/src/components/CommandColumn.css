@@ -7,8 +7,8 @@
 .command-column__body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-4);
   overflow: auto;
 }
 
@@ -16,28 +16,36 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
-  background: var(--surface-raised);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .command-section__label {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
+.command-section--hitl {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
 .command-section--hitl.command-section--active {
-  border-color: var(--accent);
-  background: color-mix(in oklch, var(--accent) 8%, var(--surface-raised));
+  margin: 0 calc(var(--space-4) * -1);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid color-mix(in oklch, var(--accent) 45%, var(--border));
+  border-bottom: 1px solid color-mix(in oklch, var(--accent) 45%, var(--border));
+  background: color-mix(in oklch, var(--accent) 8%, var(--surface));
 }
 
 .command-column__plan {
-  min-height: 72px;
+  min-height: 64px;
 }
 
 .command-column__row {
@@ -49,16 +57,16 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 44px;
-  padding: var(--space-2) 0;
+  min-height: 40px;
+  padding: 0;
   font-size: 0.8125rem;
   color: var(--ink);
   cursor: pointer;
 }
 
 .command-column__checkbox {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.125rem;
+  height: 1.125rem;
   margin: 0;
   flex-shrink: 0;
   accent-color: var(--primary);
@@ -80,26 +88,37 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  position: sticky;
+  bottom: 0;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-1);
+  background: linear-gradient(
+    to top,
+    var(--surface) 70%,
+    color-mix(in oklch, var(--surface) 0%, transparent)
+  );
 }
 
 .skill-library,
 .skill-distill {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
   padding: 0;
   margin: 0;
-  background: var(--surface-raised);
+  background: transparent;
 }
 
 .skill-library__summary,
 .skill-distill__summary,
 .override-form__summary {
-  min-height: 44px;
+  min-height: 40px;
   display: flex;
   align-items: center;
-  padding: 0 var(--space-3);
+  padding: 0;
   cursor: pointer;
   color: var(--ink);
+  font-size: 0.8125rem;
   font-weight: 500;
   list-style-position: outside;
 }
@@ -134,11 +153,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: 0 var(--space-3) var(--space-3);
+  padding: 0 0 var(--space-3);
 }
 
 .skill-library__preview {
-  max-height: 10rem;
+  max-height: 8rem;
   overflow: auto;
   margin: 0;
   font-size: 0.75rem;
@@ -154,11 +173,11 @@
   padding: var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--bg);
+  background: var(--surface-raised);
 }
 
 .skill-distill__body-preview {
-  max-height: 12rem;
+  max-height: 10rem;
   overflow: auto;
   margin: 0;
   font-size: 0.75rem;
@@ -174,12 +193,12 @@
   padding: var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--bg);
+  background: var(--surface-raised);
 }
 
 .skill-distill__result--saved {
   border-color: color-mix(in oklch, var(--success) 45%, var(--border));
-  background: color-mix(in oklch, var(--success) 8%, var(--bg));
+  background: color-mix(in oklch, var(--success) 8%, var(--surface-raised));
 }
 
 .skill-distill__path {
@@ -253,3 +272,6 @@
   }
 }
 
+.command-column .field-textarea {
+  min-height: 4.5rem;
+}

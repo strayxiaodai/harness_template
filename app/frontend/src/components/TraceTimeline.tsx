@@ -94,7 +94,7 @@ export function TraceTimeline({
                         {formatTime(step.timestamp)} · {step.source}
                       </span>
                       <span className="trace-row__preview mono">
-                        {previewForStep(step)}
+                        {preview}
                       </span>
                     </button>
                   </li>

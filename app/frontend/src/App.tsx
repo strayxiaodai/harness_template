@@ -134,12 +134,12 @@ function App() {
       }
       if (e.key === 'r' && phaseRef.current === 'awaiting_human') {
         e.preventDefault()
-        void resume()
+        handleContinue()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [resume, selectAdjacent])
+  }, [handleContinue, selectAdjacent])
 
   return (
     <div className="app-shell">

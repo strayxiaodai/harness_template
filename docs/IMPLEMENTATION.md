@@ -75,8 +75,9 @@ planner → executor → reviewer → actioner → memorize → (route)
                 ↑___________________|
 ```
 
-One **round** = all five nodes. The actioner increments `rounds` and sets
-`refine_from` from the reviewer. Memorize writes RAG memories before routing.
+One **round** = all five nodes. The actioner increments `rounds`, sets
+`refine_from` from the reviewer, scores the loop, and prepares memory
+candidates. Memorize only commits `approved_memories` before routing.
 
 **Example — round 1 walkthrough:**
 
@@ -186,6 +187,8 @@ Defined in `graph/state.py` as `AgentState`.
 | `skill_slug` / `skill_context` | Loaded skill playbook |
 | `memory_cursor` | RAG ingest bookmark in `messages` |
 | `memory_context` | Formatted recall block for prompts |
+| `pending_memories` | Actioner-extracted candidates awaiting HITL review |
+| `approved_memories` | Candidate memories approved for the memorize commit node |
 
 **Example — checkpoint values mid-run:**
 
@@ -318,8 +321,8 @@ def route_after_action(state: AgentState) -> ActionRoute:
 | `planner_agent` | Yes | `plan`, `memory_context`, messages |
 | `executor_agent` | Yes | `execution`, `result`, `tool_calls` |
 | `reviewer_agent` | Yes | `approved`, `review` |
-| `actioner_agent` | Yes (score) | `rounds`, `refine_from`, `loop_score`, `skill_preview_ready` |
-| `memorize_agent` | Yes (extract) | `memory_cursor` |
+| `actioner_agent` | Yes (score + extract) | `rounds`, `refine_from`, `loop_score`, `skill_preview_ready`, `pending_memories`, `approved_memories` |
+| `memorize_agent` | No | Commit approved memories, advance `memory_cursor`, clear memory review state |
 
 **Example — planner return patch:**
 
@@ -631,9 +634,38 @@ Relevant memories:
 Task: Add request tracing...
 ```
 
-### Write path (memorize)
+### Write path (actioner → memorize)
 
-`messages[memory_cursor:]` → LLM extract → embed → store.
+Actioner extracts candidates from `messages[memory_cursor:]`, applies the
+memory importance filter, and assigns stable ids (`m0`, `m1`, ...). With HITL
+off, candidates are auto-approved. With HITL on, actioner emits one
+`action_review` interrupt when there are pending memories or the loop score is
+high enough for skill preview. The resume payload maps pending candidates to
+`approved_memories`; memorize then embeds and stores only those approved rows.
+
+Memorize is commit-only: it does not run extraction, does not pause for HITL,
+advances `memory_cursor`, and clears `pending_memories` / `approved_memories`
+after the commit attempt.
+
+**Example — action-review resume keeps one edited memory and drops one:**
+
+```json
+{
+  "thread_id": "hitl-demo",
+  "interrupt_resume": {
+    "memories": [
+      {
+        "id": "m0",
+        "keep": true,
+        "content": "User prefers focused pytest verification.",
+        "memory_type": "preference",
+        "importance": 0.9
+      },
+      { "id": "m1", "keep": false }
+    ]
+  }
+}
+```
 
 **Example — ingest docs corpus:**
 
@@ -892,9 +924,10 @@ pytest tests/test_graph.py -v
 |------|--------|
 | `test_api.py` | `/health`, `/run`, `/resume`, `/stream`, skill eligibility |
 | `test_graph.py` | routing, workflow compile |
-| `test_actioner.py` | rounds, loop score, skill preview interrupt |
+| `test_actioner.py` | rounds, loop score, action-review interrupt and memory approval |
 | `test_planner.py` / `test_executor.py` / `test_reviewer.py` | node outputs |
-| `test_rag_*.py` / `test_memory_pipeline.py` | RAG read/write |
+| `test_memory_review.py` | action-review resume mapping and pending cache |
+| `test_rag_*.py` / `test_memory_pipeline.py` | RAG read/write and approved-memory commit |
 | `test_mcp.py` | MCP tool registration |
 | `test_skills_*.py` | distill, inject, eligibility |
 

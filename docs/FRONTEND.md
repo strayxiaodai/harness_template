@@ -90,7 +90,7 @@ Narrow (&lt;1024px): spine → workplace → timeline drawer → inspector → c
 | --- | --- | --- |
 | `ColumnSplit` | Drag handles to resize inspector / command | `useResizableColumns` |
 | `CenterColumn` | Spine + workplace + timeline drawer shell | `timelineOpen`, `useResumeDraft` |
-| `Workplace` | Clarification HITL, step payloads, or idle hint | `interrupt`, `selectedStep`, `useResumeDraft` |
+| `Workplace` | Clarification HITL, action-review memory HITL, step payloads, or idle hint | `interrupt`, `selectedStep`, `useResumeDraft` |
 | `CommandColumn` | Thin control bar: task, run, skills, HITL toggle, secondary Continue | `useConsole`, `useSkills` |
 | `GraphSpine` | Five nodes: planner → executor → reviewer → actioner → memorize | `GRAPH_NODES`, `completedNodes`, `activeNode` |
 | `TraceTimeline` | Bottom drawer; collapsed by default; chronological steps | `timeline`, `selectStep`, `timelineOpen` |
@@ -117,9 +117,17 @@ Run with human_in_the_loop: true
   → stream pauses when status === "awaiting_human"
   → GraphSpine shows next_action as pending
   → clarification: Workplace shows questions + primary Continue; inspector auto-collapses
+  → action_review: Workplace shows editable memory candidates + score context
   → command bar shows secondary Continue only (no question list)
   → [Continue] (either surface) → postResume()
 ```
+
+For `action_review`, `useResumeDraft` seeds one editable row per pending memory
+from `interrupt.value.memories`. Continue sends
+`interrupt_resume: { memories: [...] }`, where each row can keep, drop, or edit
+content, `memory_type`, and `importance`. The Command column keeps Distill /
+skill preview controls; the Workplace only notes when `skill_preview_ready` is
+true.
 
 **Skill workflow:**
 
@@ -149,6 +157,7 @@ interface RunResponse {
   status: 'complete' | 'awaiting_human'
   skill_eligible: boolean
   skill_ineligible_reason: string | null
+  interrupt?: InterruptPayload | null
   // ...
 }
 ```

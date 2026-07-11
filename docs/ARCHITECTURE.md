@@ -65,7 +65,7 @@ Client (curl / React console)
 | App state field | `human_in_the_loop` | Use |
 | --- | --- | --- |
 | `graph_auto` | `false` | `/run` default; runs to completion or max rounds |
-| `graph_step` | `true` | `/resume`; pauses after planner, executor, reviewer, memorize |
+| `graph_step` | `true` | `/resume`; pauses after planner, executor, reviewer |
 
 Actioner may also call `interrupt()` for action review when HITL is on and
 there are pending memories or `loop_score >= 80`.
@@ -80,6 +80,7 @@ Vite (see [`FRONTEND.md`](FRONTEND.md)).
 | `StatusBar` | `GET /api/health` |
 | `CommandColumn` | `POST /api/run`, `/api/resume`; skill list from `/api/skills` |
 | `GraphSpine` | `GRAPH_NODES` + `timeline` from SSE updates |
+| `Workplace` | Selected timeline payloads; clarification and `action_review` HITL interrupts |
 | `TraceTimeline` | SSE `stream_mode=updates` chunks per node |
 | `InspectorStack` | Accumulated state: `plan`, `execution`, `review`, `tool_calls`, `memory_context` |
 | Skill distill/save | `POST /api/skills/distill`, `/api/skills/save` |

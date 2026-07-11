@@ -68,8 +68,8 @@ The center column is the primary workplace. `CenterColumn` stacks three regions:
 ### Command bar
 
 - Thin control column: Run → Skills → HITL toggle → Distill
-- During `awaiting_human`: **secondary Continue** (amber) in HITL section; no clarification question list
-- **Primary Continue** lives in Workplace during clarification interrupts
+- During `awaiting_human`: **secondary Continue** (amber) in HITL section; no clarification or memory-edit list
+- **Primary Continue** lives in Workplace during clarification and action-review interrupts
 - Overrides optional in both surfaces via shared draft state
 
 ```text
@@ -120,6 +120,7 @@ Do **not** introduce LangSmith-style trace trees or chat-thread-primary layouts
 | Pass or fail? | Workplace → Review | `review.verdict`, `approved` |
 | Where are we in the graph? | GraphSpine | `activeNode`, `timeline` |
 | Clarification answers? | Workplace (primary Continue) | `interrupt`, `answers` |
+| Memory approval? | Workplace → Action review | `interrupt.value.memories`, `interrupt_resume.memories` |
 | Can I save a skill? | CommandColumn | `skill_eligible`, `skill_ineligible_reason` |
 | Is the API up? | StatusBar | `GET /health` |
 
@@ -127,6 +128,7 @@ Do **not** introduce LangSmith-style trace trees or chat-thread-primary layouts
 
 - `needs_human: true` → amber accent on pending `next_action` node
 - Clarification: primary Continue in Workplace; secondary Continue in command bar
+- Action review: editable pending memories in Workplace; Distill stays in command bar
 
 ## When To Extend vs Reuse
 

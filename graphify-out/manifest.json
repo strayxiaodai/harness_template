@@ -2170,8 +2170,8 @@
     "semantic_hash": ""
   },
   "docs/ARCHITECTURE.md": {
-    "mtime": 1783761211.0320299,
-    "ast_hash": "1f03c23cdee5cd2ba35a45f664466907",
+    "mtime": 1783762129.227009,
+    "ast_hash": "d02a27ddd7e1416a5497f4258991bbe6",
     "semantic_hash": ""
   },
   "docs/ASYNCIO.md": {
@@ -2185,13 +2185,13 @@
     "semantic_hash": ""
   },
   "docs/DESIGN.md": {
-    "mtime": 1783760649.1101239,
-    "ast_hash": "fba3a90e20e949c94eeb0a4e9bfc6d9b",
+    "mtime": 1783762140.7389917,
+    "ast_hash": "5ecff05c8d36ed6d64065102aa0dca80",
     "semantic_hash": ""
   },
   "docs/FRONTEND.md": {
-    "mtime": 1783760649.1104038,
-    "ast_hash": "9baae52803697e1c162fb3ab863103aa",
+    "mtime": 1783762134.9967613,
+    "ast_hash": "09d61be3e37edd9237220b199af5bc46",
     "semantic_hash": ""
   },
   "docs/HISTORY_GUIDE.md": {
@@ -2200,8 +2200,8 @@
     "semantic_hash": ""
   },
   "docs/IMPLEMENTATION.md": {
-    "mtime": 1783761962.0452912,
-    "ast_hash": "01b7e830e42a0dd632324739942113bd",
+    "mtime": 1783762124.359825,
+    "ast_hash": "e8c936aef8b54186011a74f7928d7a74",
     "semantic_hash": ""
   },
   "docs/LANGGRAPH.md": {
@@ -2370,8 +2370,8 @@
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-07-11-action-review-memory-hitl-design.md": {
-    "mtime": 1783760649.1220305,
-    "ast_hash": "0a972414233a8f74ab34131746046d9a",
+    "mtime": 1783762023.2691004,
+    "ast_hash": "46c1da105c736439e61a2d235fa92bd2",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-07-11-center-workplace-timeline-drawer-design.md": {
@@ -2435,8 +2435,8 @@
     "semantic_hash": ""
   },
   "docs/histories/2026-07/20260711-0211-action-review-memory-hitl.md": {
-    "mtime": 1783761535.6024034,
-    "ast_hash": "3e9f8b34444b2affac39dc17c6ff43cc",
+    "mtime": 1783762160.8962839,
+    "ast_hash": "28afd64cfc3cba2a07eba241f299195b",
     "semantic_hash": ""
   },
   "tests/test_action_review_api.py": {
@@ -2450,13 +2450,18 @@
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-07-11-action-review-api-e2e-test-design.md": {
-    "mtime": 1783761341.938933,
-    "ast_hash": "7624e175a75330f0da64faba71197a64",
+    "mtime": 1783762113.6721685,
+    "ast_hash": "c9510466f272c5a7e2dd035925391737",
     "semantic_hash": ""
   },
   "app/frontend/src/lib/actionReview.ts": {
     "mtime": 1783761774.2466958,
     "ast_hash": "147a565316e63407a65a631220f68817",
+    "semantic_hash": ""
+  },
+  "docs/histories/2026-07/20260711-0226-action-review-api-e2e-test.md": {
+    "mtime": 1783762023.5453827,
+    "ast_hash": "904e864ff99c788cc6824e3ff89b80c2",
     "semantic_hash": ""
   }
 }

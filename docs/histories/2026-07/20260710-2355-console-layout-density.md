@@ -34,3 +34,9 @@ Even instrument-panel density with center as primary viewport and Cursor-like co
 - `docs/FRONTEND.md`
 - `docs/superpowers/specs/2026-07-10-console-layout-density-design.md`
 - `docs/superpowers/plans/2026-07-10-console-layout-density.md`
+
+### Follow-up polish (2026-07-11)
+
+- Flattened nested command section cards; widened to 280/flex/268
+- Spine uses inline chevrons; SVG only for refine loops
+- Centered dashed empty states; shorter command hints

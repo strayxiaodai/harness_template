@@ -64,34 +64,37 @@ npm run preview   # serve production build locally
 
 ## Layout (three-column shell)
 
-From [`DESIGN.md`](DESIGN.md): inspector · center spine/timeline · command.
+From [`DESIGN.md`](DESIGN.md): inspector rail · `CenterColumn` · command bar.
 `StatusBar` spans the top; footer holds keyboard shortcuts. On desktop
 (≥1024px), drag the vertical handles between columns to resize inspector and
-command; widths persist in `localStorage` (`harness.console.columnWidths`).
-Double-click a handle to reset.
+command when the inspector rail is open; widths persist in `localStorage`
+(`harness.console.columnWidths`). Double-click a handle to reset.
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
 │ StatusBar — health, rounds, skill eligibility            │
 ├──────────────┬─┬───────────────────────┬─┬───────────────┤
-│ Inspector    │⁞│ GraphSpine + Timeline │⁞│ CommandColumn │
-│  (≈280px)    │ │      (flex)           │ │  (≈268px)     │
+│ Inspector    │⁞│ GraphSpine            │⁞│ CommandColumn │
+│  rail        │ │ Workplace (flex)      │ │  control bar  │
+│  (≈280px)    │ │ TraceTimeline drawer  │ │  (≈268px)     │
 ├──────────────┴─┴───────────────────────┴─┴───────────────┤
 │ Footer shortcuts                                         │
 └──────────────────────────────────────────────────────────┘
 ```
 
-Narrow (&lt;1024px): spine → timeline → inspector → command.
+Narrow (&lt;1024px): spine → workplace → timeline drawer → inspector → command.
 
 ## Components
 
 | Component | Role | Key hooks / data |
 | --- | --- | --- |
 | `ColumnSplit` | Drag handles to resize inspector / command | `useResizableColumns` |
-| `CommandColumn` | Task, plan, max rounds, HITL toggle, run/resume, skill picker | `useConsole`, `useSkills` |
+| `CenterColumn` | Spine + workplace + timeline drawer shell | `timelineOpen`, `useResumeDraft` |
+| `Workplace` | Clarification HITL, step payloads, or idle hint | `interrupt`, `selectedStep`, `useResumeDraft` |
+| `CommandColumn` | Thin control bar: task, run, skills, HITL toggle, secondary Continue | `useConsole`, `useSkills` |
 | `GraphSpine` | Five nodes: planner → executor → reviewer → actioner → memorize | `GRAPH_NODES`, `completedNodes`, `activeNode` |
-| `TraceTimeline` | Chronological step list from stream | `timeline`, `selectStep` |
-| `InspectorStack` | Expandable payloads for selected step | `plan`, `execution`, `review`, `tool_calls`, `memory_context` |
+| `TraceTimeline` | Bottom drawer; collapsed by default; chronological steps | `timeline`, `selectStep`, `timelineOpen` |
+| `InspectorStack` | Collapsible rail; secondary RAG/audit when open | `mode="secondary"`, `collapsed`, `memory_context` |
 | `StatusBar` | API health, round counter, errors | `useHealth`, `runResponse` |
 
 The frontend talks to the API only — no LangGraph or Python imports.
@@ -113,7 +116,9 @@ CommandColumn [Run]
 Run with human_in_the_loop: true
   → stream pauses when status === "awaiting_human"
   → GraphSpine shows next_action as pending
-  → [Resume] → postResume()
+  → clarification: Workplace shows questions + primary Continue; inspector auto-collapses
+  → command bar shows secondary Continue only (no question list)
+  → [Continue] (either surface) → postResume()
 ```
 
 **Skill workflow:**

@@ -43,19 +43,42 @@ CSS implementation: `app/frontend/src/styles/tokens.css`.
 
 ## Layout
 
-- Three-column shell ≥ 1024px: inspector · center · command (defaults 280px · flex · 268px)
-- Side columns are **user-resizable** via drag handles; widths persist in `localStorage`
+- Three-column shell ≥ 1024px: inspector rail · center · command bar (defaults 280px · flex · 268px)
+- Side columns are **user-resizable** via drag handles when the inspector rail is open; widths persist in `localStorage`
 - Double-click a handle (or Home while focused) resets to defaults
-- `< 1024px`: stack spine → timeline → inspector → command (resize disabled)
+- `< 1024px`: stack spine → workplace → timeline drawer → inspector → command (resize disabled)
 - Spacing scale: 4 / 8 / 12 / 16 / 24 / 32px
 - Panel radius: 12px max; buttons 8px; pills full-round
+
+### CenterColumn
+
+The center column is the primary workplace. `CenterColumn` stacks three regions:
+
+1. **GraphSpine** — graph-native node strip (planner → memorize); unchanged behavior
+2. **Workplace** — flex middle: clarification HITL, selected-step payloads, or idle hint
+3. **TraceTimeline drawer** — bottom dock; **collapsed by default** (label + step count). Expands upward (~160–240px) without permanently displacing the workplace
+
+### Inspector rail
+
+- Desktop default: **open** (~240–280px, user-resizable)
+- **Collapsible** to a narrow strip (~28–36px); left resize handle hidden when collapsed; center expands
+- **Auto-collapses** when clarification interrupt is active; user may re-expand via strip/chevron
+- When open: **secondary** artifacts only (RAG recall, audit, skill meta). Primary plan/tools/review move to Workplace when a step is selected
+
+### Command bar
+
+- Thin control column: Run → Skills → HITL toggle → Distill
+- During `awaiting_human`: **secondary Continue** (amber) in HITL section; no clarification question list
+- **Primary Continue** lives in Workplace during clarification interrupts
+- Overrides optional in both surfaces via shared draft state
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
 │ StatusBar                                                │
 ├──────────────┬─┬───────────────────────┬─┬───────────────┤
-│ Inspector    │⁞│ GraphSpine + Timeline │⁞│ CommandColumn │
-│  (drag)      │ │      (flex)           │ │  (drag)       │
+│ Inspector    │⁞│ GraphSpine            │⁞│ CommandColumn │
+│  rail        │ │ Workplace (flex)    │ │  control bar  │
+│  (drag/open) │ │ TraceTimeline drawer  │ │  (drag)       │
 ├──────────────┴─┴───────────────────────┴─┴───────────────┤
 │ Footer shortcuts                                         │
 └──────────────────────────────────────────────────────────┘
@@ -82,7 +105,7 @@ CSS implementation: `app/frontend/src/styles/tokens.css`.
 | Instrument panel | Dense layout, monospace payloads, no chat bubbles |
 | Graph-native | `GraphSpine` follows planner → memorize order |
 | Amber = HITL only | `--accent` for interrupts; `--primary` for active trace |
-| Payload visibility | `InspectorStack` shows raw plan, tools, review, RAG |
+| Payload visibility | `Workplace` shows primary plan/tools/review; `InspectorStack` secondary RAG/audit |
 | Local-first honesty | `StatusBar` reflects API health and capability gaps |
 
 Do **not** introduce LangSmith-style trace trees or chat-thread-primary layouts
@@ -92,22 +115,23 @@ Do **not** introduce LangSmith-style trace trees or chat-thread-primary layouts
 
 | Operator question | UI location | State / API field |
 | --- | --- | --- |
-| What was the plan? | Inspector → Plan | `plan[]` |
-| What did executor do? | Inspector → Execution | `execution`, `tool_calls` |
-| Pass or fail? | Inspector → Review | `review.verdict`, `approved` |
+| What was the plan? | Workplace → Plan (or Inspector secondary) | `plan[]` |
+| What did executor do? | Workplace → Execution | `execution`, `tool_calls` |
+| Pass or fail? | Workplace → Review | `review.verdict`, `approved` |
 | Where are we in the graph? | GraphSpine | `activeNode`, `timeline` |
+| Clarification answers? | Workplace (primary Continue) | `interrupt`, `answers` |
 | Can I save a skill? | CommandColumn | `skill_eligible`, `skill_ineligible_reason` |
 | Is the API up? | StatusBar | `GET /health` |
 
 **Example — HITL interrupt styling:**
 
 - `needs_human: true` → amber accent on pending `next_action` node
-- Resume button primary in command column (not hidden in a menu)
+- Clarification: primary Continue in Workplace; secondary Continue in command bar
 
 ## When To Extend vs Reuse
 
 1. Reuse tokens from `app/frontend/src/styles/tokens.css`
-2. Reuse `GraphSpine`, `InspectorStack`, `TraceTimeline`, `CommandColumn`
+2. Reuse `CenterColumn`, `Workplace`, `GraphSpine`, `InspectorStack`, `TraceTimeline`, `CommandColumn`
 3. Update this file when adding global tokens or breakpoints
 4. Mirror token changes in `tokens.css` in the same PR
 

@@ -2,8 +2,13 @@ import { useEffect, useState } from 'react'
 import type {
   ClarificationAnswer,
   InterruptPayload,
+  MemoryResumeRow,
   ResumeOverrides,
 } from '../types/api'
+import {
+  actionReviewMemories,
+  isActionReviewInterrupt,
+} from '../lib/actionReview'
 import { clarificationQuestions } from '../lib/clarification'
 import type { RunPhase } from './useConsole'
 
@@ -21,6 +26,7 @@ export function useResumeDraft(
   const canResume =
     phase === 'awaiting_human' || phase === 'error'
   const questions = clarificationQuestions(interrupt)
+  const memories = actionReviewMemories(interrupt)
 
   const [planOverrideText, setPlanOverrideText] = useState('')
   const [refineOverride, setRefineOverride] = useState<
@@ -29,12 +35,16 @@ export function useResumeDraft(
   const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>(
     {},
   )
+  const [memoryDrafts, setMemoryDrafts] = useState<
+    Record<string, MemoryResumeRow>
+  >({})
 
   useEffect(() => {
     if (!canResume) {
       setPlanOverrideText('')
       setRefineOverride('')
       setAnswerDrafts({})
+      setMemoryDrafts({})
       return
     }
     const next: Record<string, string> = {}
@@ -42,15 +52,38 @@ export function useResumeDraft(
       next[question.id] = ''
     }
     setAnswerDrafts(next)
+    const nextMemoryDrafts: Record<string, MemoryResumeRow> = {}
+    for (const memory of memories) {
+      nextMemoryDrafts[memory.id] = {
+        id: memory.id,
+        keep: true,
+        content: memory.content,
+        memory_type: memory.memory_type,
+        importance: memory.importance,
+      }
+    }
+    setMemoryDrafts(nextMemoryDrafts)
   }, [canResume, interrupt?.id])
 
   const setAnswer = (id: string, value: string) => {
     setAnswerDrafts((prev) => ({ ...prev, [id]: value }))
   }
 
+  const setMemoryDraft = (id: string, patch: Partial<MemoryResumeRow>) => {
+    setMemoryDrafts((prev) => ({
+      ...prev,
+      [id]: {
+        ...(prev[id] ?? { id, keep: true }),
+        ...patch,
+        id,
+      },
+    }))
+  }
+
   const buildPayload = (): {
     overrides?: ResumeOverrides
     answers?: ClarificationAnswer[]
+    interrupt_resume?: { memories: MemoryResumeRow[] }
   } => {
     const overrides: ResumeOverrides = {}
     const plan = parsePlanLines(planOverrideText)
@@ -69,22 +102,40 @@ export function useResumeDraft(
             }))
             .filter((a) => a.answer.length > 0)
         : undefined
+    const interrupt_resume = isActionReviewInterrupt(interrupt)
+      ? {
+          memories: memories.map(
+            (memory) =>
+              memoryDrafts[memory.id] ?? {
+                id: memory.id,
+                keep: true,
+                content: memory.content,
+                memory_type: memory.memory_type,
+                importance: memory.importance,
+              },
+          ),
+        }
+      : undefined
     return {
       overrides:
         Object.keys(overrides).length > 0 ? overrides : undefined,
       answers,
+      interrupt_resume,
     }
   }
 
   return {
     canResume,
     questions,
+    memories,
     planOverrideText,
     setPlanOverrideText,
     refineOverride,
     setRefineOverride,
     answerDrafts,
     setAnswer,
+    memoryDrafts,
+    setMemoryDraft,
     buildPayload,
   }
 }

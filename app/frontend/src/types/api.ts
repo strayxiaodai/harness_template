@@ -78,6 +78,23 @@ export interface ClarificationAnswer {
   answer: string
 }
 
+export type MemoryType = 'fact' | 'preference' | 'entity' | 'summary'
+
+export interface PendingMemory {
+  id: string
+  content: string
+  memory_type: MemoryType
+  importance: number
+}
+
+export interface MemoryResumeRow {
+  id: string
+  keep: boolean
+  content?: string
+  memory_type?: MemoryType
+  importance?: number
+}
+
 export interface InterruptPayload {
   id?: string | null
   value?: {

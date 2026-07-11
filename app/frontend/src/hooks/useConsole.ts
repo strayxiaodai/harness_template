@@ -221,7 +221,11 @@ export function useConsole() {
   )
 
   const resume = useCallback(
-    async (overrides?: ResumeOverrides, answers?: ClarificationAnswer[]) => {
+    async (
+      overrides?: ResumeOverrides,
+      answers?: ClarificationAnswer[],
+      interrupt_resume?: unknown,
+    ) => {
       if (busyRef.current) {
         return
       }
@@ -241,6 +245,7 @@ export function useConsole() {
           thread_id: threadId,
           overrides: overrides ?? undefined,
           answers: answers ?? undefined,
+          interrupt_resume: interrupt_resume ?? undefined,
         })
         const step = responseToTimelineStep(response)
         setTimeline((prev) => [...prev, step])

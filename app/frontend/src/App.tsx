@@ -114,8 +114,8 @@ function App() {
   )
 
   const handleContinue = useCallback(() => {
-    const { overrides, answers } = buildPayload()
-    void resume(overrides, answers)
+    const { overrides, answers, interrupt_resume } = buildPayload()
+    void resume(overrides, answers, interrupt_resume)
   }, [buildPayload, resume])
 
   useEffect(() => {

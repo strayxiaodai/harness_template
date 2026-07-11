@@ -156,12 +156,13 @@ async def test_action_review_resume_keeps_edits_drops_and_commits(
     memories = value.get("memories") or []
     assert len(memories) == 2
     assert {m["id"] for m in memories} == {"m0", "m1"}
-    assert commit_spy.await_count == 0
+    commit_spy.assert_not_awaited()
     # Actioner has not returned yet at dynamic interrupt; candidates live in payload.
-    pending = (snap.values or {}).get("pending_memories") or value.get("memories") or []
-    assert len(pending) == 2
-    approved = (snap.values or {}).get("approved_memories")
-    assert approved in ([], None)
+    state_pending = (snap.values or {}).get("pending_memories")
+    assert state_pending in ([], None)
+    assert len(memories) == 2
+    state_approved = (snap.values or {}).get("approved_memories")
+    assert state_approved in ([], None)
 
     response = action_review_client.post(
         "/resume",
@@ -187,7 +188,7 @@ async def test_action_review_resume_keeps_edits_drops_and_commits(
     assert body.get("interrupt") is None
     assert body.get("next_action") in (None, "")
 
-    commit_spy.assert_awaited()
+    commit_spy.assert_awaited_once()
     call_kwargs = commit_spy.await_args.kwargs
     call_args = commit_spy.await_args.args
     approved = call_kwargs.get("approved_memories")

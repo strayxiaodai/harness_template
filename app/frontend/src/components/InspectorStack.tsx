@@ -1,29 +1,24 @@
 import type { ReactNode } from 'react'
-import { formatJson } from '../lib/api'
 import type { AgentStateSnapshot, TimelineStep } from '../types/api'
 import './InspectorStack.css'
 
 interface InspectorStackProps {
   step: TimelineStep | null
   accumulated: AgentStateSnapshot
+  mode?: 'secondary' | 'full'
   collapsed?: boolean
   onExpand?: () => void
   onCollapse?: () => void
 }
 
-function isSparseSnapshot(state: AgentStateSnapshot): boolean {
-  return (
-    !state.plan?.length &&
-    !state.execution &&
-    !state.tool_calls?.length &&
-    !state.review &&
-    !state.result
-  )
+function isSparseSecondarySnapshot(state: AgentStateSnapshot): boolean {
+  return !state.skill_context && !state.memory_context && !state.result
 }
 
 export function InspectorStack({
   step,
   accumulated,
+  mode = 'secondary',
   collapsed = false,
   onExpand,
   onCollapse,
@@ -40,128 +35,123 @@ export function InspectorStack({
           onClick={onExpand}
           aria-expanded={false}
         >
-          Inspector
+          Inspector ▸
         </button>
       </aside>
     )
   }
 
-  if (!step && isSparseSnapshot(accumulated)) {
+  const state = step?.state ?? accumulated
+  const secondaryOnly = mode === 'secondary'
+
+  if (secondaryOnly && !step && isSparseSecondarySnapshot(accumulated)) {
     return (
       <aside className="inspector-stack panel" aria-label="Inspector">
         <InspectorHeader onCollapse={onCollapse} />
         <div className="inspector-stack__empty">
           <p className="empty-state empty-state--centered">
-            Select a timeline step
+            Secondary context (RAG, audit)
           </p>
           <p className="empty-state__hint">
-            Payloads for plan, tools, and review appear here.
+            Skill playbook, memory recall, and audit events appear here.
           </p>
         </div>
       </aside>
     )
   }
 
-  const state = step?.state ?? accumulated
-
   return (
     <aside className="inspector-stack" aria-label="Inspector">
       <InspectorHeader onCollapse={onCollapse} />
-      <InspectorSection title="Plan" empty={!state.plan?.length}>
-        {state.plan?.length ? (
-          <ol className="inspector-list">
-            {state.plan.map((item, i) => (
-              <li key={`${i}-${item}`}>{item}</li>
-            ))}
-          </ol>
-        ) : null}
-      </InspectorSection>
 
-      <InspectorSection
-        title="Execution"
-        empty={!state.execution}
-      >
-        {state.execution && (
-          <div className="inspector-prose">
-            <p>{state.execution.summary}</p>
-            {state.execution.changes.length > 0 && (
-              <>
-                <h3 className="inspector-sub">Changes</h3>
-                <ul>
-                  {state.execution.changes.map((c) => (
-                    <li key={c}>{c}</li>
-                  ))}
-                </ul>
-              </>
+      {!secondaryOnly && (
+        <>
+          <InspectorSection title="Plan" empty={!state.plan?.length}>
+            {state.plan?.length ? (
+              <ol className="inspector-list">
+                {state.plan.map((item, i) => (
+                  <li key={`${i}-${item}`}>{item}</li>
+                ))}
+              </ol>
+            ) : null}
+          </InspectorSection>
+
+          <InspectorSection title="Execution" empty={!state.execution}>
+            {state.execution && (
+              <div className="inspector-prose">
+                <p>{state.execution.summary}</p>
+                {state.execution.changes.length > 0 && (
+                  <>
+                    <h3 className="inspector-sub">Changes</h3>
+                    <ul>
+                      {state.execution.changes.map((c) => (
+                        <li key={c}>{c}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {state.execution.risks.length > 0 && (
+                  <>
+                    <h3 className="inspector-sub">Risks</h3>
+                    <ul>
+                      {state.execution.risks.map((r) => (
+                        <li key={r}>{r}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
             )}
-            {state.execution.risks.length > 0 && (
-              <>
-                <h3 className="inspector-sub">Risks</h3>
-                <ul>
-                  {state.execution.risks.map((r) => (
-                    <li key={r}>{r}</li>
+          </InspectorSection>
+
+          <InspectorSection
+            title="Tool calls"
+            empty={!state.tool_calls?.length}
+          >
+            {state.tool_calls && state.tool_calls.length > 0 && (
+              <table className="tool-table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Tool</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {state.tool_calls.map((tc, i) => (
+                    <tr key={`${tc.tool}-${i}`}>
+                      <td>{tc.iteration}</td>
+                      <td className="mono">{tc.tool}</td>
+                      <td>{tc.status}</td>
+                    </tr>
                   ))}
-                </ul>
-              </>
+                </tbody>
+              </table>
             )}
-          </div>
-        )}
-      </InspectorSection>
+          </InspectorSection>
 
-      <InspectorSection
-        title="Tool calls"
-        empty={!state.tool_calls?.length}
-      >
-        {state.tool_calls && state.tool_calls.length > 0 && (
-          <table className="tool-table">
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Tool</th>
-                <th scope="col">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.tool_calls.map((tc, i) => (
-                <tr key={`${tc.tool}-${i}`}>
-                  <td>{tc.iteration}</td>
-                  <td className="mono">{tc.tool}</td>
-                  <td>{tc.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {state.tool_calls?.map((tc, i) => (
-          <pre key={`args-${i}`} className="inspector-json mono">
-            {formatJson(tc.args)}
-          </pre>
-        ))}
-      </InspectorSection>
+          <InspectorSection title="Review" empty={!state.review}>
+            {state.review && (
+              <dl className="inspector-dl">
+                <div>
+                  <dt>Verdict</dt>
+                  <dd>{state.review.verdict}</dd>
+                </div>
+                <div>
+                  <dt>Reason</dt>
+                  <dd>{state.review.reason}</dd>
+                </div>
+                <div>
+                  <dt>Suggested step</dt>
+                  <dd className="mono">{state.review.suggested_step}</dd>
+                </div>
+              </dl>
+            )}
+          </InspectorSection>
+        </>
+      )}
 
-      <InspectorSection title="Review" empty={!state.review}>
-        {state.review && (
-          <dl className="inspector-dl">
-            <div>
-              <dt>Verdict</dt>
-              <dd>{state.review.verdict}</dd>
-            </div>
-            <div>
-              <dt>Reason</dt>
-              <dd>{state.review.reason}</dd>
-            </div>
-            <div>
-              <dt>Suggested step</dt>
-              <dd className="mono">{state.review.suggested_step}</dd>
-            </div>
-          </dl>
-        )}
-      </InspectorSection>
-
-      <InspectorSection
-        title="Skill playbook"
-        empty={!state.skill_context}
-      >
+      <InspectorSection title="Skill playbook" empty={!state.skill_context}>
         {state.skill_context ? (
           <pre className="inspector-json mono">{state.skill_context}</pre>
         ) : (
@@ -169,10 +159,7 @@ export function InspectorStack({
         )}
       </InspectorSection>
 
-      <InspectorSection
-        title="Memory recall"
-        empty={!state.memory_context}
-      >
+      <InspectorSection title="Memory recall" empty={!state.memory_context}>
         {state.memory_context ? (
           <pre className="inspector-json mono">{state.memory_context}</pre>
         ) : (

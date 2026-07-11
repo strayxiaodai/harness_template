@@ -97,10 +97,11 @@ function App() {
   const [timelineOpen, setTimelineOpen] = useState(false)
 
   const draft = useResumeDraft(phase, runResponse?.interrupt ?? null)
+  const { buildPayload } = draft
   const clarifying =
     phase === 'awaiting_human' &&
     isClarificationInterrupt(runResponse?.interrupt ?? null)
-  const [inspectorCollapsed, setInspectorCollapsed] = useState(false)
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(clarifying)
 
   const handleSelectNode = useCallback(
     (node: GraphNode) => {
@@ -113,9 +114,9 @@ function App() {
   )
 
   const handleContinue = useCallback(() => {
-    const { overrides, answers } = draft.buildPayload()
+    const { overrides, answers } = buildPayload()
     void resume(overrides, answers)
-  }, [draft, resume])
+  }, [buildPayload, resume])
 
   useEffect(() => {
     if (clarifying) {
@@ -186,6 +187,7 @@ function App() {
         }
       >
         <InspectorStack
+          mode="secondary"
           step={selectedStep}
           accumulated={accumulated}
           collapsed={desktop && inspectorCollapsed}

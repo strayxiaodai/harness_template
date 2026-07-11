@@ -297,7 +297,7 @@ export function CommandColumn({
                 disabled={isStreaming}
                 aria-keyshortcuts="r"
               >
-                Continue from interrupt
+                Continue
               </button>
               <OverrideForm
                 planOverrideText={planOverrideText}
@@ -477,7 +477,7 @@ function OverrideForm({
           <option value="finish">finish</option>
         </select>
         <p className="override-form__note">
-          Overrides apply when you click Continue from interrupt.
+          Overrides apply when you click Continue.
         </p>
       </div>
     </details>

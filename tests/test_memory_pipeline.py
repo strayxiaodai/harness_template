@@ -362,6 +362,41 @@ async def test_memorize_skips_store_when_approved_empty(
 
 
 @pytest.mark.asyncio
+async def test_memorize_rag_disabled_advances_cursor_and_clears_lists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """RAG-disabled skip advances cursor and clears pending/approved lists."""
+    from agent import memorize as memorize_module
+
+    monkeypatch.setattr(
+        memorize_module,
+        "load_rag_settings",
+        lambda: RagSettings(enabled=False),
+    )
+
+    messages = [HumanMessage(content="x"), AIMessage(content="y")]
+    result = await memorize_module.memorize_agent(
+        _state(
+            messages=messages,
+            memory_cursor=0,
+            approved_memories=[
+                {
+                    "content": "User said x",
+                    "memory_type": "fact",
+                    "importance": 0.8,
+                },
+            ],
+            pending_memories=[{"id": "m0", "content": "User said x"}],
+        ),
+    )
+
+    assert result["role"] == "memorize"
+    assert result["memory_cursor"] == len(messages)
+    assert result["pending_memories"] == []
+    assert result["approved_memories"] == []
+
+
+@pytest.mark.asyncio
 async def test_memorize_agent_runs_memory_ingest(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

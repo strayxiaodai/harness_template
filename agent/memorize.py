@@ -17,6 +17,15 @@ def _clear_memory_lists() -> dict[str, list[dict[str, object]]]:
     return {"pending_memories": [], "approved_memories": []}
 
 
+def _skip_memorize_updates(state: AgentState) -> dict[str, object]:
+    """Return memorize updates when commit cannot run."""
+    return {
+        "role": "memorize",
+        "memory_cursor": len(state.get("messages", [])),
+        **_clear_memory_lists(),
+    }
+
+
 async def memorize_agent(state: AgentState) -> dict[str, object]:
     """Commit approved memories from state to the memory store.
 
@@ -28,13 +37,13 @@ async def memorize_agent(state: AgentState) -> dict[str, object]:
     """
     settings = load_rag_settings()
     if not settings.enabled:
-        return {"role": "memorize", **_clear_memory_lists()}
+        return _skip_memorize_updates(state)
 
     try:
         service = get_rag_service()
     except RuntimeError:
         logger.debug("RAG service not initialized; skipping memory commit")
-        return {"role": "memorize", **_clear_memory_lists()}
+        return _skip_memorize_updates(state)
 
     try:
         updates = await commit_approved_memories(
@@ -52,8 +61,4 @@ async def memorize_agent(state: AgentState) -> dict[str, object]:
             exc,
             exc_info=True,
         )
-        return {
-            "role": "memorize",
-            "memory_cursor": len(state.get("messages", [])),
-            **_clear_memory_lists(),
-        }
+        return _skip_memorize_updates(state)

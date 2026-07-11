@@ -117,3 +117,104 @@ async def run_memory_ingest(
         state["thread_id"],
     )
     return {"memory_cursor": len(state["messages"])}
+
+
+async def extract_memory_candidates(
+    state: AgentState,
+    *,
+    settings: RagSettings | None = None,
+) -> list[dict[str, object]]:
+    """Extract filtered memory candidates without writing to the store.
+
+    Args:
+        state: Current agent state.
+        settings: Optional settings override.
+
+    Returns:
+        Pending memory candidates with stable ids (m0, m1, ...).
+    """
+    cfg = settings or load_rag_settings()
+    if not cfg.enabled:
+        return []
+    cursor = state.get("memory_cursor", 0)
+    new_messages = collect_new_messages(state["messages"], since_index=cursor)
+    if not new_messages:
+        return []
+    extracted = await extract_memories(new_messages)
+    filtered = [
+        memory
+        for memory in extracted.memories
+        if memory.importance >= cfg.extract.min_importance
+    ]
+    return [
+        {
+            "id": f"m{index}",
+            "content": memory.content,
+            "memory_type": memory.memory_type,
+            "importance": memory.importance,
+        }
+        for index, memory in enumerate(filtered)
+    ]
+
+
+async def commit_approved_memories(
+    state: AgentState,
+    *,
+    memory_store: MemoryStore,
+    settings: RagSettings | None = None,
+) -> dict[str, object]:
+    """Upsert approved_memories and advance memory_cursor.
+
+    Args:
+        state: Current agent state with approved_memories.
+        memory_store: Memory store.
+        settings: Optional settings override.
+
+    Returns:
+        State updates including memory_cursor and cleared pending/approved.
+    """
+    from rag.schemas import ExtractedMemory
+
+    cfg = settings or load_rag_settings()
+    cursor_update = {"memory_cursor": len(state.get("messages", []))}
+    raw = state.get("approved_memories") or []
+    if not isinstance(raw, list) or not raw:
+        return {
+            **cursor_update,
+            "pending_memories": [],
+            "approved_memories": [],
+        }
+
+    memories: list[ExtractedMemory] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        content = str(item.get("content", "")).strip()
+        if not content:
+            continue
+        memories.append(
+            ExtractedMemory(
+                content=content,
+                memory_type=item.get("memory_type", "fact"),  # type: ignore[arg-type]
+                importance=float(item.get("importance", 0.5)),
+            ),
+        )
+    if not memories:
+        return {
+            **cursor_update,
+            "pending_memories": [],
+            "approved_memories": [],
+        }
+
+    embeddings = get_embeddings(cfg)
+    await memory_store.upsert_memories(
+        state["thread_id"],
+        memories,
+        embeddings,
+    )
+    memory_store.save(cfg.index_dir)
+    return {
+        **cursor_update,
+        "pending_memories": [],
+        "approved_memories": [],
+    }

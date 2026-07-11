@@ -1,6 +1,9 @@
 import type {
   ClarificationQuestion,
   InterruptPayload,
+  MemoryResumeRow,
+  MemoryType,
+  PendingMemory,
   ResumeOverrides,
   TimelineStep,
 } from '../types/api'
@@ -9,8 +12,20 @@ import {
   clarificationReason,
   isClarificationInterrupt,
 } from '../lib/clarification'
+import {
+  isActionReviewInterrupt,
+} from '../lib/actionReview'
 import { formatJson } from '../lib/api'
 import './Workplace.css'
+
+const MEMORY_TYPES: MemoryType[] = ['fact', 'preference', 'entity', 'summary']
+
+interface ActionReviewMeta {
+  score?: number
+  threshold?: number
+  skillPreviewReady: boolean
+  message: string
+}
 
 interface WorkplaceProps {
   phase: RunPhase
@@ -19,6 +34,10 @@ interface WorkplaceProps {
   questions: ClarificationQuestion[]
   answerDrafts: Record<string, string>
   onAnswerChange: (id: string, value: string) => void
+  memories: PendingMemory[]
+  memoryDrafts: Record<string, MemoryResumeRow>
+  actionReviewMeta: ActionReviewMeta
+  onMemoryDraftChange: (id: string, patch: Partial<MemoryResumeRow>) => void
   planOverrideText: string
   refineOverride: ResumeOverrides['refine_from'] | ''
   onPlanOverrideChange: (value: string) => void
@@ -36,6 +55,10 @@ export function Workplace({
   questions,
   answerDrafts,
   onAnswerChange,
+  memories,
+  memoryDrafts,
+  actionReviewMeta,
+  onMemoryDraftChange,
   planOverrideText,
   refineOverride,
   onPlanOverrideChange,
@@ -45,6 +68,8 @@ export function Workplace({
 }: WorkplaceProps) {
   const clarifying =
     phase === 'awaiting_human' && isClarificationInterrupt(interrupt)
+  const actionReviewing =
+    phase === 'awaiting_human' && isActionReviewInterrupt(interrupt)
 
   if (clarifying) {
     const reason = clarificationReason(interrupt)
@@ -107,6 +132,149 @@ export function Workplace({
               <option value="finish">finish</option>
             </select>
           </details>
+          <button
+            type="button"
+            className="btn btn-accent"
+            onClick={onContinue}
+            disabled={streaming}
+            aria-keyshortcuts="r"
+          >
+            Continue
+          </button>
+        </div>
+      </section>
+    )
+  }
+
+  if (actionReviewing) {
+    return (
+      <section
+        className="workplace panel workplace--hitl"
+        aria-label="Workplace"
+      >
+        <h2 className="panel-title">Action review</h2>
+        <div className="workplace__body">
+          {actionReviewMeta.message ? (
+            <p className="workplace__reason">{actionReviewMeta.message}</p>
+          ) : null}
+          {actionReviewMeta.score !== undefined ? (
+            <p className="workplace__hint">
+              Score: {actionReviewMeta.score}
+              {actionReviewMeta.skillPreviewReady &&
+              actionReviewMeta.threshold !== undefined
+                ? ` / threshold ${actionReviewMeta.threshold}`
+                : ''}
+            </p>
+          ) : null}
+          {actionReviewMeta.skillPreviewReady ? (
+            <p className="workplace__hint">
+              Distill / skill preview is available in Command.
+            </p>
+          ) : null}
+
+          {memories.length > 0 ? (
+            <div className="workplace__memory-list" aria-label="Memory drafts">
+              {memories.map((memory) => {
+                const draft = memoryDrafts[memory.id] ?? {
+                  id: memory.id,
+                  keep: true,
+                  content: memory.content,
+                  memory_type: memory.memory_type,
+                  importance: memory.importance,
+                }
+                return (
+                  <div key={memory.id} className="workplace__memory-row">
+                    <label className="workplace__memory-keep">
+                      <input
+                        type="checkbox"
+                        checked={draft.keep}
+                        onChange={(e) =>
+                          onMemoryDraftChange(memory.id, {
+                            keep: e.target.checked,
+                          })
+                        }
+                        disabled={streaming}
+                      />
+                      Keep
+                    </label>
+                    <div className="workplace__field">
+                      <label
+                        className="field-label"
+                        htmlFor={`wp-memory-content-${memory.id}`}
+                      >
+                        Memory
+                      </label>
+                      <textarea
+                        id={`wp-memory-content-${memory.id}`}
+                        className="field-textarea"
+                        rows={3}
+                        value={draft.content ?? memory.content}
+                        onChange={(e) =>
+                          onMemoryDraftChange(memory.id, {
+                            content: e.target.value,
+                          })
+                        }
+                        disabled={streaming}
+                      />
+                    </div>
+                    <div className="workplace__memory-controls">
+                      <div className="workplace__field">
+                        <label
+                          className="field-label"
+                          htmlFor={`wp-memory-type-${memory.id}`}
+                        >
+                          Type
+                        </label>
+                        <select
+                          id={`wp-memory-type-${memory.id}`}
+                          className="field-input"
+                          value={draft.memory_type ?? memory.memory_type}
+                          onChange={(e) =>
+                            onMemoryDraftChange(memory.id, {
+                              memory_type: e.target.value as MemoryType,
+                            })
+                          }
+                          disabled={streaming}
+                        >
+                          {MEMORY_TYPES.map((type) => (
+                            <option key={type} value={type}>
+                              {type}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="workplace__field">
+                        <label
+                          className="field-label"
+                          htmlFor={`wp-memory-importance-${memory.id}`}
+                        >
+                          Importance
+                        </label>
+                        <input
+                          id={`wp-memory-importance-${memory.id}`}
+                          className="field-input"
+                          type="number"
+                          min={0}
+                          max={1}
+                          step={0.1}
+                          value={draft.importance ?? memory.importance}
+                          onChange={(e) =>
+                            onMemoryDraftChange(memory.id, {
+                              importance: Number(e.target.value),
+                            })
+                          }
+                          disabled={streaming}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="empty-state">Nothing to store this round</p>
+          )}
+
           <button
             type="button"
             className="btn btn-accent"

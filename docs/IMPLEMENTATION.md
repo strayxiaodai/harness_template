@@ -99,6 +99,11 @@ Two interrupt mechanisms:
    and either pending memories exist or `loop_score >= 80`, so the operator can
    review memories and preview a skill from one pause.
 
+Action-review memory candidates are stashed in-process by
+`(thread_id, memory_cursor)` before interrupting. This keeps local/dev
+checkpointer resumes idempotent when LangGraph re-enters the actioner from the
+top; shared multi-process deployments need shared pending-memory storage.
+
 **Example — start a HITL thread:**
 
 ```bash

@@ -33,8 +33,35 @@ operator's actual approval choices.
 ### Files Modified
 
 - `agent/actioner.py`
+- `agent/memory_review.py`
 - `tests/test_actioner.py`
+- `tests/test_memory_review.py`
 - `docs/IMPLEMENTATION.md`
 - `docs/ARCHITECTURE.md`
 - `docs/QUALITY_SCORE.md`
 - `docs/histories/2026-07/20260711-0211-action-review-memory-hitl.md`
+
+## [2026-07-11 02:17] | Task: Persist Pending Memories On Resume
+
+### User Query
+
+> Fix the Task 3 review finding where LangGraph re-enters `actioner` from the
+> top after an interrupt, causing nondeterministic memory extraction and broken
+> resume id mapping.
+
+### Changes Overview
+
+- Area: Actioner HITL resume idempotency.
+- Key actions: Added an in-process `(thread_id, memory_cursor)` pending-memory
+  cache, resolved pending candidates from state/cache/extraction in that order,
+  stashed before action-review interrupts, and cleared after resume or auto
+  approval mapping.
+- Tests: Added a regression that simulates a paused first interrupt and a resumed
+  second actioner invocation, proving extraction runs once and edits map against
+  the first pending ids.
+
+### Design Intent
+
+This preserves stable memory review ids across local/dev checkpointer resumes
+without changing graph topology. The cache is intentionally process-local and is
+documented as needing shared storage for multi-process deployments.

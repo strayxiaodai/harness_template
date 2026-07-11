@@ -20,7 +20,13 @@ from graph.schemas import ActionScoreResult
 from graph.state import AgentState
 from llm.providers import get_llm
 from llm.retry import call_llm
-from agent.memory_review import action_review_message, map_resume_to_approved
+from agent.memory_review import (
+    action_review_message,
+    clear_pending,
+    load_pending,
+    map_resume_to_approved,
+    stash_pending,
+)
 from rag.ingest.memory_extract import extract_memory_candidates
 from skills.eligibility import SKILL_PREVIEW_SCORE_THRESHOLD
 
@@ -112,8 +118,13 @@ async def actioner_agent(state: AgentState) -> dict[str, object]:
     score = score_result.score
     skill_preview_ready = score >= SKILL_PREVIEW_SCORE_THRESHOLD
 
-    pending = state.get("pending_memories") or []
-    if not pending:
+    thread_id = state["thread_id"]
+    memory_cursor = state.get("memory_cursor")
+    pending = state.get("pending_memories") or load_pending(
+        thread_id,
+        memory_cursor,
+    )
+    if pending is None:
         try:
             pending = await extract_memory_candidates(state)
         except Exception as exc:
@@ -124,6 +135,7 @@ async def actioner_agent(state: AgentState) -> dict[str, object]:
         state.get("human_in_the_loop") and (pending or skill_preview_ready),
     )
     if action_review_interrupted:
+        stash_pending(thread_id, memory_cursor, pending)
         resume_value = interrupt(
             {
                 "kind": "action_review",
@@ -141,6 +153,7 @@ async def actioner_agent(state: AgentState) -> dict[str, object]:
         approved_memories = map_resume_to_approved(pending, resume_value)
     else:
         approved_memories = map_resume_to_approved(pending, True)
+    clear_pending(thread_id, memory_cursor)
 
     await write_audit_event(
         thread_id=state["thread_id"],

@@ -5,6 +5,55 @@ from __future__ import annotations
 from typing import Any
 
 MEMORY_TYPES = frozenset({"fact", "preference", "entity", "summary"})
+PendingCacheKey = tuple[str, int | None]
+
+# Single-process HITL idempotency for actioner interrupt re-entry. This matches
+# local/dev checkpointer usage; multi-process deployments need shared storage.
+_PENDING_CACHE: dict[PendingCacheKey, list[dict[str, Any]]] = {}
+
+
+def stash_pending(
+    thread_id: str,
+    cursor: int | None,
+    pending: list[dict[str, Any]],
+) -> None:
+    """Store pending memories for actioner interrupt re-entry.
+
+    Args:
+        thread_id: Stable LangGraph thread identifier.
+        cursor: Memory extraction cursor for the actioner invocation.
+        pending: Pending memory candidates with stable ids.
+    """
+    _PENDING_CACHE[(thread_id, cursor)] = [dict(item) for item in pending]
+
+
+def load_pending(
+    thread_id: str,
+    cursor: int | None,
+) -> list[dict[str, Any]] | None:
+    """Load pending memories cached before an action-review interrupt.
+
+    Args:
+        thread_id: Stable LangGraph thread identifier.
+        cursor: Memory extraction cursor for the actioner invocation.
+
+    Returns:
+        Cached pending memories, or ``None`` when no cache entry exists.
+    """
+    pending = _PENDING_CACHE.get((thread_id, cursor))
+    if pending is None:
+        return None
+    return [dict(item) for item in pending]
+
+
+def clear_pending(thread_id: str, cursor: int | None) -> None:
+    """Clear pending memories after action-review mapping completes.
+
+    Args:
+        thread_id: Stable LangGraph thread identifier.
+        cursor: Memory extraction cursor for the actioner invocation.
+    """
+    _PENDING_CACHE.pop((thread_id, cursor), None)
 
 
 def action_review_message(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -19,6 +20,18 @@ PENDING_MEMORY = {
 }
 
 
+@pytest.fixture(autouse=True)
+def clear_pending_cache() -> Iterator[None]:
+    """Keep actioner cache state isolated across tests."""
+    from agent.memory_review import clear_pending
+
+    for cursor in (None, 0, 7):
+        clear_pending("test-thread", cursor)
+    yield
+    for cursor in (None, 0, 7):
+        clear_pending("test-thread", cursor)
+
+
 def _state(**overrides: object) -> dict[str, Any]:
     """Build a minimal AgentState dict for actioner tests."""
     base: dict[str, Any] = {
@@ -31,6 +44,7 @@ def _state(**overrides: object) -> dict[str, Any]:
         "role": "actioner",
         "approved": False,
         "human_in_the_loop": False,
+        "memory_cursor": 0,
         "review": {
             "verdict": "pass",
             "reason": "looks good",
@@ -219,6 +233,60 @@ async def test_actioner_interrupts_for_pending_memories_when_hitl(
     assert audit.await_args.kwargs["payload"]["pending_memory_count"] == 1
     assert audit.await_args.kwargs["payload"]["approved_memory_count"] == 1
     assert audit.await_args.kwargs["payload"]["action_review_interrupted"] is True
+
+
+@pytest.mark.asyncio
+async def test_actioner_reuses_pending_memories_after_interrupt_resume(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Actioner must not re-extract memories when re-entered after interrupt."""
+    from app.agents import actioner as actioner_module
+
+    audit = AsyncMock()
+    extract = AsyncMock(
+        side_effect=[
+            [PENDING_MEMORY],
+            AssertionError("memory extraction should not run on resume"),
+        ],
+    )
+    resume_value = {
+        "memories": [
+            {
+                **PENDING_MEMORY,
+                "keep": True,
+                "content": "User prefers pytest -v for targeted checks.",
+            },
+        ],
+    }
+    interrupt = MagicMock(side_effect=[RuntimeError("paused"), resume_value])
+
+    monkeypatch.setattr(actioner_module, "write_audit_event", audit)
+    monkeypatch.setattr(
+        actioner_module,
+        "score_loop",
+        AsyncMock(return_value=ActionScoreResult(score=65, rationale="memory")),
+    )
+    monkeypatch.setattr(actioner_module, "extract_memory_candidates", extract)
+    monkeypatch.setattr(actioner_module, "interrupt", interrupt)
+
+    state = _state(human_in_the_loop=True, memory_cursor=7)
+
+    with pytest.raises(RuntimeError, match="paused"):
+        await actioner_module.actioner_agent(state)
+
+    result = await actioner_module.actioner_agent(state)
+
+    assert extract.await_count == 1
+    assert interrupt.call_count == 2
+    assert result["pending_memories"] == [PENDING_MEMORY]
+    assert result["approved_memories"] == [
+        {
+            "content": "User prefers pytest -v for targeted checks.",
+            "memory_type": "preference",
+            "importance": 0.8,
+        },
+    ]
+    assert audit.await_args.kwargs["payload"]["approved_memory_count"] == 1
 
 
 @pytest.mark.asyncio

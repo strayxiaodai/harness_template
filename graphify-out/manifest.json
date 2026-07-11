@@ -1025,8 +1025,8 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "agent/actioner.py": {
-    "mtime": 1783761180.2169669,
-    "ast_hash": "7f2d1b10e7bf11e275c886e17363195e",
+    "mtime": 1783761484.297489,
+    "ast_hash": "26fbb8c34fb7dffb72afeed3509c52db",
     "semantic_hash": ""
   },
   "agent/executor.py": {
@@ -1555,8 +1555,8 @@
     "semantic_hash": "a15053789e81898a66d021015b012cdd"
   },
   "tests/test_actioner.py": {
-    "mtime": 1783761157.1448188,
-    "ast_hash": "64045db53298e0d662b636994e2a1fe3",
+    "mtime": 1783761589.8548775,
+    "ast_hash": "afe6f3c1978e0f66a0017d75e01f76ed",
     "semantic_hash": ""
   },
   "tests/test_api.py": {
@@ -1655,8 +1655,8 @@
     "semantic_hash": "17688e0f1518a8ea6c8f5b03a17fa045"
   },
   "agent/memory_review.py": {
-    "mtime": 1783760697.2597826,
-    "ast_hash": "98c8f1a02d61b3154b1f86975cff9565",
+    "mtime": 1783761479.3159518,
+    "ast_hash": "25d0e28373d1543725f103b4c89ecf98",
     "semantic_hash": ""
   },
   "app/frontend/src/components/CenterColumn.tsx": {
@@ -1690,8 +1690,8 @@
     "semantic_hash": ""
   },
   "tests/test_memory_review.py": {
-    "mtime": 1783760685.4059129,
-    "ast_hash": "d6f028d9727cfc1fc7038e10d3c512be",
+    "mtime": 1783761494.1227865,
+    "ast_hash": "51a6a074f974f6ec666d83e70669c617",
     "semantic_hash": ""
   },
   ".agents/skills/impeccable/SKILL.md": {
@@ -2200,8 +2200,8 @@
     "semantic_hash": ""
   },
   "docs/IMPLEMENTATION.md": {
-    "mtime": 1783761207.533184,
-    "ast_hash": "13d8c26c344d442736b9488c5efabf23",
+    "mtime": 1783761509.899734,
+    "ast_hash": "061185bf6e4df45387165b5dc78e9dca",
     "semantic_hash": ""
   },
   "docs/LANGGRAPH.md": {
@@ -2435,8 +2435,23 @@
     "semantic_hash": ""
   },
   "docs/histories/2026-07/20260711-0211-action-review-memory-hitl.md": {
-    "mtime": 1783761219.9297504,
-    "ast_hash": "dbf64b6621087a7e83718972e28b53ee",
+    "mtime": 1783761535.6024034,
+    "ast_hash": "3e9f8b34444b2affac39dc17c6ff43cc",
+    "semantic_hash": ""
+  },
+  "tests/test_action_review_api.py": {
+    "mtime": 1783761557.3511908,
+    "ast_hash": "28288419d7b8293070e37880190140a4",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-07-11-action-review-api-e2e-test.md": {
+    "mtime": 1783761341.9520178,
+    "ast_hash": "f29941787029eb0512b4ff687752960c",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-07-11-action-review-api-e2e-test-design.md": {
+    "mtime": 1783761341.938933,
+    "ast_hash": "7624e175a75330f0da64faba71197a64",
     "semantic_hash": ""
   }
 }

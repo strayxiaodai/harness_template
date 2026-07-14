@@ -14,12 +14,13 @@ class ExecutionRecord(TypedDict):
     verification: list[str]
 
 
-class ReviewRecord(TypedDict):
-    """Serialized form of a ReviewResult stored in the graph state."""
+class LearningRecord(TypedDict):
+    """Serialized learner verdict + lessons (candidates stored separately)."""
 
     verdict: str
     reason: str
     suggested_step: str
+    lessons: dict[str, list[str]]
 
 
 class ToolCallRecord(TypedDict):
@@ -51,7 +52,8 @@ class AgentState(TypedDict):
     result: NotRequired[str]
     execution: NotRequired[ExecutionRecord]
     approved: bool
-    review: NotRequired[ReviewRecord]
+    learning: NotRequired[LearningRecord]
+    learning_candidates: NotRequired[list[dict[str, object]]]
     refine_from: NotRequired[str]
     tool_calls: NotRequired[list[ToolCallRecord]]
     human_in_the_loop: bool

@@ -12,7 +12,7 @@ class PlanResult(BaseModel):
 
 
 class ExecutorResult(BaseModel):
-    """Structured executor output consumed by the reviewer."""
+    """Structured executor output consumed by the learner."""
 
     summary: str = Field(min_length=1)
     changes: list[str] = Field(default_factory=list)
@@ -20,8 +20,37 @@ class ExecutorResult(BaseModel):
     verification: list[str] = Field(default_factory=list)
 
 
+class LessonsBlock(BaseModel):
+    """Learner lessons attached for actioner scoring and UI."""
+
+    worked: list[str] = Field(default_factory=list)
+    failed: list[str] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
+    next_time: list[str] = Field(default_factory=list)
+
+
+class LearningCandidate(BaseModel):
+    """Memory-shaped candidate proposed by the learner."""
+
+    id: str = Field(min_length=1)
+    content: str = Field(min_length=1)
+    memory_type: Literal["fact", "preference", "entity", "summary"]
+    importance: float = Field(ge=0.0, le=1.0)
+
+
+class LearningResult(BaseModel):
+    """Structured learner output consumed by the actioner."""
+
+    verdict: Literal["pass", "fail"]
+    reason: str = Field(min_length=1)
+    suggested_step: Literal["planner", "finish"]
+    lessons: LessonsBlock = Field(default_factory=LessonsBlock)
+    learning_candidates: list[LearningCandidate] = Field(default_factory=list)
+
+
+# Temporary until Task 3 removes agent/reviewer.py.
 class ReviewResult(BaseModel):
-    """Structured reviewer output consumed by the actioner."""
+    """Legacy reviewer output; superseded by LearningResult."""
 
     verdict: Literal["pass", "fail"]
     reason: str = Field(min_length=1)

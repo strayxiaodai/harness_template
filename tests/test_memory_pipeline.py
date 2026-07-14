@@ -323,8 +323,7 @@ async def test_memorize_commits_approved_only(
         ],
         pending_memories=[{"id": "m0", "content": "x"}],
     )
-    result = await memorize_module.memorize_agent(state)
-    assert result["role"] == "memorize"
+    result = await memorize_module.commit_round_memories(state)
     assert result["memory_cursor"] == 2
     assert result["pending_memories"] == []
     assert result["approved_memories"] == []
@@ -354,7 +353,7 @@ async def test_memorize_skips_store_when_approved_empty(
     monkeypatch.setattr(memorize_module, "get_rag_service", lambda: mock_service)
     monkeypatch.setattr(memorize_module, "commit_approved_memories", commit)
 
-    result = await memorize_module.memorize_agent(
+    result = await memorize_module.commit_round_memories(
         _state(messages=[HumanMessage(content="x")], approved_memories=[]),
     )
     assert result["memory_cursor"] == 1
@@ -375,7 +374,7 @@ async def test_memorize_rag_disabled_advances_cursor_and_clears_lists(
     )
 
     messages = [HumanMessage(content="x"), AIMessage(content="y")]
-    result = await memorize_module.memorize_agent(
+    result = await memorize_module.commit_round_memories(
         _state(
             messages=messages,
             memory_cursor=0,
@@ -389,8 +388,6 @@ async def test_memorize_rag_disabled_advances_cursor_and_clears_lists(
             pending_memories=[{"id": "m0", "content": "User said x"}],
         ),
     )
-
-    assert result["role"] == "memorize"
     assert result["memory_cursor"] == len(messages)
     assert result["pending_memories"] == []
     assert result["approved_memories"] == []
@@ -419,9 +416,7 @@ async def test_memorize_agent_runs_memory_ingest(
         AsyncMock(return_value={"memory_cursor": 3}),
     )
 
-    result = await memorize_module.memorize_agent(_state(messages=[]))
-
-    assert result["role"] == "memorize"
+    result = await memorize_module.commit_round_memories(_state(messages=[]))
     assert result["memory_cursor"] == 3
     memorize_module.commit_approved_memories.assert_awaited_once()
     mock_service.save_memory_store.assert_called_once()
@@ -452,9 +447,7 @@ async def test_memorize_agent_continues_when_ingest_fails(
     )
 
     messages = [AIMessage(content="done")]
-    result = await memorize_module.memorize_agent(_state(messages=messages))
-
-    assert result["role"] == "memorize"
+    result = await memorize_module.commit_round_memories(_state(messages=messages))
     assert result["memory_cursor"] == len(messages)
     assert result["pending_memories"] == []
     assert result["approved_memories"] == []

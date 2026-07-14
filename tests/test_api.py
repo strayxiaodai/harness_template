@@ -16,11 +16,13 @@ def _snapshot(
     values: dict[str, Any],
     *,
     next_nodes: tuple[str, ...] = (),
+    interrupts: tuple[Any, ...] = (),
 ) -> MagicMock:
     """Build a fake LangGraph state snapshot."""
     snap = MagicMock()
     snap.values = values
     snap.next = next_nodes
+    snap.interrupts = interrupts
     return snap
 
 
@@ -28,12 +30,17 @@ def _mock_graph(
   values: dict[str, Any],
   *,
   next_nodes: tuple[str, ...] = (),
+  interrupts: tuple[Any, ...] = (),
 ) -> MagicMock:
     """Build a mock compiled graph."""
     graph = MagicMock()
     graph.ainvoke = AsyncMock(return_value=None)
     graph.aget_state = AsyncMock(
-        return_value=_snapshot(values, next_nodes=next_nodes),
+        return_value=_snapshot(
+            values,
+            next_nodes=next_nodes,
+            interrupts=interrupts,
+        ),
     )
 
     async def _astream(*_args: object, **_kwargs: object):
@@ -132,6 +139,57 @@ async def test_snapshot_marks_skill_eligible_after_loop() -> None:
     response = await snapshot_to_response(graph, "thread-1")
     assert response.skill_eligible is True
     assert response.skill_ineligible_reason is None
+
+
+@pytest.mark.asyncio
+async def test_snapshot_includes_action_review_interrupt() -> None:
+    """RunResponse exposes dynamic interrupt and compact learning fields."""
+    from app.services.snapshot import snapshot_to_response
+
+    interrupt = MagicMock()
+    interrupt.id = "int-1"
+    interrupt.value = {
+        "kind": "action_review",
+        "node": "actioner",
+        "memories": [],
+        "score": 85,
+        "threshold": 80,
+        "skill_preview_ready": True,
+        "message": "Skill preview is available.",
+    }
+    graph = _mock_graph(
+        {
+            "approved": True,
+            "role": "actioner",
+            "rounds": 1,
+            "max_rounds": 3,
+            "human_in_the_loop": True,
+            "plan": ["a"],
+            "learning": {
+                "verdict": "pass",
+                "reason": "ok",
+                "suggested_step": "finish",
+                "lessons": {
+                    "worked": [],
+                    "failed": [],
+                    "risks": [],
+                    "next_time": [],
+                },
+            },
+            "loop_score": 85,
+            "skill_preview_ready": True,
+        },
+        next_nodes=(),
+        interrupts=(interrupt,),
+    )
+    response = await snapshot_to_response(graph, "thread-1")
+    assert response.needs_human is True
+    assert response.interrupt is not None
+    assert response.interrupt.value["kind"] == "action_review"
+    assert response.plan == ["a"]
+    assert response.loop_score == 85
+    assert response.learning is not None
+    assert response.next_action == "actioner"
 
 
 def test_resume_requires_hitl_thread(client: TestClient) -> None:

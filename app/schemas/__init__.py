@@ -1,9 +1,10 @@
 """Pydantic request and response models for the HTTP API."""
 
 from app.schemas.run import (
+    InterruptPayload,
+    LearningOverride,
     ResumeOverrides,
     ResumeRequest,
-    ReviewOverride,
     RunRequest,
     RunResponse,
 )
@@ -18,9 +19,10 @@ from app.schemas.skills import (
 __all__ = [
     "DistillSkillRequest",
     "DistillSkillResponse",
+    "InterruptPayload",
+    "LearningOverride",
     "ResumeOverrides",
     "ResumeRequest",
-    "ReviewOverride",
     "RunRequest",
     "RunResponse",
     "SaveSkillRequest",

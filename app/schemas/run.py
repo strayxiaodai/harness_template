@@ -30,12 +30,12 @@ class RunRequest(BaseModel):
         return self
 
 
-class ReviewOverride(BaseModel):
-    """Typed review override for HITL correction."""
+class LearningOverride(BaseModel):
+    """Typed learning override for HITL correction."""
 
     verdict: Literal["pass", "fail"]
     reason: str = Field(min_length=1)
-    suggested_step: Literal["planner", "executor", "finish"]
+    suggested_step: Literal["planner", "finish"]
 
 
 class ResumeOverrides(BaseModel):
@@ -46,8 +46,8 @@ class ResumeOverrides(BaseModel):
     plan: list[str] | None = None
     task: str | None = None
     result: str | None = None
-    review: ReviewOverride | None = None
-    refine_from: Literal["planner", "executor", "finish"] | None = None
+    learning: LearningOverride | None = None
+    refine_from: Literal["planner", "finish"] | None = None
 
 
 class ResumeRequest(BaseModel):
@@ -60,6 +60,13 @@ class ResumeRequest(BaseModel):
         default=None,
         description="Resume payload for dynamic interrupt() pauses (e.g. action_review)",
     )
+
+
+class InterruptPayload(BaseModel):
+    """LangGraph dynamic interrupt exposed to the console."""
+
+    id: str | None = None
+    value: Any = None
 
 
 class RunResponse(BaseModel):
@@ -76,3 +83,13 @@ class RunResponse(BaseModel):
     max_rounds: int = 0
     skill_eligible: bool = False
     skill_ineligible_reason: str | None = None
+    interrupt: InterruptPayload | None = None
+    plan: list[str] | None = None
+    execution: dict[str, Any] | None = None
+    tool_calls: list[dict[str, Any]] | None = None
+    learning: dict[str, Any] | None = None
+    learning_candidates: list[dict[str, Any]] | None = None
+    refine_from: str | None = None
+    loop_score: int | None = None
+    skill_preview_ready: bool | None = None
+    memory_cursor: int | None = None

@@ -198,6 +198,14 @@ export interface SkillDetail extends SkillSummary {
   body: string
 }
 
+export interface ThreadSummary {
+  thread_id: string
+  task: string
+  slug: string
+  started_at: string
+  plan: string[]
+}
+
 export interface TimelineStep {
   id: string
   node: GraphNode | string

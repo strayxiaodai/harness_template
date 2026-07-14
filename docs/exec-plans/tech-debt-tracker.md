@@ -12,7 +12,7 @@ Known debt preserved for planning. Not urgent enough to block current tasks.
 | 2026-07-07 | Ops | No `Makefile` / `scripts/` | Docs-only scaffold | Port upstream harness scripts |
 | 2026-07-09 | Docs | `REFERENCE.md` renamed to `IMPLEMENTATION.md` | Clarify as-built vs spec/references | — |
 | 2026-07-08 | Observability | No `logging_config.py` | Per-module loggers | Central config + `thread_id` in format |
-| 2026-07-08 | API | No thread list endpoint | Console uses manual `thread_id` | `GET /threads` with checkpoint metadata |
+| 2026-07-14 | API | Checkpoint metadata on thread list | Artifact-backed `GET /threads` covers attach | Optional `has_checkpoint` / checkpointer enum |
 | 2026-07-08 | UI tests | No Playwright/Vitest e2e | Manual browser verify | Add minimal e2e for run/resume |
 
 Add rows when deferring work intentionally. Link active plans in

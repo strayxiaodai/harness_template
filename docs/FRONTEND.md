@@ -72,7 +72,7 @@ command when the inspector rail is open; widths persist in `localStorage`
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│ StatusBar — health, rounds, skill eligibility            │
+│ StatusBar — health, thread picker, rounds                │
 ├──────────────┬─┬───────────────────────┬─┬───────────────┤
 │ Inspector    │⁞│ GraphSpine            │⁞│ CommandColumn │
 │  rail        │ │ Workplace (flex)      │ │  control bar  │
@@ -95,7 +95,7 @@ Narrow (&lt;1024px): spine → workplace → timeline drawer → inspector → c
 | `GraphSpine` | Four nodes: planner → executor → learner → actioner | `GRAPH_NODES`, `completedNodes`, `activeNode` |
 | `TraceTimeline` | Bottom drawer; collapsed by default; chronological steps | `timeline`, `selectStep`, `timelineOpen` |
 | `InspectorStack` | Collapsible rail; secondary RAG/audit when open | `mode="secondary"`, `collapsed`, `memory_context` |
-| `StatusBar` | API health, round counter, errors | `useHealth`, `runResponse` |
+| `StatusBar` | API health, thread attach picker, round counter | `useHealth`, `useThreads`, `runResponse` |
 
 The frontend talks to the API only — no LangGraph or Python imports.
 
@@ -197,7 +197,7 @@ cd app/frontend && npm run lint && npm run build
 | Gap | Workaround |
 | --- | --- |
 | Frontend not served by FastAPI | Run Vite dev server alongside API |
-| No thread list API | Operator supplies `thread_id` manually |
+| Attach-only thread list | StatusBar picks `GET /threads`; fills Task/Plan; no checkpoint hydrate |
 | No audit panel | Postgres audit not exposed via HTTP yet |
 | SSE only during active stream | Use curl `/stream` for headless debugging |
 

@@ -123,6 +123,7 @@ Do **not** introduce LangSmith-style trace trees or chat-thread-primary layouts
 | Memory approval? | Workplace → Action review | `interrupt.value.memories`, `interrupt_resume.memories` |
 | Can I save a skill? | CommandColumn | `skill_eligible`, `skill_ineligible_reason` |
 | Is the API up? | StatusBar | `GET /health` |
+| Which prior thread? | StatusBar picker | `GET /threads` → attach id + Task/Plan |
 
 **Example — HITL interrupt styling:**
 

@@ -8,6 +8,7 @@ import {
   responseToTimelineStep,
   streamRun,
 } from '../lib/api'
+import { applyAttachFields, shouldDisableThreadPicker } from '../lib/threadAttach'
 import { clampRounds, formatFetchError } from '../lib/errors'
 import {
   resolveSkillEligible,
@@ -88,6 +89,25 @@ export function useConsole() {
     setDistillResult(null)
     setDistillBusy(false)
   }, [])
+
+  const attachThread = useCallback(
+    (params: { threadId: string; task: string; plan: string[] }) => {
+      if (shouldDisableThreadPicker(phase, busyRef.current)) {
+        return
+      }
+      const fields = applyAttachFields({
+        thread_id: params.threadId,
+        task: params.task,
+        slug: '',
+        started_at: '',
+        plan: params.plan,
+      })
+      setThreadId(fields.threadId)
+      setTask(fields.task)
+      setPlanText(fields.planText)
+    },
+    [phase],
+  )
 
   const clearError = useCallback(() => {
     setError(null)
@@ -399,6 +419,7 @@ export function useConsole() {
     saveSkill,
     discardSkill,
     resetThread,
+    attachThread,
     selectStep,
     selectAdjacent,
     clearError,

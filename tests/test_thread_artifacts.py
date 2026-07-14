@@ -137,3 +137,198 @@ def test_disk_errors_do_not_raise(
         payload={"plan": ["x"]},
         status="complete",
     )
+
+
+def test_list_threads_empty(threads_dir: Path) -> None:
+    """F1: Empty root yields an empty list."""
+    assert ta.list_threads() == []
+
+
+def test_list_threads_sorted_by_started_at(threads_dir: Path) -> None:
+    """F2+F3: Summaries from index+meta; newest started_at first."""
+    threads_dir.mkdir(parents=True, exist_ok=True)
+    older = threads_dir / "older-task"
+    newer = threads_dir / "newer-task"
+    older.mkdir()
+    newer.mkdir()
+    (older / "meta.json").write_text(
+        json.dumps(
+            {
+                "thread_id": "id-old",
+                "task": "older task",
+                "slug": "older-task",
+                "started_at": "2026-07-13T10:00:00+00:00",
+                "plan": ["a"],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (newer / "meta.json").write_text(
+        json.dumps(
+            {
+                "thread_id": "id-new",
+                "task": "newer task",
+                "slug": "newer-task",
+                "started_at": "2026-07-14T12:00:00+00:00",
+                "plan": [],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (threads_dir / ".index.json").write_text(
+        json.dumps({"id-old": "older-task", "id-new": "newer-task"}) + "\n",
+        encoding="utf-8",
+    )
+    rows = ta.list_threads()
+    assert [r["thread_id"] for r in rows] == ["id-new", "id-old"]
+    assert rows[0]["task"] == "newer task"
+    assert rows[0]["slug"] == "newer-task"
+    assert rows[1]["plan"] == ["a"]
+
+
+def test_list_threads_empty_started_at_sorts_last(threads_dir: Path) -> None:
+    """F4: Missing started_at sorts after dated rows."""
+    threads_dir.mkdir(parents=True, exist_ok=True)
+    dated = threads_dir / "dated"
+    undated = threads_dir / "undated"
+    dated.mkdir()
+    undated.mkdir()
+    (dated / "meta.json").write_text(
+        json.dumps(
+            {
+                "thread_id": "id-dated",
+                "task": "dated",
+                "slug": "dated",
+                "started_at": "2026-07-14T01:00:00+00:00",
+                "plan": [],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (undated / "meta.json").write_text(
+        json.dumps(
+            {
+                "thread_id": "id-undated",
+                "task": "undated",
+                "slug": "undated",
+                "plan": [],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (threads_dir / ".index.json").write_text(
+        json.dumps({"id-dated": "dated", "id-undated": "undated"}) + "\n",
+        encoding="utf-8",
+    )
+    rows = ta.list_threads()
+    assert [r["thread_id"] for r in rows] == ["id-dated", "id-undated"]
+
+
+def test_list_threads_skips_corrupt_meta(threads_dir: Path) -> None:
+    """F5: Corrupt meta for one index entry is skipped."""
+    threads_dir.mkdir(parents=True, exist_ok=True)
+    good = threads_dir / "good"
+    bad = threads_dir / "bad"
+    good.mkdir()
+    bad.mkdir()
+    (good / "meta.json").write_text(
+        json.dumps(
+            {
+                "thread_id": "id-good",
+                "task": "ok",
+                "slug": "good",
+                "started_at": "2026-07-14T01:00:00+00:00",
+                "plan": [],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (bad / "meta.json").write_text("{not-json", encoding="utf-8")
+    (threads_dir / ".index.json").write_text(
+        json.dumps({"id-good": "good", "id-bad": "bad"}) + "\n",
+        encoding="utf-8",
+    )
+    rows = ta.list_threads()
+    assert len(rows) == 1
+    assert rows[0]["thread_id"] == "id-good"
+
+
+def test_list_threads_skips_missing_dir(threads_dir: Path) -> None:
+    """F6: Index slug with no directory is skipped."""
+    threads_dir.mkdir(parents=True, exist_ok=True)
+    (threads_dir / ".index.json").write_text(
+        json.dumps({"id-ghost": "no-such-dir"}) + "\n",
+        encoding="utf-8",
+    )
+    assert ta.list_threads() == []
+
+
+def test_list_threads_prefers_index_thread_id(threads_dir: Path) -> None:
+    """F7: Index key wins when meta.thread_id disagrees."""
+    threads_dir.mkdir(parents=True, exist_ok=True)
+    path = threads_dir / "slug-a"
+    path.mkdir()
+    (path / "meta.json").write_text(
+        json.dumps(
+            {
+                "thread_id": "meta-says-other",
+                "task": "t",
+                "slug": "slug-a",
+                "started_at": "2026-07-14T02:00:00+00:00",
+                "plan": [],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (threads_dir / ".index.json").write_text(
+        json.dumps({"index-id": "slug-a"}) + "\n",
+        encoding="utf-8",
+    )
+    rows = ta.list_threads()
+    assert len(rows) == 1
+    assert rows[0]["thread_id"] == "index-id"
+
+
+def test_list_threads_missing_plan_defaults_empty(threads_dir: Path) -> None:
+    """F8: meta without plan yields plan=[]."""
+    threads_dir.mkdir(parents=True, exist_ok=True)
+    path = threads_dir / "no-plan"
+    path.mkdir()
+    (path / "meta.json").write_text(
+        json.dumps(
+            {
+                "thread_id": "id-np",
+                "task": "t",
+                "slug": "no-plan",
+                "started_at": "2026-07-14T03:00:00+00:00",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (threads_dir / ".index.json").write_text(
+        json.dumps({"id-np": "no-plan"}) + "\n",
+        encoding="utf-8",
+    )
+    assert ta.list_threads()[0]["plan"] == []
+
+
+def test_list_threads_after_init(threads_dir: Path) -> None:
+    """F9: init_thread_artifacts row is listed."""
+    ta.init_thread_artifacts(
+        task="From init",
+        thread_id="init-thread-1",
+        plan=["one", "two"],
+    )
+    rows = ta.list_threads()
+    assert len(rows) == 1
+    assert rows[0]["thread_id"] == "init-thread-1"
+    assert rows[0]["task"] == "From init"
+    assert rows[0]["plan"] == ["one", "two"]
+    assert rows[0]["started_at"]

@@ -8,7 +8,7 @@ import os
 import re
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from skills.store import slugify
 
@@ -125,6 +125,62 @@ def lookup_thread_dir(thread_id: str, *, root: Path | None = None) -> Path | Non
         return None
     path = base / slug
     return path if path.is_dir() else None
+
+
+class ThreadSummaryDict(TypedDict):
+    """On-disk thread list row (API maps to Pydantic ThreadSummary)."""
+
+    thread_id: str
+    task: str
+    slug: str
+    started_at: str
+    plan: list[str]
+
+
+def list_threads(*, root: Path | None = None) -> list[ThreadSummaryDict]:
+    """List thread artifact summaries from .index.json + meta.json.
+
+    Newest ``started_at`` first. Corrupt or missing meta entries are skipped.
+    Index key is preferred for ``thread_id`` when meta disagrees.
+    """
+    base = root or threads_root()
+    index = _read_index(base)
+    rows: list[ThreadSummaryDict] = []
+    for thread_id, slug in index.items():
+        path = base / slug
+        meta_path = path / "meta.json"
+        if not path.is_dir() or not meta_path.is_file():
+            logger.warning(
+                "thread index skip missing dir/meta: %s -> %s",
+                thread_id,
+                slug,
+            )
+            continue
+        try:
+            raw = json.loads(meta_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("thread index skip bad meta %s: %s", meta_path, exc)
+            continue
+        if not isinstance(raw, dict):
+            logger.warning("thread index skip non-object meta %s", meta_path)
+            continue
+        plan_raw = raw.get("plan") or []
+        plan = (
+            [str(p) for p in plan_raw] if isinstance(plan_raw, list) else []
+        )
+        rows.append(
+            ThreadSummaryDict(
+                thread_id=str(thread_id),
+                task=str(raw.get("task") or ""),
+                slug=str(raw.get("slug") or slug),
+                started_at=str(raw.get("started_at") or ""),
+                plan=plan,
+            )
+        )
+
+    # ISO timestamps sort lexicographically; empty started_at sorts last.
+    rows.sort(key=lambda r: r["started_at"] or "", reverse=True)
+    return rows
 
 
 def safe_init_thread_artifacts(

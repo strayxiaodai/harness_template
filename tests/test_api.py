@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -320,6 +322,71 @@ def test_list_skills_empty(client: TestClient) -> None:
         response = client.get("/skills")
     assert response.status_code == 200
     assert response.json() == []
+
+
+def test_list_threads_empty(client: TestClient) -> None:
+    """F10: GET /threads returns [] when the artifact store is empty."""
+    with patch(
+        "app.api.threads.list_threads",
+        return_value=[],
+    ):
+        response = client.get("/threads")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_list_threads_returns_summaries(client: TestClient) -> None:
+    """F11: GET /threads maps summary rows to JSON."""
+    rows = [
+        {
+            "thread_id": "abc",
+            "task": "do the thing",
+            "slug": "do-the-thing",
+            "started_at": "2026-07-14T08:00:00+00:00",
+            "plan": ["step"],
+        }
+    ]
+    with patch("app.api.threads.list_threads", return_value=rows):
+        response = client.get("/threads")
+    assert response.status_code == 200
+    assert response.json() == rows
+
+
+def test_list_threads_reads_harness_dir(
+    client: TestClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """F12: GET /threads reads real HARNESS_THREADS_DIR (unmocked list)."""
+    root = tmp_path / "threads"
+    root.mkdir()
+    slug = root / "live-task"
+    slug.mkdir()
+    (slug / "meta.json").write_text(
+        json.dumps(
+            {
+                "thread_id": "live-id",
+                "task": "live task",
+                "slug": "live-task",
+                "started_at": "2026-07-14T09:00:00+00:00",
+                "plan": ["p1"],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (root / ".index.json").write_text(
+        json.dumps({"live-id": "live-task"}) + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("HARNESS_THREADS_DIR", str(root))
+    response = client.get("/threads")
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["thread_id"] == "live-id"
+    assert body[0]["task"] == "live task"
+    assert body[0]["plan"] == ["p1"]
 
 
 def test_distill_skill_endpoint(client: TestClient) -> None:

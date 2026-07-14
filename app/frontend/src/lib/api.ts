@@ -11,6 +11,7 @@ import type {
   SkillDetail,
   SkillSummary,
   StreamPayload,
+  ThreadSummary,
   TimelineStep,
 } from '../types/api'
 import { GRAPH_NODES, isErrorPayload, isFinalPayload } from '../types/api'
@@ -59,6 +60,17 @@ export async function fetchSkills(signal?: AbortSignal): Promise<SkillSummary[]>
   if (!res.ok) {
     const body = await res.text()
     throw new Error(formatApiError(res.status, body, 'List skills failed'))
+  }
+  return res.json()
+}
+
+export async function fetchThreads(
+  signal?: AbortSignal,
+): Promise<ThreadSummary[]> {
+  const res = await fetch(`${API_BASE}/threads`, { signal })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(formatApiError(res.status, body, 'List threads failed'))
   }
   return res.json()
 }

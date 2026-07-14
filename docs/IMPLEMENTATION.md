@@ -46,7 +46,7 @@ harness_template/
 ├── rag/             # ingest, stores, retrieve, inject
 │   └── ingest/memory_extract.py  # extract_memory_candidates / commit_approved_memories
 ├── app/             # FastAPI + React frontend
-│   ├── api/         # /health, /run, /resume, /stream, /skills
+│   ├── api/         # /health, /run, /resume, /stream, /skills, /threads
 │   ├── services/    # harness, snapshot, state, thread_artifacts, resume_overrides
 │   ├── skills/      # distilled playbooks (`<slug>/SKILL.md`); tracked
 │   ├── threads/     # per-thread stage markdown (gitignored; created at runtime)
@@ -262,6 +262,12 @@ Defined in `graph/state.py` as `AgentState`.
 ## Structured Schemas
 
 Pydantic models in `graph/schemas.py`. Nodes use `llm.with_structured_output(...)`.
+
+Executor and learner run a tool-calling phase, then a **fresh** structured
+summarize call. The summarize prompt uses plain-text tool evidence rather than
+live `ToolMessage` / tool-call `AIMessage` rows — otherwise Ollama's default
+`json_schema` method often keeps emitting tool calls (empty content) and
+raises LangChain `OUTPUT_PARSING_FAILURE`.
 
 ### PlanResult
 
@@ -609,6 +615,7 @@ data: {"error": "graph run timed out"}
 
 | Method | Path | Purpose |
 |--------|------|---------|
+| `GET` | `/threads` | List on-disk thread artifacts (`app/threads/`) for console attach |
 | `GET` | `/skills` | List distilled skills |
 | `GET` | `/skills/{slug}` | Load one skill body |
 | `POST` | `/skills/distill` | Thread → SKILL.md preview or save |
@@ -717,9 +724,15 @@ Each stage markdown records **status** (`pending` | `running` | `paused` |
 | Final snapshot / `/run` return | refresh all four from response fields |
 | `/resume` | lookup via `.index.json`; refresh (skip quietly if no index entry) |
 
-Disk failures are logged and **never** fail the graph run. There is no public
-artifact API in v1 — inspect files under `app/threads/` (or
-`HARNESS_THREADS_DIR`) directly.
+Disk failures are logged and **never** fail the graph run. Public list-only API:
+`GET /threads` returns summaries from `.index.json` + each `meta.json`
+(`thread_id`, `task`, `slug`, `started_at`, `plan`). Stage markdown remains
+file-inspect only (no browse/edit routes).
+
+**Console attach:** StatusBar thread picker loads `GET /threads`, then sets
+`thread_id` + Task + Plan from the selected summary without hydrating the
+LangGraph checkpoint or wiping the timeline. Resume/Distill still use the
+existing `/resume` and skills paths when a checkpoint exists.
 
 | Env | Default | Purpose |
 |-----|---------|---------|
@@ -1072,7 +1085,8 @@ curl -N -X POST http://localhost:8000/stream \
   -H "Content-Type: application/json" \
   -d '{"thread_id":"w3","task":"List agent nodes"}'
 
-# 5. Skills (library under app/skills/)
+# 5. Threads + skills
+curl -s http://localhost:8000/threads
 curl -s http://localhost:8000/skills
 curl -s http://localhost:8000/skills/my-skill-slug
 ```
@@ -1100,6 +1114,7 @@ pytest tests/test_graph.py -v
 | `test_clarification.py` | clarification helper unit tests (helper not wired into agents yet) |
 | `test_mcp.py` | MCP tool registration |
 | `test_skills_*.py` | distill, inject, eligibility |
+| `test_thread_artifacts.py` | `list_threads` F1–F9 + stage write helpers |
 | `test_skills_store_root.py` | default `skills_root()` → `app/skills` |
 | `test_thread_artifacts.py` | init, collision slug, stage markdown write, disk-error soft-fail |
 | `test_harness_thread_artifacts.py` | run / stream / resume wiring into `app/threads/` |

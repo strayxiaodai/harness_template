@@ -10,6 +10,7 @@ import { useResumeDraft } from './hooks/useResumeDraft'
 import { useHealth } from './hooks/useHealth'
 import { useResizableColumns } from './hooks/useResizableColumns'
 import { useSkills } from './hooks/useSkills'
+import { useThreads } from './hooks/useThreads'
 import {
   isClarificationInterrupt,
 } from './lib/clarification'
@@ -63,10 +64,18 @@ function App() {
     saveSkill,
     discardSkill,
     resetThread,
+    attachThread,
     selectStep,
     selectAdjacent,
     clearError,
   } = useConsole()
+
+  const {
+    threads,
+    loading: threadsLoading,
+    error: threadsError,
+    refreshThreads,
+  } = useThreads()
 
   const {
     skills,
@@ -133,6 +142,12 @@ function App() {
     }
   }, [clarifying, actionReviewing])
 
+  useEffect(() => {
+    if (phase === 'complete' || phase === 'awaiting_human') {
+      void refreshThreads()
+    }
+  }, [phase, refreshThreads])
+
   const phaseRef = useRef(phase)
   phaseRef.current = phase
 
@@ -179,6 +194,19 @@ function App() {
         maxRounds={maxRoundsDisplay}
         humanInTheLoop={humanInTheLoop}
         nextAction={runResponse?.next_action ?? null}
+        threads={threads}
+        threadsLoading={threadsLoading}
+        threadsError={threadsError}
+        onAttachThread={(thread) =>
+          attachThread({
+            threadId: thread.thread_id,
+            task: thread.task,
+            plan: thread.plan,
+          })
+        }
+        onRefreshThreads={() => {
+          void refreshThreads()
+        }}
       />
 
       <main

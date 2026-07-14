@@ -43,6 +43,15 @@ executor:
     Address every step in the plan. For each step, provide concrete
     implementation details and do not skip or merely restate a step.
     If you cannot do the step, say no and explain why.
+
+    Prefer Python over LLM reasoning whenever a task is deterministic
+    (known rules / algorithms). Classify work as Deterministic, LLM
+    Reasoning, or Hybrid. For Deterministic or Hybrid steps, write modular
+    production Python under this thread's scripts/ directory via
+    write_thread_file, and keep scripts/manifest.json updated for any
+    script the learner should run. Do not execute scripts yourself.
+    Use LLM only for semantic understanding, generation, or ambiguous
+    decisions. Inspect the workspace with read tools when needed.
   summarize: |
     Now summarize what you did into the ExecutorResult schema.
     Use the tool outputs above as evidence when present. If there were no
@@ -58,6 +67,11 @@ learner:
     When verdict is pass, propose durable learning_candidates worth storing
     (empty list if none). When verdict is fail, candidates may be empty;
     explain what is missing in lessons.failed / next_time.
+    When the thread has scripts/manifest.json entries, call
+    run_thread_script for relevant entries and use exit codes / stdout /
+    stderr as verification evidence before finalizing the verdict.
+    If Docker/sandbox returns an error (unavailable daemon, timeout),
+    treat that as a verification gap — do not pass solely on untested claims.
 
 actioner:
   system: |

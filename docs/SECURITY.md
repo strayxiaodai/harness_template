@@ -50,7 +50,7 @@ Document new variables in [`IMPLEMENTATION.md`](IMPLEMENTATION.md) when added.
 
 ## Executor Tool Surface
 
-Default allow-list: `read_file`, `list_dir` (read-only).
+Default allow-list: `read_file`, `list_dir`, `write_thread_file`, `read_thread_file`.
 
 ```python
 # tools/code_tools.py — path traversal blocked
@@ -59,10 +59,18 @@ if not target.is_relative_to(workspace):
     raise ValueError("path escapes the workspace")
 ```
 
+Thread writes are further scoped to `app/threads/<slug>/scripts/` (`*.py` or
+`manifest.json` only). Learner `run_thread_script` executes only via Docker S2
+(`--network=none`, `--read-only`, `--cap-drop=ALL`); there is no host-Python
+fallback when Docker is unavailable.
+
 | Tool | Risk level | Enable |
 | --- | --- | --- |
 | `read_file` | Low | Default |
 | `list_dir` | Low | Default |
+| `write_thread_file` | Medium (thread-scoped) | Default |
+| `read_thread_file` | Low | Default |
+| `run_thread_script` | High→mitigated by Docker S2 | Learner only |
 | `search_knowledge_base` | Low | `EXECUTOR_TOOLS=...,search_knowledge_base` |
 | `mcp__*__*` | **High** | `HARNESS_MCP_ENABLED=true` |
 

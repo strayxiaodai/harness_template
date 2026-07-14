@@ -61,7 +61,7 @@ harness_template/
 **Example — list top-level packages from the executor:**
 
 ```bash
-export EXECUTOR_TOOLS=read_file,list_dir
+export EXECUTOR_TOOLS=read_file,list_dir,write_thread_file,read_thread_file
 # Inside a graph run, executor may call:
 # list_dir(path="agent")  →  ["actioner.py", "executor.py", ...]
 ```
@@ -837,7 +837,11 @@ Retrieved documents:
 | `EMBEDDING_MODEL` | Model name | `BGE-M3:latest` |
 | `RAG_MEMORY_BACKEND` | `faiss` or `postgres` | `faiss` |
 | `DATABASE_URL` | Postgres memory + audit | `postgresql://...` |
-| `EXECUTOR_TOOLS` | Tool allow-list | `read_file,list_dir,search_knowledge_base` |
+| `EXECUTOR_TOOLS` | Tool allow-list | `read_file,list_dir,write_thread_file,read_thread_file` |
+| `HARNESS_SCRIPT_IMAGE` | Docker image for learner script runs | `python:3.12-slim` |
+| `HARNESS_SCRIPT_TIMEOUT_SECONDS` | Per-script Docker timeout | `30` |
+| `HARNESS_SCRIPT_OUTPUT_BYTES` | Stdout/stderr cap per stream | `32768` |
+| `HARNESS_DOCKER_BIN` | Docker CLI binary | `docker` |
 
 **Postgres memory pool (optional):**
 
@@ -856,24 +860,32 @@ Apply `migrations/002_rag_memory.sql` when using pgvector memory.
 |------|---------|-------------|
 | `read_file` | Yes | Read workspace file (max 128 KiB) |
 | `list_dir` | Yes | List directory entries |
+| `write_thread_file` | Yes | Write `scripts/*.py` or `manifest.json` for the current thread |
+| `read_thread_file` | Yes | Read under `app/threads/<slug>/` |
 | `search_knowledge_base` | No | Hybrid doc search (RAG) |
 | `mcp__{server}__{tool}` | When MCP enabled | External MCP tools |
 
-**Example — read_file:**
+**Learner-only tools** (not in `EXECUTOR_TOOLS`):
+
+| Tool | Description |
+|------|-------------|
+| `run_thread_script` | Run a manifest-listed `.py` under `scripts/` inside Docker S2 (`--network=none`, read-only mount). No host-Python fallback. |
+
+**Example — write_thread_file:**
 
 ```json
-{"path": "app/schemas/run.py", "max_bytes": 4096}
+{"path": "validate.py", "content": "assert True\n"}
 ```
 
-**Example — list_dir:**
+Writes to `app/threads/<slug>/scripts/validate.py`. Update `scripts/manifest.json` so the learner can run it.
+
+**Example — run_thread_script (learner):**
 
 ```json
-{"path": "agent"}
+{"path": "validate.py"}
 ```
 
-→ `["actioner.py", "executor.py", "learner.py", "memorize.py", "planner.py"]`
-
-Registry: `tools/registry.py`. Max tool iterations per executor pass: `5`.
+Registry: `tools/registry.py`. Max tool iterations per executor/learner pass: `5`.
 
 ---
 

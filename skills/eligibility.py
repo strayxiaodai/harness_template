@@ -11,9 +11,9 @@ SKILL_PREVIEW_SCORE_THRESHOLD = 80
 def thread_eligible_for_skill(values: dict[str, Any]) -> tuple[bool, str]:
     """Return whether a thread has completed at least one harness loop.
 
-    A loop is planner → executor → reviewer → actioner → memorize. The
-    actioner increments ``rounds``, so ``rounds >= 1`` means at least one
-    full cycle finished (or was interrupted after actioner on round 1).
+    A loop is planner → executor → learner → actioner. The actioner
+    increments ``rounds``, so ``rounds >= 1`` means at least one full
+    cycle finished (or was interrupted after actioner on round 1).
 
     Args:
         values: LangGraph checkpoint values for the thread.
@@ -26,16 +26,16 @@ def thread_eligible_for_skill(values: dict[str, Any]) -> tuple[bool, str]:
         return (
             False,
             "Complete at least one harness loop before saving a skill "
-            f"(planner → executor → reviewer → actioner → memorize). "
+            f"(planner → executor → learner → actioner). "
             f"Current rounds: {rounds}.",
         )
 
     has_execution = bool(values.get("execution"))
-    has_review = bool(values.get("review"))
-    if not has_execution and not has_review:
+    has_learning = bool(values.get("learning"))
+    if not has_execution and not has_learning:
         return (
             False,
-            "At least one loop must produce executor and reviewer output "
+            "At least one loop must produce executor and learner output "
             "before saving a skill.",
         )
 

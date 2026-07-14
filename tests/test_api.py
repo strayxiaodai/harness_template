@@ -120,7 +120,7 @@ async def test_snapshot_marks_skill_eligible_after_loop() -> None:
                 "risks": [],
                 "verification": [],
             },
-            "review": {
+            "learning": {
                 "verdict": "pass",
                 "reason": "ok",
                 "suggested_step": "finish",

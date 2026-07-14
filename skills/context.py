@@ -52,11 +52,11 @@ def format_thread_context(values: dict[str, Any]) -> str:
             f"{json.dumps(tool_calls, indent=2, default=str)}",
         )
 
-    review = values.get("review")
-    if review:
+    learning = values.get("learning")
+    if learning:
         sections.append(
-            "## Review\n"
-            f"{json.dumps(review, indent=2, default=str)}",
+            "## Learning\n"
+            f"{json.dumps(learning, indent=2, default=str)}",
         )
 
     result = values.get("result")

@@ -13,6 +13,7 @@ and [`DESIGN.md`](DESIGN.md).
 | Design tokens | `src/styles/tokens.css` |
 | API client | `src/lib/api.ts` |
 | Console state machine | `src/hooks/useConsole.ts` |
+| Thread library list | `src/hooks/useThreads.ts` |
 
 ## Local Development
 
@@ -136,6 +137,15 @@ List skills     → GET /api/skills
 Run with skill  → POST /api/run { skill_slug }
 Distill preview → POST /api/skills/distill { save: false }
 Save skill      → POST /api/skills/save
+```
+
+**Thread attach (recovery):**
+
+```text
+List threads → GET /api/threads  (from app/threads/ index + meta)
+Pick in StatusBar → attachThread: set thread_id + Task + Plan
+  (does not rebuild timeline or call /resume)
+Continue / Distill → existing /resume and /skills paths when checkpoint exists
 ```
 
 **Example — skill eligibility in UI:**

@@ -13,7 +13,7 @@ Solo developers and builders working locally with this LangGraph harness templat
 
 ## Product Purpose
 
-A developer console for the harness — not a chat wrapper around the agents. The UI exposes the Plan → Do → Check → Action loop as inspectable, resumable work: submit a goal, pause at interrupts, override or approve, and see exactly what each node produced (plans, tool calls, reviews, RAG recall, audit events).
+A developer console for the harness — not a chat wrapper around the agents. The UI exposes the Plan → Do → Check → Action loop as inspectable, resumable work: submit a goal, pause at interrupts, override or approve, recover a prior thread from on-disk artifacts, and see exactly what each node produced (plans, tool calls, reviews, RAG recall, audit events).
 
 Success means **control and clarity**: the builder can answer "what did planner/executor/reviewer do, with what context, and why?" without digging through logs or raw JSON in a terminal.
 

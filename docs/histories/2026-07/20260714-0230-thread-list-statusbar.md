@@ -28,7 +28,8 @@ state. Attach-only keeps resume/distill paths unchanged when checkpoints exist.
 - `app/schemas/threads.py`, `app/api/threads.py`, `app/core/app.py`
 - `tests/test_thread_artifacts.py`, `tests/test_api.py`
 - `app/frontend` — `useThreads`, `threadAttach`, StatusBar, App
-- Docs: `IMPLEMENTATION.md`, `FRONTEND.md`, `DESIGN.md`, tech-debt, this history
+- Docs: `IMPLEMENTATION.md`, `FRONTEND.md`, `DESIGN.md`, `ARCHITECTURE.md`,
+  `PRODUCT.md`, `releases/feature-release-notes.md`, tech-debt, this history
 
 ### Manual smoke (S1–S5)
 

@@ -17,6 +17,7 @@ RAG, skills, tools, and configuration. Each section includes a concrete example.
 | Loop quality scoring + action-review HITL gate | Implemented | `agent/actioner.py` |
 | RAG (hybrid retrieve, memory ingest, rerank, inject) | Implemented | `rag/`, `context/` |
 | FastAPI `/run`, `/resume`, `/stream`, `/health` | Implemented | `app/api/` |
+| Thread artifact list (`GET /threads`) + StatusBar attach | Implemented | `app/api/threads.py`, `app/services/thread_artifacts.py` |
 | Skill distillation + save eligibility gate | Implemented | `skills/`, `app/api/skills.py`, `app/skills/` |
 | Thread run artifacts (stage markdown) | Implemented | `app/services/thread_artifacts.py`, `app/threads/` |
 | MCP executor tools | Implemented | `harness_mcp/` |

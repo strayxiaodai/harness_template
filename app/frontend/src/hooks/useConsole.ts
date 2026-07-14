@@ -150,7 +150,7 @@ export function useConsole() {
               }
               setActiveNode(node)
               localAccumulated = mergeNodeUpdate(node, patch, localAccumulated)
-              const step = payloadToTimelineStep(node, localAccumulated, 'stream')
+              const step = payloadToTimelineStep(node, patch, 'stream')
               setAccumulated({ ...localAccumulated })
               setTimeline((prev) => [...prev, step])
               setSelectedStepId(step.id)

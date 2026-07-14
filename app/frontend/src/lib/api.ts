@@ -189,17 +189,46 @@ export function mergeNodeUpdate(
   }
 }
 
+export function nodePatchFromUpdate(
+  node: string,
+  patch: AgentStateSnapshot,
+): AgentStateSnapshot {
+  return { ...patch, role: node }
+}
+
 export function payloadToTimelineStep(
   node: string,
-  state: AgentStateSnapshot,
+  patch: AgentStateSnapshot,
   source: TimelineStep['source'],
 ): TimelineStep {
   return {
     id: nextStepId(),
     node,
     timestamp: Date.now(),
-    state: { ...state, role: node },
+    state: nodePatchFromUpdate(node, patch),
     source,
+  }
+}
+
+export function patchFromRunResponse(
+  node: string,
+  response: RunResponse,
+): AgentStateSnapshot {
+  return {
+    role: response.last_role ?? node,
+    rounds: response.rounds,
+    max_rounds: response.max_rounds,
+    approved: response.approved,
+    result: response.result ?? undefined,
+    refine_from: response.refine_from ?? undefined,
+    loop_score: response.loop_score ?? undefined,
+    skill_preview_ready: response.skill_preview_ready ?? undefined,
+    memory_cursor: response.memory_cursor ?? undefined,
+    plan: response.plan ?? undefined,
+    execution: response.execution ?? undefined,
+    tool_calls: response.tool_calls ?? undefined,
+    learning: response.learning ?? undefined,
+    learning_candidates: response.learning_candidates ?? undefined,
   }
 }
 
@@ -209,14 +238,7 @@ export function responseToTimelineStep(response: RunResponse): TimelineStep {
     id: nextStepId(),
     node,
     timestamp: Date.now(),
-    state: {
-      role: response.last_role ?? undefined,
-      rounds: response.rounds,
-      max_rounds: response.max_rounds,
-      approved: response.approved,
-      result: response.result ?? undefined,
-      refine_from: response.next_action ?? undefined,
-    },
+    state: patchFromRunResponse(node, response),
     source: 'resume',
   }
 }

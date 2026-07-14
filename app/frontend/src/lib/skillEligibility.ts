@@ -7,9 +7,9 @@ export function threadEligibleForSkill(
   rounds: number,
   timeline: TimelineStep[] = [],
 ): boolean {
-  const fromState = Boolean(state.execution || state.review)
+  const fromState = Boolean(state.execution || state.learning)
   const fromTimeline = timeline.some(
-    (step) => Boolean(step.state.execution || step.state.review),
+    (step) => Boolean(step.state.execution || step.state.learning),
   )
   const hasLoopOutput = fromState || fromTimeline
   const previewReady = Boolean(

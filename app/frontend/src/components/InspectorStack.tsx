@@ -130,20 +130,20 @@ export function InspectorStack({
             )}
           </InspectorSection>
 
-          <InspectorSection title="Review" empty={!state.review}>
-            {state.review && (
+          <InspectorSection title="Learning" empty={!state.learning}>
+            {state.learning && (
               <dl className="inspector-dl">
                 <div>
                   <dt>Verdict</dt>
-                  <dd>{state.review.verdict}</dd>
+                  <dd>{state.learning.verdict}</dd>
                 </div>
                 <div>
                   <dt>Reason</dt>
-                  <dd>{state.review.reason}</dd>
+                  <dd>{state.learning.reason}</dd>
                 </div>
                 <div>
                   <dt>Suggested step</dt>
-                  <dd className="mono">{state.review.suggested_step}</dd>
+                  <dd className="mono">{state.learning.suggested_step}</dd>
                 </div>
               </dl>
             )}

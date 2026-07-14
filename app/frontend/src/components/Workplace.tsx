@@ -128,7 +128,6 @@ export function Workplace({
             >
               <option value="">No change</option>
               <option value="planner">planner</option>
-              <option value="executor">executor</option>
               <option value="finish">finish</option>
             </select>
           </details>
@@ -291,27 +290,41 @@ export function Workplace({
 
   if (selectedStep) {
     const s = selectedStep.state
+    const node = selectedStep.node
+    const showPlan = node === 'planner' && Boolean(s.plan?.length)
+    const showExecution =
+      node === 'executor' && Boolean(s.execution || s.tool_calls?.length)
+    const showLearning = node === 'learner' && Boolean(s.learning)
+    const showActioner =
+      node === 'actioner' &&
+      (s.loop_score !== undefined ||
+        Boolean(s.refine_from) ||
+        s.memory_cursor !== undefined ||
+        s.skill_preview_ready !== undefined)
+    const empty =
+      !showPlan && !showExecution && !showLearning && !showActioner
+
     return (
       <section className="workplace panel" aria-label="Workplace">
         <h2 className="panel-title">Step · {selectedStep.node}</h2>
         <div className="workplace__body workplace__payloads">
-          {s.plan?.length ? (
+          {showPlan ? (
             <div>
               <h3 className="workplace__sub">Plan</h3>
               <ol className="inspector-list">
-                {s.plan.map((item, i) => (
+                {s.plan!.map((item, i) => (
                   <li key={`${i}-${item}`}>{item}</li>
                 ))}
               </ol>
             </div>
           ) : null}
-          {s.execution ? (
+          {showExecution && s.execution ? (
             <div>
               <h3 className="workplace__sub">Execution</h3>
               <p className="inspector-prose">{s.execution.summary}</p>
             </div>
           ) : null}
-          {s.tool_calls?.length ? (
+          {showExecution && s.tool_calls?.length ? (
             <div>
               <h3 className="workplace__sub">Tools</h3>
               <pre className="inspector-json mono">
@@ -319,20 +332,73 @@ export function Workplace({
               </pre>
             </div>
           ) : null}
-          {s.review ? (
+          {showLearning && s.learning ? (
             <div>
-              <h3 className="workplace__sub">Review</h3>
+              <h3 className="workplace__sub">Learning</h3>
               <p className="inspector-prose">
-                {s.review.verdict}: {s.review.reason}
+                {s.learning.verdict}: {s.learning.reason}
               </p>
+              <p className="workplace__hint mono">
+                suggested: {s.learning.suggested_step}
+              </p>
+              {s.learning.lessons ? (
+                <dl className="inspector-dl">
+                  <div>
+                    <dt>Worked</dt>
+                    <dd>{s.learning.lessons.worked.join('; ') || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Failed</dt>
+                    <dd>{s.learning.lessons.failed.join('; ') || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Risks</dt>
+                    <dd>{s.learning.lessons.risks.join('; ') || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Next time</dt>
+                    <dd>{s.learning.lessons.next_time.join('; ') || '—'}</dd>
+                  </div>
+                </dl>
+              ) : null}
+              {s.learning_candidates?.length ? (
+                <p className="workplace__hint">
+                  {s.learning_candidates.length} learning candidate
+                  {s.learning_candidates.length === 1 ? '' : 's'}
+                </p>
+              ) : null}
             </div>
           ) : null}
-          {!s.plan?.length &&
-            !s.execution &&
-            !s.tool_calls?.length &&
-            !s.review && (
-              <p className="empty-state">No primary payloads on this step.</p>
-            )}
+          {showActioner ? (
+            <div>
+              <h3 className="workplace__sub">Action</h3>
+              <dl className="inspector-dl">
+                <div>
+                  <dt>Loop score</dt>
+                  <dd className="mono">
+                    {s.loop_score !== undefined ? s.loop_score : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Refine from</dt>
+                  <dd className="mono">{s.refine_from ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt>Skill preview</dt>
+                  <dd>{s.skill_preview_ready ? 'ready' : 'not ready'}</dd>
+                </div>
+                <div>
+                  <dt>Memory cursor</dt>
+                  <dd className="mono">
+                    {s.memory_cursor !== undefined ? s.memory_cursor : '—'}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          ) : null}
+          {empty ? (
+            <p className="empty-state">No primary payloads on this step.</p>
+          ) : null}
         </div>
       </section>
     )

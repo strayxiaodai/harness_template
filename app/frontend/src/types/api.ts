@@ -1,9 +1,8 @@
 export const GRAPH_NODES = [
   'planner',
   'executor',
-  'reviewer',
+  'learner',
   'actioner',
-  'memorize',
 ] as const
 
 export type GraphNode = (typeof GRAPH_NODES)[number]
@@ -15,10 +14,18 @@ export interface ExecutionRecord {
   verification: string[]
 }
 
-export interface ReviewRecord {
+export interface LessonsBlock {
+  worked: string[]
+  failed: string[]
+  risks: string[]
+  next_time: string[]
+}
+
+export interface LearningRecord {
   verdict: string
   reason: string
   suggested_step: string
+  lessons: LessonsBlock
 }
 
 export interface ToolCallRecord {
@@ -38,7 +45,8 @@ export interface AgentStateSnapshot {
   result?: string
   execution?: ExecutionRecord
   approved?: boolean
-  review?: ReviewRecord
+  learning?: LearningRecord
+  learning_candidates?: PendingMemory[]
   refine_from?: string
   tool_calls?: ToolCallRecord[]
   human_in_the_loop?: boolean
@@ -61,10 +69,10 @@ export interface RunRequest {
   skill_slug?: string
 }
 
-export interface ReviewOverride {
+export interface LearningOverride {
   verdict: 'pass' | 'fail'
   reason: string
-  suggested_step: 'planner' | 'executor' | 'finish'
+  suggested_step: 'planner' | 'finish'
 }
 
 export interface ClarificationQuestion {
@@ -113,8 +121,8 @@ export interface ResumeOverrides {
   plan?: string[]
   task?: string
   result?: string
-  review?: ReviewOverride
-  refine_from?: 'planner' | 'executor' | 'finish'
+  learning?: LearningOverride
+  refine_from?: 'planner' | 'finish'
 }
 
 export interface ResumeRequest {
@@ -138,6 +146,15 @@ export interface RunResponse {
   skill_eligible: boolean
   skill_ineligible_reason: string | null
   interrupt?: InterruptPayload | null
+  plan?: string[] | null
+  execution?: ExecutionRecord | null
+  tool_calls?: ToolCallRecord[] | null
+  learning?: LearningRecord | null
+  learning_candidates?: PendingMemory[] | null
+  refine_from?: string | null
+  loop_score?: number | null
+  skill_preview_ready?: boolean | null
+  memory_cursor?: number | null
 }
 
 export interface DistillSkillRequest {

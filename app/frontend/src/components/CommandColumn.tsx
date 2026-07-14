@@ -473,7 +473,6 @@ function OverrideForm({
         >
           <option value="">No change</option>
           <option value="planner">planner</option>
-          <option value="executor">executor</option>
           <option value="finish">finish</option>
         </select>
         <p className="override-form__note">

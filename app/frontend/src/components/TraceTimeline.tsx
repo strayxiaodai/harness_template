@@ -110,20 +110,24 @@ export function TraceTimeline({
 
 function previewForStep(step: TimelineStep): string {
   const s = step.state
-  if (s.execution?.summary) {
-    return s.execution.summary.slice(0, 120)
+  switch (step.node) {
+    case 'planner':
+      return s.plan?.length ? `plan: ${s.plan.length} steps` : '—'
+    case 'executor':
+      return (
+        s.execution?.summary?.slice(0, 120) ||
+        s.result?.slice(0, 120) ||
+        '—'
+      )
+    case 'learner':
+      return s.learning
+        ? `${s.learning.verdict}: ${s.learning.reason}`.slice(0, 120)
+        : '—'
+    case 'actioner':
+      return s.loop_score !== undefined
+        ? `score ${s.loop_score} → ${s.refine_from ?? '?'}`
+        : '—'
+    default:
+      return s.role ? `role: ${s.role}` : '—'
   }
-  if (s.review?.verdict) {
-    return `review: ${s.review.verdict} — ${s.review.reason}`.slice(0, 120)
-  }
-  if (s.plan?.length) {
-    return `plan: ${s.plan.length} steps`
-  }
-  if (s.result) {
-    return s.result.slice(0, 120)
-  }
-  if (s.role) {
-    return `role: ${s.role}`
-  }
-  return '—'
 }

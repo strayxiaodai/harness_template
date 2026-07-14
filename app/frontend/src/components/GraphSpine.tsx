@@ -29,8 +29,7 @@ export function GraphSpine({
   refineFrom,
   onSelectNode,
 }: GraphSpineProps) {
-  const showRefineLoop =
-    refineFrom === 'planner' || refineFrom === 'executor'
+  const showRefineLoop = refineFrom === 'planner'
 
   return (
     <section className="graph-spine panel" aria-label="Agent graph">

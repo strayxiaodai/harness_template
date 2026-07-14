@@ -3,25 +3,22 @@ from typing import Literal
 
 from graph.state import AgentState
 
-ActionRoute = Literal["executor", "planner", "finish"]
+ActionRoute = Literal["planner", "finish"]
 
 DEFAULT_MAX_ROUNDS = 3
 
 
 def route_after_action(state: AgentState) -> ActionRoute:
-    """Finish or refine after the memorize step."""
+    """Finish or continue at planner after the actioner step."""
     if state.get("approved"):
         return "finish"
 
     if state["rounds"] >= state.get("max_rounds", DEFAULT_MAX_ROUNDS):
         return "finish"
 
-    refine_from = state.get("refine_from", "executor")
-
-    if refine_from == "planner":
-        return "planner"
-
+    refine_from = state.get("refine_from", "planner")
     if refine_from == "finish":
         return "finish"
 
-    return "executor"
+    # planner, legacy executor, or unknown → planner
+    return "planner"

@@ -29,9 +29,14 @@ def test_route_finishes_when_approved() -> None:
     assert route_after_action(_state(approved=True)) == "finish"
 
 
-def test_route_defaults_to_executor_refinement() -> None:
-    """Failed checks should resume execution by default."""
-    assert route_after_action(_state()) == "executor"
+def test_route_defaults_to_planner_refinement() -> None:
+    """Failed / unmarked loops continue at planner, not executor."""
+    assert route_after_action(_state()) == "planner"
+
+
+def test_route_maps_legacy_executor_refine_to_planner() -> None:
+    """Legacy refine_from=executor must continue at planner."""
+    assert route_after_action(_state(refine_from="executor")) == "planner"
 
 
 def test_route_can_resume_at_planner() -> None:
@@ -43,7 +48,7 @@ def test_route_respects_round_budget() -> None:
     """The loop must finish once the round budget is exhausted."""
     assert (
         route_after_action(
-            _state(rounds=3, max_rounds=3, refine_from="executor"),
+            _state(rounds=3, max_rounds=3, refine_from="planner"),
         )
         == "finish"
     )

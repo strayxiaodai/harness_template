@@ -56,6 +56,8 @@ class AgentState(TypedDict):
     learning_candidates: NotRequired[list[dict[str, object]]]
     refine_from: NotRequired[str]
     tool_calls: NotRequired[list[ToolCallRecord]]
+    learner_tool_calls: NotRequired[list[ToolCallRecord]]
+    script_runs: NotRequired[list[dict[str, object]]]
     human_in_the_loop: bool
     memory_cursor: NotRequired[int]
     memory_context: NotRequired[str]

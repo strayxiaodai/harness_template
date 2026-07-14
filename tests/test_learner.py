@@ -8,7 +8,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from graph.schemas import LearningResult, LessonsBlock
 
@@ -71,12 +71,19 @@ async def test_learner_writes_learning_to_state(
     )
     fake_structured = MagicMock()
     fake_llm = MagicMock()
+    fake_llm.bind_tools.return_value = MagicMock()
     fake_llm.with_structured_output.return_value = fake_structured
     monkeypatch.setattr(learner_module, "get_llm", lambda: fake_llm)
     monkeypatch.setattr(
         learner_module,
+        "get_learner_tools",
+        lambda _tid: [],
+    )
+    monkeypatch.setattr(learner_module, "lookup_thread_dir", lambda _tid: None)
+    monkeypatch.setattr(
+        learner_module,
         "call_llm",
-        AsyncMock(return_value=learning),
+        AsyncMock(side_effect=[AIMessage(content="reviewed"), learning]),
     )
 
     result = await learner_module.learner_agent(_state())
@@ -87,8 +94,8 @@ async def test_learner_writes_learning_to_state(
     assert result["learning"]["lessons"]["failed"] == ["no edge-case coverage"]
     assert result["learning_candidates"] == []
     assert "review" not in result
-    assert len(result["messages"]) == 1
-    assert "missing edge-case tests" in result["messages"][0].content
+    assert result["learner_tool_calls"] == []
+    assert any("missing edge-case tests" in m.content for m in result["messages"])
     fake_llm.with_structured_output.assert_called_once_with(LearningResult)
 
 
@@ -114,12 +121,19 @@ async def test_learner_sets_approved_on_pass(
         ],
     )
     fake_llm = MagicMock()
+    fake_llm.bind_tools.return_value = MagicMock()
     fake_llm.with_structured_output.return_value = MagicMock()
     monkeypatch.setattr(learner_module, "get_llm", lambda: fake_llm)
     monkeypatch.setattr(
         learner_module,
+        "get_learner_tools",
+        lambda _tid: [],
+    )
+    monkeypatch.setattr(learner_module, "lookup_thread_dir", lambda _tid: None)
+    monkeypatch.setattr(
+        learner_module,
         "call_llm",
-        AsyncMock(return_value=learning),
+        AsyncMock(side_effect=[AIMessage(content="ok"), learning]),
     )
 
     result = await learner_module.learner_agent(_state())
@@ -146,17 +160,29 @@ async def test_learner_includes_execution_and_tool_calls_in_prompt(
         learning_candidates=[],
     )
 
+    call_count = {"n": 0}
+
     async def fake_call_llm(
         runnable: Any,
         messages: list[Any],
-    ) -> LearningResult:
+    ) -> Any:
         del runnable
         captured_messages.extend(messages)
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            return AIMessage(content="no tools needed")
         return learning
 
     fake_llm = MagicMock()
+    fake_llm.bind_tools.return_value = MagicMock()
     fake_llm.with_structured_output.return_value = MagicMock()
     monkeypatch.setattr(learner_module, "get_llm", lambda: fake_llm)
+    monkeypatch.setattr(
+        learner_module,
+        "get_learner_tools",
+        lambda _tid: [],
+    )
+    monkeypatch.setattr(learner_module, "lookup_thread_dir", lambda _tid: None)
     monkeypatch.setattr(learner_module, "call_llm", fake_call_llm)
 
     await learner_module.learner_agent(
@@ -175,7 +201,7 @@ async def test_learner_includes_execution_and_tool_calls_in_prompt(
     human_messages = [
         message for message in captured_messages if isinstance(message, HumanMessage)
     ]
-    assert len(human_messages) == 1
+    assert len(human_messages) >= 1
     content = human_messages[0].content
     assert "implemented the feature" in content
     assert "edited main.py" in content

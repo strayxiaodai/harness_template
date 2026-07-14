@@ -154,7 +154,14 @@ def _stage_keys(node: str) -> tuple[str, ...]:
     if node == "executor":
         return ("result", "execution", "tool_calls")
     if node == "learner":
-        return ("learning", "learning_candidates", "suggested_step", "approved")
+        return (
+            "learning",
+            "learning_candidates",
+            "suggested_step",
+            "approved",
+            "learner_tool_calls",
+            "script_runs",
+        )
     return (
         "loop_score",
         "skill_preview_ready",

@@ -8,3 +8,4 @@ data/rag/
 data/checkpoints/
 .superpowers/
 .worktrees/
+app/threads/

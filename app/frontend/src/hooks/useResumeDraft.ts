@@ -9,7 +9,10 @@ import {
   actionReviewMemories,
   isActionReviewInterrupt,
 } from '../lib/actionReview'
-import { clarificationQuestions } from '../lib/clarification'
+import {
+  clarificationQuestions,
+  isClarificationInterrupt,
+} from '../lib/clarification'
 import type { RunPhase } from './useConsole'
 
 function parsePlanLines(text: string): string[] {
@@ -83,7 +86,9 @@ export function useResumeDraft(
   const buildPayload = (): {
     overrides?: ResumeOverrides
     answers?: ClarificationAnswer[]
-    interrupt_resume?: { memories: MemoryResumeRow[] }
+    interrupt_resume?:
+      | { memories: MemoryResumeRow[] }
+      | { answers: ClarificationAnswer[] }
   } => {
     const overrides: ResumeOverrides = {}
     const plan = parsePlanLines(planOverrideText)
@@ -102,20 +107,26 @@ export function useResumeDraft(
             }))
             .filter((a) => a.answer.length > 0)
         : undefined
-    const interrupt_resume = isActionReviewInterrupt(interrupt)
-      ? {
-          memories: memories.map(
-            (memory) =>
-              memoryDrafts[memory.id] ?? {
-                id: memory.id,
-                keep: true,
-                content: memory.content,
-                memory_type: memory.memory_type,
-                importance: memory.importance,
-              },
-          ),
-        }
-      : undefined
+    let interrupt_resume:
+      | { memories: MemoryResumeRow[] }
+      | { answers: ClarificationAnswer[] }
+      | undefined
+    if (isActionReviewInterrupt(interrupt)) {
+      interrupt_resume = {
+        memories: memories.map(
+          (memory) =>
+            memoryDrafts[memory.id] ?? {
+              id: memory.id,
+              keep: true,
+              content: memory.content,
+              memory_type: memory.memory_type,
+              importance: memory.importance,
+            },
+        ),
+      }
+    } else if (isClarificationInterrupt(interrupt) && answers?.length) {
+      interrupt_resume = { answers }
+    }
     return {
       overrides:
         Object.keys(overrides).length > 0 ? overrides : undefined,

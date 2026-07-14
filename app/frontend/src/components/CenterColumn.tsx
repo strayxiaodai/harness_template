@@ -98,6 +98,7 @@ export function CenterColumn({
       />
       <Workplace
         phase={phase}
+        activeNode={activeNode}
         interrupt={interrupt}
         selectedStep={selectedStep}
         questions={questions}

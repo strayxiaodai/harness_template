@@ -90,7 +90,7 @@ Narrow (&lt;1024px): spine → workplace → timeline drawer → inspector → c
 | --- | --- | --- |
 | `ColumnSplit` | Drag handles to resize inspector / command | `useResizableColumns` |
 | `CenterColumn` | Spine + workplace + timeline drawer shell | `timelineOpen`, `useResumeDraft` |
-| `Workplace` | Clarification HITL, action-review memory HITL, step payloads, or idle hint | `interrupt`, `selectedStep`, `useResumeDraft` |
+| `Workplace` | Clarification / action-review HITL, step payloads, or phase-aware status (ready / running / paused / complete / error) | `phase`, `activeNode`, `interrupt`, `selectedStep`, `useResumeDraft` |
 | `CommandColumn` | Thin control bar: task, run, skills, HITL toggle, secondary Continue | `useConsole`, `useSkills` |
 | `GraphSpine` | Four nodes: planner → executor → learner → actioner | `GRAPH_NODES`, `completedNodes`, `activeNode` |
 | `TraceTimeline` | Bottom drawer; collapsed by default; chronological steps | `timeline`, `selectStep`, `timelineOpen` |

@@ -29,6 +29,29 @@ def test_route_finishes_when_approved() -> None:
     assert route_after_action(_state(approved=True)) == "finish"
 
 
+def test_route_prefers_learning_verdict_over_stale_approved() -> None:
+    """Operator learning override must drive routing even if approved lags."""
+    assert (
+        route_after_action(
+            _state(
+                approved=True,
+                learning={"verdict": "fail", "suggested_step": "planner"},
+                refine_from="planner",
+            ),
+        )
+        == "planner"
+    )
+    assert (
+        route_after_action(
+            _state(
+                approved=False,
+                learning={"verdict": "pass", "suggested_step": "finish"},
+            ),
+        )
+        == "finish"
+    )
+
+
 def test_route_defaults_to_planner_refinement() -> None:
     """Failed / unmarked loops continue at planner, not executor."""
     assert route_after_action(_state()) == "planner"

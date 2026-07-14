@@ -240,6 +240,54 @@ def test_resume_applies_overrides(client: TestClient) -> None:
     assert patch == {"plan": ["step one", "step two"]}
 
 
+def test_resume_learning_override_syncs_approved(client: TestClient) -> None:
+    """Learning overrides merge lessons and sync the approved bit."""
+    from app.main import app
+
+    graph = _mock_graph(
+        {
+            "approved": False,
+            "human_in_the_loop": True,
+            "rounds": 0,
+            "max_rounds": 3,
+            "role": "learner",
+            "learning": {
+                "verdict": "fail",
+                "reason": "incomplete",
+                "suggested_step": "planner",
+                "lessons": {
+                    "worked": [],
+                    "failed": ["missing tests"],
+                    "risks": [],
+                    "next_time": [],
+                },
+            },
+        },
+        next_nodes=("actioner",),
+    )
+    graph.aupdate_state = AsyncMock()
+    app.state.graph_step = graph
+
+    response = client.post(
+        "/resume",
+        json={
+            "thread_id": "t1",
+            "overrides": {
+                "learning": {
+                    "verdict": "pass",
+                    "reason": "Operator override: accept",
+                    "suggested_step": "finish",
+                },
+            },
+        },
+    )
+    assert response.status_code == 200
+    patch = graph.aupdate_state.await_args.args[1]
+    assert patch["approved"] is True
+    assert patch["learning"]["lessons"]["failed"] == ["missing tests"]
+    assert patch["learning"]["verdict"] == "pass"
+
+
 def test_resume_request_rejects_unknown_override_key() -> None:
     """ResumeRequest must reject non-allowlisted override keys."""
     with pytest.raises(ValidationError):

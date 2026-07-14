@@ -26,7 +26,7 @@ def skills_root() -> Path:
     override = os.getenv("HARNESS_SKILLS_DIR", "").strip()
     if override:
         return Path(override).expanduser().resolve()
-    return _REPO_ROOT / ".cursor" / "skills"
+    return _REPO_ROOT / "app" / "skills"
 
 
 def slugify(text: str, *, max_length: int = 48) -> str:

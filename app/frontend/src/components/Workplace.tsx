@@ -29,6 +29,7 @@ interface ActionReviewMeta {
 
 interface WorkplaceProps {
   phase: RunPhase
+  activeNode: string | null
   interrupt: InterruptPayload | null
   selectedStep: TimelineStep | null
   questions: ClarificationQuestion[]
@@ -48,8 +49,44 @@ interface WorkplaceProps {
   streaming: boolean
 }
 
+function phaseStatusCopy(
+  phase: RunPhase,
+  activeNode: string | null,
+): { title: string; hint: string } {
+  switch (phase) {
+    case 'streaming':
+      return {
+        title: activeNode ? `Running · ${activeNode}` : 'Running…',
+        hint: 'Step payloads appear here as the graph advances.',
+      }
+    case 'awaiting_human':
+      return {
+        title: 'Awaiting human',
+        hint: activeNode
+          ? `Paused after ${activeNode}. Continue from Command (or press R).`
+          : 'Continue from Command (or press R).',
+      }
+    case 'complete':
+      return {
+        title: 'Run complete',
+        hint: 'Select a timeline step to inspect payloads.',
+      }
+    case 'error':
+      return {
+        title: 'Run error',
+        hint: 'Check Command for the error detail, then resume or start a new thread.',
+      }
+    default:
+      return {
+        title: 'Ready for a run',
+        hint: 'Start a thread from Command. Clarification and step payloads appear here.',
+      }
+  }
+}
+
 export function Workplace({
   phase,
+  activeNode,
   interrupt,
   selectedStep,
   questions,
@@ -404,15 +441,26 @@ export function Workplace({
     )
   }
 
+  const status = phaseStatusCopy(phase, activeNode)
+  const idleTone =
+    phase === 'streaming'
+      ? 'workplace__idle--running'
+      : phase === 'awaiting_human'
+        ? 'workplace__idle--paused'
+        : phase === 'error'
+          ? 'workplace__idle--error'
+          : ''
+
   return (
     <section className="workplace panel" aria-label="Workplace">
       <h2 className="panel-title">Workplace</h2>
-      <div className="workplace__idle">
-        <p className="empty-state empty-state--centered">Ready for a run</p>
-        <p className="empty-state__hint">
-          Start a thread from Command. Clarification and step payloads appear
-          here.
-        </p>
+      <div
+        className={`workplace__idle ${idleTone}`.trim()}
+        aria-live="polite"
+        aria-busy={phase === 'streaming'}
+      >
+        <p className="empty-state empty-state--centered">{status.title}</p>
+        <p className="empty-state__hint">{status.hint}</p>
       </div>
     </section>
   )

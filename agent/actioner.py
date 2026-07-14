@@ -19,11 +19,13 @@ from agent.memory_review import (
     action_review_message,
     clear_pending,
     load_pending,
+    load_score,
     map_resume_to_approved,
     stash_pending,
 )
 from audit.logger import write_audit_event
 from config.prompts import PROMPTS
+from graph.routing import learning_passed
 from graph.schemas import ActionScoreResult
 from graph.state import AgentState
 from llm.providers import get_llm
@@ -148,11 +150,11 @@ async def actioner_agent(state: AgentState) -> dict[str, object]:
     learning = state.get("learning") or {}
     suggestion = _normalize_step(
         learning.get("suggested_step")
-        or ("finish" if state.get("approved") else "planner")
+        or ("finish" if learning_passed(state) else "planner")
     )
     next_round = state["rounds"] + 1
 
-    if not state.get("approved"):
+    if not learning_passed(state):
         await write_audit_event(
             thread_id=state["thread_id"],
             round_number=next_round,
@@ -175,16 +177,22 @@ async def actioner_agent(state: AgentState) -> dict[str, object]:
             "skill_preview_ready": False,
         }
 
-    score_result = await score_loop(state)
-    score = score_result.score
-    skill_preview_ready = score >= SKILL_PREVIEW_SCORE_THRESHOLD
-
     thread_id = state["thread_id"]
     memory_cursor = state.get("memory_cursor")
+    cached_score = load_score(thread_id, memory_cursor)
     pending = state.get("pending_memories") or load_pending(
         thread_id,
         memory_cursor,
     )
+
+    if cached_score is not None:
+        score, rationale = cached_score
+        score_result = ActionScoreResult(score=score, rationale=rationale)
+    else:
+        score_result = await score_loop(state)
+    score = score_result.score
+    skill_preview_ready = score >= SKILL_PREVIEW_SCORE_THRESHOLD
+
     if pending is None:
         try:
             extracted = await extract_memory_candidates(state)
@@ -200,7 +208,13 @@ async def actioner_agent(state: AgentState) -> dict[str, object]:
         state.get("human_in_the_loop") and (pending or skill_preview_ready),
     )
     if action_review_interrupted:
-        stash_pending(thread_id, memory_cursor, pending)
+        stash_pending(
+            thread_id,
+            memory_cursor,
+            pending,
+            score=score,
+            score_rationale=score_result.rationale,
+        )
         resume_value = interrupt(
             {
                 "kind": "action_review",

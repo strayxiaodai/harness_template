@@ -130,6 +130,83 @@ async def test_actioner_soft_skips_when_not_approved(
 
 
 @pytest.mark.asyncio
+async def test_actioner_soft_skips_when_learning_verdict_fail_despite_approved(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Learning verdict is the source of truth when approved is stale."""
+    from app.agents import actioner as actioner_module
+
+    score = AsyncMock()
+    commit = AsyncMock()
+    monkeypatch.setattr(actioner_module, "write_audit_event", AsyncMock())
+    monkeypatch.setattr(actioner_module, "score_loop", score)
+    monkeypatch.setattr(actioner_module, "commit_round_memories", commit)
+
+    result = await actioner_module.actioner_agent(
+        _state(
+            approved=True,
+            learning={
+                "verdict": "fail",
+                "reason": "Operator override: replan",
+                "suggested_step": "planner",
+                "lessons": {
+                    "worked": [],
+                    "failed": [],
+                    "risks": [],
+                    "next_time": [],
+                },
+            },
+        ),
+    )
+
+    score.assert_not_awaited()
+    commit.assert_not_awaited()
+    assert result["loop_score"] == 0
+    assert result["refine_from"] == "planner"
+
+
+@pytest.mark.asyncio
+async def test_actioner_reuses_cached_score_after_action_review_resume(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Interrupt re-entry must not re-score; use the stashed loop score."""
+    from app.agents import actioner as actioner_module
+    from agent.memory_review import clear_pending, stash_pending
+
+    clear_pending("test-thread", 0)
+    stash_pending(
+        "test-thread",
+        0,
+        [PENDING_MEMORY],
+        score=SKILL_PREVIEW_SCORE_THRESHOLD,
+        score_rationale="cached score",
+    )
+
+    score = AsyncMock()
+    extract = AsyncMock()
+    monkeypatch.setattr(actioner_module, "write_audit_event", AsyncMock())
+    monkeypatch.setattr(actioner_module, "score_loop", score)
+    monkeypatch.setattr(actioner_module, "extract_memory_candidates", extract)
+    monkeypatch.setattr(
+        actioner_module,
+        "interrupt",
+        MagicMock(return_value={"memories": [{**PENDING_MEMORY, "keep": True}]}),
+    )
+    commit = _stub_commit(monkeypatch, actioner_module)
+
+    result = await actioner_module.actioner_agent(
+        _state(human_in_the_loop=True, memory_cursor=0),
+    )
+
+    score.assert_not_awaited()
+    extract.assert_not_awaited()
+    assert result["loop_score"] == SKILL_PREVIEW_SCORE_THRESHOLD
+    assert result["skill_preview_ready"] is True
+    commit.assert_awaited_once()
+    clear_pending("test-thread", 0)
+
+
+@pytest.mark.asyncio
 async def test_actioner_increments_rounds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

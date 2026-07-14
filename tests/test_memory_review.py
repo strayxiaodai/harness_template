@@ -111,6 +111,25 @@ def test_pending_cache_round_trips_empty_lists() -> None:
     assert load_pending(thread_id, cursor) is None
 
 
+def test_pending_cache_round_trips_score() -> None:
+    """Action-review re-entry can reuse the stashed loop score."""
+    from agent.memory_review import load_score
+
+    thread_id = "cache-score"
+    cursor = 14
+    clear_pending(thread_id, cursor)
+    stash_pending(
+        thread_id,
+        cursor,
+        [{"id": "m0", "content": "x", "memory_type": "fact", "importance": 0.5}],
+        score=82,
+        score_rationale="stable",
+    )
+    assert load_score(thread_id, cursor) == (82, "stable")
+    clear_pending(thread_id, cursor)
+    assert load_score(thread_id, cursor) is None
+
+
 def test_pending_cache_returns_copies() -> None:
     """Callers should not mutate pending cache contents by accident."""
     thread_id = "cache-copy"

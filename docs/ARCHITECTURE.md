@@ -133,7 +133,7 @@ from app.graph.routing import route_after_action
 | Document RAG index | FAISS + BM25 under `data/rag/` | — |
 | Memory store | FAISS under `data/rag/memory/` | pgvector via Postgres |
 | Audit log | No-op (debug skip) | `agent_audit_log` table |
-| Distilled skills | `.cursor/skills/<slug>/SKILL.md` | — |
+| Distilled skills | `app/skills/<slug>/SKILL.md` | — |
 
 ## Local Development Model
 

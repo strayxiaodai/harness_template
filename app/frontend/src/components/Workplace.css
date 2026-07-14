@@ -34,6 +34,20 @@
   background: color-mix(in oklch, var(--surface-raised) 55%, transparent);
 }
 
+.workplace__idle--running {
+  border-color: color-mix(in oklch, var(--primary) 40%, var(--border));
+  background: color-mix(in oklch, var(--primary) 8%, var(--surface));
+}
+
+.workplace__idle--paused {
+  border-color: color-mix(in oklch, var(--accent) 45%, var(--border));
+  background: color-mix(in oklch, var(--accent) 8%, var(--surface));
+}
+
+.workplace__idle--error {
+  border-color: color-mix(in oklch, var(--danger, var(--accent)) 40%, var(--border));
+}
+
 .workplace__field {
   display: grid;
   gap: var(--space-1);

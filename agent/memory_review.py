@@ -9,22 +9,31 @@ PendingCacheKey = tuple[str, int | None]
 
 # Single-process HITL idempotency for actioner interrupt re-entry. This matches
 # local/dev checkpointer usage; multi-process deployments need shared storage.
-_PENDING_CACHE: dict[PendingCacheKey, list[dict[str, Any]]] = {}
+_PENDING_CACHE: dict[PendingCacheKey, dict[str, Any]] = {}
 
 
 def stash_pending(
     thread_id: str,
     cursor: int | None,
     pending: list[dict[str, Any]],
+    *,
+    score: int | None = None,
+    score_rationale: str | None = None,
 ) -> None:
-    """Store pending memories for actioner interrupt re-entry.
+    """Store pending memories (and optional score) for interrupt re-entry.
 
     Args:
         thread_id: Stable LangGraph thread identifier.
         cursor: Memory extraction cursor for the actioner invocation.
         pending: Pending memory candidates with stable ids.
+        score: Loop score shown in the interrupt payload (reuse on resume).
+        score_rationale: Scoring rationale paired with ``score``.
     """
-    _PENDING_CACHE[(thread_id, cursor)] = [dict(item) for item in pending]
+    _PENDING_CACHE[(thread_id, cursor)] = {
+        "pending": [dict(item) for item in pending],
+        "score": score,
+        "score_rationale": score_rationale,
+    }
 
 
 def load_pending(
@@ -40,10 +49,36 @@ def load_pending(
     Returns:
         Cached pending memories, or ``None`` when no cache entry exists.
     """
-    pending = _PENDING_CACHE.get((thread_id, cursor))
+    entry = _PENDING_CACHE.get((thread_id, cursor))
+    if entry is None:
+        return None
+    pending = entry.get("pending")
     if pending is None:
         return None
     return [dict(item) for item in pending]
+
+
+def load_score(
+    thread_id: str,
+    cursor: int | None,
+) -> tuple[int, str] | None:
+    """Load the loop score cached with an action-review interrupt.
+
+    Args:
+        thread_id: Stable LangGraph thread identifier.
+        cursor: Memory extraction cursor for the actioner invocation.
+
+    Returns:
+        ``(score, rationale)`` when a score was stashed, else ``None``.
+    """
+    entry = _PENDING_CACHE.get((thread_id, cursor))
+    if entry is None:
+        return None
+    score = entry.get("score")
+    if score is None:
+        return None
+    rationale = str(entry.get("score_rationale") or "Cached action-review score.")
+    return int(score), rationale
 
 
 def clear_pending(thread_id: str, cursor: int | None) -> None:

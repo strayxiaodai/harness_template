@@ -37,9 +37,13 @@ curl -s http://localhost:8000/health | jq
 
 ```text
 harness_template/
-├── agent/           # LangGraph nodes
+├── agent/           # LangGraph nodes + HITL helpers
+│   ├── planner.py / executor.py / learner.py / actioner.py / memorize.py
+│   ├── memory_review.py   # action_review resume mapping + pending stash
+│   └── clarification.py   # shared clarification helper (not yet wired into nodes)
 ├── graph/           # builder, routing, state, schemas
 ├── rag/             # ingest, stores, retrieve, inject
+│   └── ingest/memory_extract.py  # extract_memory_candidates / commit_approved_memories
 ├── app/             # FastAPI + React frontend
 │   ├── api/         # /health, /run, /resume, /stream, /skills
 │   ├── services/    # harness, snapshot, state
@@ -80,6 +84,14 @@ One **round** = planner → executor → learner → actioner. The actioner incr
 commits memories before routing to `planner` or `END`. On fail it soft-skips
 (score 0, no commit) and still routes.
 
+Ownership of memory write (all inside actioner on the pass path):
+
+| Step | Memory role |
+|------|-------------|
+| Extract / merge | `learning_candidates` ∪ `extract_memory_candidates` |
+| Optional HITL | `action_review` interrupt → `approved_memories` |
+| Commit | `commit_round_memories` upserts, advances cursor, clears lists |
+
 **Example — round 1 walkthrough:**
 
 | Step | Node | Key state after |
@@ -99,12 +111,22 @@ Two interrupt mechanisms:
    it commits approved memories after the actioner returns.
 2. **Action-review interrupt** — actioner calls in-node `interrupt()` when HITL
    is on and either pending memories exist or `loop_score >= 80`, so the
-   operator can review memories and preview a skill from one pause.
+   operator can review/edit memories and see skill-preview readiness in one
+   pause. During this pause, checkpoint `next` is typically still `actioner`
+   and `snapshot.interrupts[0].value.kind == "action_review"`.
 
-Action-review memory candidates are stashed in-process by
-`(thread_id, memory_cursor)` before interrupting. This keeps local/dev
-checkpointer resumes idempotent when LangGraph re-enters the actioner from the
-top; shared multi-process deployments need shared pending-memory storage.
+Action-review candidates (and the loop score shown in the interrupt) are
+stashed in-process by `(thread_id, memory_cursor)` before interrupting
+(`agent/memory_review.py`). That keeps local/dev checkpointer resumes
+idempotent when LangGraph re-enters the actioner from the top — pending rows
+and score are reused instead of re-extracting / re-scoring. Shared
+multi-process deployments need shared pending-memory storage.
+
+`ask_clarification()` in `agent/clarification.py` is a reusable
+`kind: clarification` helper for structured Q&A pauses. It is **not** wired
+into planner / executor / learner / actioner structured outputs in the current
+tree (schemas and nodes omit clarification fields). The console still has a
+Workplace surface for clarification payloads if emitted.
 
 **Example — start a HITL thread:**
 
@@ -285,33 +307,35 @@ Pydantic models in `graph/schemas.py`. Nodes use `llm.with_structured_output(...
 
 ## Routing
 
-`graph/routing.py` — `route_after_action` runs after `actioner` (`planner`|`finish`).
+`graph/routing.py` — `route_after_action` runs after `actioner`
+(`planner`|`finish` only). Soft-skip / finish prefer `learning.verdict` via
+`learning_passed(state)` so a stale top-level `approved` bit cannot disagree
+with an operator learning override.
 
 ```python
 def route_after_action(state: AgentState) -> ActionRoute:
-    if state.get("approved"):
+    if learning_passed(state):
         return "finish"
     if state["rounds"] >= state.get("max_rounds", DEFAULT_MAX_ROUNDS):
         return "finish"
-    refine_from = state.get("refine_from", "executor")
-    if refine_from == "planner":
-        return "planner"
+    refine_from = state.get("refine_from", "planner")
     if refine_from == "finish":
         return "finish"
-    return "executor"
+    # planner, legacy executor, or unknown → planner
+    return "planner"
 ```
 
 `DEFAULT_MAX_ROUNDS = 3`.
 
 **Example — routing scenarios:**
 
-| `approved` | `rounds` | `max_rounds` | `refine_from` | Route |
-|----------|----------|--------------|---------------|-------|
-| `true` | 1 | 3 | `executor` | `finish` |
-| `false` | 3 | 3 | `executor` | `finish` (budget) |
-| `false` | 1 | 3 | `executor` | `executor` |
-| `false` | 1 | 3 | `planner` | `planner` |
-| `false` | 1 | 3 | `finish` | `finish` |
+| `learning.verdict` / `approved` | `rounds` | `max_rounds` | `refine_from` | Route |
+|--------------------------------|----------|--------------|---------------|-------|
+| pass (`approved` true) | 1 | 3 | `finish` | `finish` |
+| fail | 3 | 3 | `planner` | `finish` (budget) |
+| fail | 1 | 3 | `executor` (legacy) | `planner` |
+| fail | 1 | 3 | `planner` | `planner` |
+| fail | 1 | 3 | `finish` | `finish` |
 
 ---
 
@@ -324,6 +348,16 @@ def route_after_action(state: AgentState) -> ActionRoute:
 | `learner_agent` | Yes | `approved`, `learning`, `learning_candidates` |
 | `actioner_agent` | Yes (score + extract + commit) | soft-skip on fail; on pass: score, HITL, `commit_round_memories` |
 | `commit_round_memories` | No (helper) | Called by actioner after approve; advances cursor, clears lists |
+
+Helpers used by those nodes:
+
+| Helper | Module | Role |
+|--------|--------|------|
+| `learning_passed` | `graph/routing.py` | Soft-skip / route from `learning.verdict` (fallback `approved`) |
+| `apply_resume_overrides` | `app/services/resume_overrides.py` | Merge learning lessons, sync `approved`, mirror `refine_from` → `suggested_step` |
+| `extract_memory_candidates` | `rag/ingest/memory_extract.py` | Extract + filter + id (`m0`…) — **no store** |
+| `map_resume_to_approved` / `stash_pending` / `load_score` | `agent/memory_review.py` | HITL resume mapping; pending + score cache for interrupt re-entry |
+| `commit_approved_memories` | `rag/ingest/memory_extract.py` | Embed + upsert approved rows; clear pending/approved |
 
 **Example — planner return patch:**
 
@@ -447,25 +481,40 @@ Skill body is injected into planner/executor prompts via `skills/inject.py`.
 
 Resume a HITL thread. Optional `overrides` patch checkpoint state first.
 
-**Node-boundary resume** — omit `interrupt_resume` (or pass `null`). The graph
-continues from the last `interrupt_after` pause on planner, executor, or
-learner.
+**How the harness chooses resume input** (`app/services/harness.py`):
 
-**Dynamic interrupt resume** — when the thread is paused on an actioner
-`action_review` interrupt, pass `interrupt_resume` with the operator's memory
-decisions. The harness forwards it as `Command(resume=interrupt_resume)` to
-LangGraph.
+| Condition | Graph input |
+|-----------|-------------|
+| `interrupt_resume` present | `Command(resume=interrupt_resume)` |
+| Else active `snapshot.interrupts` | `Command(resume=True)` (bare continue / keep-all for action review) |
+| Else node-boundary pause only | `None` (continue after `interrupt_after`) |
+
+**Overrides** are normalized via `apply_resume_overrides` before
+`aupdate_state`: learning patches **merge** onto existing lessons (not
+replace), `approved` syncs from `learning.verdict`, and `refine_from` also
+updates `learning.suggested_step` so the actioner keeps the operator's route
+choice. Soft-skip / routing also prefer `learning.verdict` over a stale
+`approved` bit.
+
+**Node-boundary resume** — omit `interrupt_resume` (or pass `null`) when paused
+after planner / executor / learner. A bare `{ "thread_id": "..." }` works.
+
+**Dynamic interrupt resume** — when paused inside actioner on `action_review`,
+pass `interrupt_resume` with the operator's memory decisions. Prefer an
+explicit memories list from the console; bare resume still **keeps all**
+pending candidates. Clarification pauses (when emitted) resume with
+`interrupt_resume: { "answers": [...] }` — do not send answers as a top-level
+`ResumeRequest` field.
+
+`RunResponse.interrupt` carries the active dynamic-interrupt payload (for
+example `kind: "action_review"` with pending memories) so the console can
+render Workplace without reading the raw checkpoint snapshot.
 
 | `interrupt_resume` | Effect on pending memories |
 | --- | --- |
 | omitted / `null` / `{}` / missing `memories` | **Keep all** pending candidates as extracted |
 | `{ "memories": [] }` | Store nothing |
 | `{ "memories": [...] }` | Per-id keep / edit / drop (see example) |
-
-Bare resume (`{"thread_id": "..."}` only) is correct for node-boundary pauses.
-For action review, include `interrupt_resume.memories` when the operator edits
-candidates; a bare resume at an action-review interrupt still **keeps all**
-pending memories.
 
 **Request — node-boundary with overrides:**
 
@@ -610,7 +659,36 @@ curl -s -X POST http://localhost:8000/skills/save \
   }' | jq
 ```
 
-Writes to `.cursor/skills/<slug>/SKILL.md`.
+Writes to `app/skills/<slug>/SKILL.md` (override with `HARNESS_SKILLS_DIR`).
+
+### Thread run artifacts
+
+On `POST /run` or `POST /stream`, the harness creates a local folder keyed by the
+Command → Task text (slugified):
+
+```text
+app/threads/
+  .index.json                 # thread_id → slug
+  <task-slug>/
+    meta.json
+    planner.md
+    executor.md
+    learner.md
+    actioner.md
+```
+
+Each stage markdown records **status** (`pending` | `running` | `paused` |
+`complete` | `error`) and **contents** for that node; multi-round runs append
+`## Round N` sections. Resume looks up the folder via `app/threads/.index.json`
+and refreshes the stage files. Disk failures are logged and never fail the run.
+
+| Env | Purpose |
+|-----|---------|
+| `HARNESS_THREADS_DIR` | Override artifact root (tests / custom path) |
+| `HARNESS_SKILLS_DIR` | Override distilled skills root (default `app/skills`) |
+
+The whole `app/threads/` tree is gitignored (local pickup only). Distilled
+skills under `app/skills/` are tracked.
 
 ---
 
@@ -637,15 +715,21 @@ Task: Add request tracing...
 
 ### Write path (actioner commit)
 
-Actioner (pass path) scores the loop, merges `learning_candidates` with extract
-from `messages[memory_cursor:]`, applies the memory importance filter, and
-assigns stable ids (`m0`, `m1`, ...). With HITL off, candidates are
-auto-approved. With HITL on, actioner emits one `action_review` interrupt when
-there are pending memories or the loop score is high enough for skill preview.
-The resume payload maps pending candidates to `approved_memories`; actioner
-then embeds and stores only those approved rows via `commit_round_memories`,
-advances `memory_cursor`, and clears `pending_memories` / `approved_memories`.
-Fail path soft-skips (no score HITL/commit).
+1. **Score / soft-skip (actioner)** — fail path soft-skips when
+   `learning_passed` is false (score 0, no HITL/commit). Pass path scores once;
+   on `action_review` interrupt, score + pending are stashed so LangGraph
+   re-entry reuses them instead of re-scoring.
+2. **Extract (actioner, pass)** — merge `learning_candidates` with
+   `extract_memory_candidates(state)` from `messages[memory_cursor:]`, apply
+   importance filter, assign stable ids (`m0`, `m1`, …); **no store** yet.
+3. **Approve (actioner, pass)** —
+   - HITL off (or no interrupt needed): `approved_memories = map_resume_to_approved(pending, True)`.
+   - HITL on + (candidates **or** `skill_preview_ready`):
+     `interrupt(kind="action_review")`, then map the resume value.
+4. **Commit (actioner helper)** — `commit_round_memories` embeds/upserts only
+   approved rows (skip store when empty), always advances `memory_cursor`, and
+   clears `pending_memories` / `approved_memories`. RAG disabled or service
+   missing uses the same soft-skip shape (cursor advanced + lists cleared).
 
 **Example — action-review resume keeps one edited memory and drops one:**
 
@@ -834,6 +918,13 @@ export OLLAMA_MODEL=qwen3.6:27b
 | Memory | `CHECKPOINT_BACKEND=memory` | in-process (tests) |
 | Postgres | `CHECKPOINT_BACKEND=postgres` + `DATABASE_URL` | shared DB |
 
+### Skills and thread artifacts
+
+| Env | Default | Purpose |
+|-----|---------|---------|
+| `HARNESS_SKILLS_DIR` | `app/skills` | Distilled skill library root |
+| `HARNESS_THREADS_DIR` | `app/threads` | Per-thread stage markdown root (gitignored) |
+
 **Example — SQLite dev (default):**
 
 ```bash
@@ -856,6 +947,15 @@ uvicorn app.main:app --reload --port 8000
 cd app/frontend && npm install && npm run dev
 # http://localhost:5173  →  API at http://localhost:8000
 ```
+
+Console layout and Workplace interrupt kinds are detailed in
+[`FRONTEND.md`](FRONTEND.md). Workplace status tracks Command/StatusBar
+`RunPhase` (ready / running / awaiting human / complete / error) when no step
+is selected; GraphSpine owns the active-node indicator. For action review,
+`useResumeDraft` seeds editable rows from `interrupt.value.memories` and
+Continue sends `interrupt_resume: { memories: [...] }` (keep / drop / edit).
+Clarification Continue sends `interrupt_resume: { answers: [...] }`. Distill /
+skill preview controls stay in the Command column.
 
 ---
 
@@ -892,13 +992,26 @@ curl -s -X POST http://localhost:8000/run \
   -H "Content-Type: application/json" \
   -d '{"thread_id":"w1","task":"Summarize docs/IMPLEMENTATION.md API section","max_rounds":2}'
 
-# 3. HITL run + resume
+# 3. HITL run + node-boundary resume (planner/executor/learner pause)
 curl -s -X POST http://localhost:8000/run \
   -H "Content-Type: application/json" \
   -d '{"thread_id":"w2","task":"Review API","human_in_the_loop":true}'
 curl -s -X POST http://localhost:8000/resume \
   -H "Content-Type: application/json" \
   -d '{"thread_id":"w2"}'
+
+# 3b. Action-review resume (when paused inside actioner)
+curl -s -X POST http://localhost:8000/resume \
+  -H "Content-Type: application/json" \
+  -d '{
+    "thread_id":"w2",
+    "interrupt_resume":{
+      "memories":[
+        {"id":"m0","keep":true,"content":"Edited fact","memory_type":"fact","importance":0.8},
+        {"id":"m1","keep":false}
+      ]
+    }
+  }'
 
 # 4. Stream
 curl -N -X POST http://localhost:8000/stream \
@@ -922,19 +1035,22 @@ pytest tests/test_graph.py -v
 
 | File | Covers |
 |------|--------|
-| `test_api.py` | `/health`, `/run`, `/resume`, `/stream`, skill eligibility |
-| `test_graph.py` | routing, workflow compile |
-| `test_actioner.py` | rounds, loop score, action-review interrupt and memory approval |
+| `test_api.py` | `/health`, `/run`, `/resume`, `/stream`, skill eligibility, learning override sync |
+| `test_resume_overrides.py` | `apply_resume_overrides` merge / approved / refine_from |
+| `test_graph.py` | routing (`learning_passed`), workflow compile, `HITL_PAUSE_NODES` (no memorize node) |
+| `test_actioner.py` | soft-skip, score cache on re-entry, action-review interrupt, auto-approve, merge+commit |
+| `test_action_review_api.py` | E2E: action_review → `/resume` keep/edit/drop → actioner commit |
 | `test_planner.py` / `test_executor.py` / `test_learner.py` | node outputs |
-| `test_memory_review.py` | action-review resume mapping and pending cache |
+| `test_memory_review.py` | `map_resume_to_approved` and pending/score stash helpers |
 | `test_rag_*.py` / `test_memory_pipeline.py` | RAG read/write and approved-memory commit |
+| `test_clarification.py` | clarification helper unit tests (helper not wired into agents yet) |
 | `test_mcp.py` | MCP tool registration |
 | `test_skills_*.py` | distill, inject, eligibility |
 
-**Example — run one node test file:**
+**Example — HITL memory path:**
 
 ```bash
-pytest tests/test_actioner.py -v
+pytest tests/test_actioner.py tests/test_memory_review.py tests/test_action_review_api.py -v
 ```
 
 Integration tests (`@pytest.mark.integration`) require external services and are

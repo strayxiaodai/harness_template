@@ -87,7 +87,7 @@ sanitization today.
 | Graph checkpoints | SQLite / Postgres | May contain task text, tool output | Until deleted |
 | RAG document index | `data/rag/` (gitignored) | Ingested repo docs | Until re-ingest |
 | Thread memories | FAISS or pgvector | Extracted from runs | Operator-managed |
-| Distilled skills | `.cursor/skills/` | Version controlled | Git history |
+| Distilled skills | `app/skills/` | Version controlled | Git history |
 | Audit events | Postgres `agent_audit_log` | Tool args may include paths | Operator-managed |
 
 **Example — audit row may contain paths:**

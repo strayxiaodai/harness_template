@@ -65,7 +65,7 @@ async def save_skill_route(
     request: Request,
     body: SaveSkillRequest,
 ) -> DistillSkillResponse:
-    """Persist a previewed skill draft to .cursor/skills/."""
+    """Persist a previewed skill draft to app/skills/."""
     try:
         return await save_skill(request, body)
     except LookupError as exc:

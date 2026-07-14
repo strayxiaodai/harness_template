@@ -92,7 +92,7 @@ async def test_executor_runs_search_knowledge_base_tool(
     monkeypatch.setattr(
         executor_module,
         "get_executor_tools",
-        lambda: [search_knowledge_base],
+        lambda _thread_id: [search_knowledge_base],
     )
     monkeypatch.setattr(executor_module, "write_audit_event", AsyncMock())
     monkeypatch.setenv("EXECUTOR_TOOLS", "search_knowledge_base")

@@ -18,7 +18,7 @@ from llm.providers import get_llm
 from llm.retry import call_llm
 from rag.config import load_rag_settings
 from skills.inject import skill_prompt_prefix
-from tools.registry import get_executor_tools, get_tool_by_name
+from tools.registry import get_executor_tools
 
 MAX_TOOL_ITERATIONS = 5
 
@@ -44,7 +44,8 @@ async def _run_tool_loop(
     ToolCallRecords for the reviewer and the audit log.
     """
     llm = get_llm()
-    tools = get_executor_tools()
+    tools = get_executor_tools(state["thread_id"])
+    tool_by_name = {tool.name: tool for tool in tools}
     if tools:
         llm = get_llm().bind_tools(tools)
 
@@ -81,7 +82,7 @@ async def _run_tool_loop(
             name = call["name"]
             args = call.get("args", {}) or {}
             try:
-                tool = get_tool_by_name(name)
+                tool = tool_by_name[name]
                 output = await tool.ainvoke(args)
                 content = _tool_output_to_content(output)
                 status = "ok"

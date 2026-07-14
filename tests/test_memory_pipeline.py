@@ -261,7 +261,7 @@ async def test_executor_injects_memory_context_from_state(
     fake_llm.bind_tools.return_value = MagicMock()
     fake_llm.with_structured_output.return_value = MagicMock()
     monkeypatch.setattr(executor_module, "get_llm", lambda: fake_llm)
-    monkeypatch.setattr(executor_module, "get_executor_tools", lambda: [])
+    monkeypatch.setattr(executor_module, "get_executor_tools", lambda _tid: [])
     monkeypatch.setattr(executor_module, "write_audit_event", AsyncMock())
 
     captured: list[Any] = []

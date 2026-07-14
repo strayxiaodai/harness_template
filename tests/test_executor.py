@@ -54,7 +54,7 @@ def _patch_llm_and_tools(
     monkeypatch.setattr(
         executor_module,
         "get_executor_tools",
-        lambda: [MagicMock(name="tool")],
+        lambda _thread_id: [MagicMock(name="tool")],
     )
     return fake_llm
 
@@ -114,11 +114,12 @@ async def test_executor_runs_tool_and_records_call(
     monkeypatch.setattr(executor_module, "write_audit_event", audit)
 
     fake_tool = MagicMock()
+    fake_tool.name = "read_file"
     fake_tool.ainvoke = AsyncMock(return_value="file contents")
     monkeypatch.setattr(
         executor_module,
-        "get_tool_by_name",
-        lambda name: fake_tool,
+        "get_executor_tools",
+        lambda _thread_id: [fake_tool],
     )
 
     response = AIMessage(
@@ -170,11 +171,12 @@ async def test_executor_records_tool_error_without_aborting(
     monkeypatch.setattr(executor_module, "write_audit_event", AsyncMock())
 
     fake_tool = MagicMock()
+    fake_tool.name = "read_file"
     fake_tool.ainvoke = AsyncMock(side_effect=RuntimeError("boom"))
     monkeypatch.setattr(
         executor_module,
-        "get_tool_by_name",
-        lambda name: fake_tool,
+        "get_executor_tools",
+        lambda _thread_id: [fake_tool],
     )
 
     response = AIMessage(

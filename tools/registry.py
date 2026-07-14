@@ -21,11 +21,15 @@ _ALL_TOOLS: dict[str, BaseTool] = {
     search_knowledge_base.name: search_knowledge_base,
 }
 
-DEFAULT_ALLOWED_TOOLS = "read_file,list_dir"
+_THREAD_TOOL_NAMES = frozenset({"write_thread_file", "read_thread_file"})
+
+DEFAULT_ALLOWED_TOOLS = (
+    "read_file,list_dir,write_thread_file,read_thread_file"
+)
 
 
 def _allowlist() -> set[str]:
-    """Read EXECUTOR_TOOLS (comma-separated). Default: read-only tools."""
+    """Read EXECUTOR_TOOLS (comma-separated). Default includes thread file tools."""
     raw = os.getenv("EXECUTOR_TOOLS", DEFAULT_ALLOWED_TOOLS)
     allowed = {name.strip() for name in raw.split(",") if name.strip()}
     include_mcp = os.getenv("HARNESS_MCP_INCLUDE_ALL", "true").strip().lower()
@@ -36,7 +40,7 @@ def _allowlist() -> set[str]:
 
 
 def _builtin_tools() -> dict[str, BaseTool]:
-    """Return built-in executor tools keyed by name."""
+    """Return built-in static executor tools keyed by name."""
     return dict(_ALL_TOOLS)
 
 
@@ -48,10 +52,16 @@ def _executor_tool_map() -> dict[str, BaseTool]:
     return tools
 
 
-def get_executor_tools() -> list[BaseTool]:
-    """Return the tools the executor is allowed to call."""
+def get_executor_tools(thread_id: str) -> list[BaseTool]:
+    """Return executor tools; thread-scoped tools bound to ``thread_id``."""
+    from tools.thread_files import make_read_thread_file, make_write_thread_file
+
     allowed = _allowlist()
     available = _executor_tool_map()
+    if "write_thread_file" in allowed:
+        available["write_thread_file"] = make_write_thread_file(thread_id)
+    if "read_thread_file" in allowed:
+        available["read_thread_file"] = make_read_thread_file(thread_id)
     missing = allowed - set(available)
     if missing:
         raise RuntimeError(
@@ -60,8 +70,22 @@ def get_executor_tools() -> list[BaseTool]:
     return [available[name] for name in sorted(allowed)]
 
 
-def get_tool_by_name(name: str) -> BaseTool:
-    """Look up a tool by name. Raises if missing or not allow-listed."""
+def get_learner_tools(thread_id: str) -> list[BaseTool]:
+    """Tools the learner may call (read; run added in script_tools task)."""
+    from tools.thread_files import make_read_thread_file
+
+    return [make_read_thread_file(thread_id)]
+
+
+def get_tool_by_name(name: str, thread_id: str | None = None) -> BaseTool:
+    """Look up a tool by name. Thread tools require ``thread_id``."""
+    if name in _THREAD_TOOL_NAMES:
+        if not thread_id:
+            raise PermissionError(f"tool {name!r} requires thread_id")
+        for tool in get_executor_tools(thread_id):
+            if tool.name == name:
+                return tool
+        raise KeyError(f"tool {name!r} is not registered")
     if name not in _allowlist():
         raise PermissionError(f"tool {name!r} is not in the allow-list")
     tool = _executor_tool_map().get(name)

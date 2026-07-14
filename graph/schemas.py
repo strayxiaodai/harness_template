@@ -48,15 +48,6 @@ class LearningResult(BaseModel):
     learning_candidates: list[LearningCandidate] = Field(default_factory=list)
 
 
-# Temporary until Task 3 removes agent/reviewer.py.
-class ReviewResult(BaseModel):
-    """Legacy reviewer output; superseded by LearningResult."""
-
-    verdict: Literal["pass", "fail"]
-    reason: str = Field(min_length=1)
-    suggested_step: Literal["planner", "executor", "finish"]
-
-
 class ActionScoreResult(BaseModel):
     """Structured loop quality score produced by the actioner."""
 

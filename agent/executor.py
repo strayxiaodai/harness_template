@@ -48,8 +48,8 @@ async def _run_tool_loop(
     if tools:
         llm = get_llm().bind_tools(tools)
 
-    prior_review = state.get("review")
-    feedback = prior_review["reason"] if prior_review else "(none)"
+    prior_learning = state.get("learning")
+    feedback = prior_learning["reason"] if prior_learning else "(none)"
 
     memory_prefix = ""
     rag_settings = load_rag_settings()
@@ -64,7 +64,7 @@ async def _run_tool_loop(
                 f"{memory_prefix}"
                 f"Task: {state['task']}\n"
                 f"Plan: {state['plan']}\n"
-                f"Prior review feedback: {feedback}"
+                f"Prior learning feedback: {feedback}"
             )
         ),
     ]

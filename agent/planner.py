@@ -26,8 +26,8 @@ async def planner_agent(state: AgentState) -> dict[str, object]:
     llm = get_llm()
     structured = llm.with_structured_output(PlanResult)
 
-    review = state.get("review")
-    feedback = review["reason"] if review else "(none)"
+    learning = state.get("learning")
+    feedback = learning["reason"] if learning else "(none)"
 
     memory_block = ""
     memory_updates: dict[str, object] = {}
@@ -50,7 +50,7 @@ async def planner_agent(state: AgentState) -> dict[str, object]:
                     f"{memory_block}"
                     f"Task: {state['task']}\n"
                     f"Current plan: {state['plan']}\n"
-                    f"Prior review feedback: {feedback}"
+                    f"Prior learning feedback: {feedback}"
                 )
             ),
         ],

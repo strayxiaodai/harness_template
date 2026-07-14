@@ -1,4 +1,8 @@
-# app/agents/reviewer.py
+# app/agents/learner.py
+"""Learner agent: challenge executor output and capture lessons."""
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 
@@ -10,7 +14,7 @@ from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from config.prompts import PROMPTS
-from graph.schemas import ReviewResult
+from graph.schemas import LearningResult
 from graph.state import AgentState, ToolCallRecord
 from llm.providers import get_llm
 from llm.retry import call_llm
@@ -19,7 +23,7 @@ load_dotenv()
 
 
 def _format_tool_calls(tool_calls: list[ToolCallRecord] | None) -> str:
-    """Format compact tool call records for the reviewer prompt.
+    """Format compact tool call records for the learner prompt.
 
     Args:
         tool_calls: Executor tool call records from state.
@@ -38,16 +42,16 @@ def _format_tool_calls(tool_calls: list[ToolCallRecord] | None) -> str:
     return "\n".join(lines)
 
 
-async def reviewer_agent(state: AgentState) -> dict[str, object]:
-    """Check the current result and return a structured verdict."""
+async def learner_agent(state: AgentState) -> dict[str, object]:
+    """Challenge the current result and return structured learning."""
     llm = get_llm()
-    structured = llm.with_structured_output(ReviewResult)
+    structured = llm.with_structured_output(LearningResult)
     execution = state.get("execution") or {}
 
-    review: ReviewResult = await call_llm(
+    learning: LearningResult = await call_llm(
         structured,
         [
-            SystemMessage(content=PROMPTS["reviewer"]["system"].strip()),
+            SystemMessage(content=PROMPTS["learner"]["system"].strip()),
             HumanMessage(
                 content=(
                     f"Task: {state['task']}\n"
@@ -63,10 +67,20 @@ async def reviewer_agent(state: AgentState) -> dict[str, object]:
     )
 
     return {
-        "role": "reviewer",
-        "approved": review.verdict == "pass",
-        "review": review.model_dump(),
+        "role": "learner",
+        "approved": learning.verdict == "pass",
+        "learning": {
+            "verdict": learning.verdict,
+            "reason": learning.reason,
+            "suggested_step": learning.suggested_step,
+            "lessons": learning.lessons.model_dump(),
+        },
+        "learning_candidates": [
+            candidate.model_dump() for candidate in learning.learning_candidates
+        ],
         "messages": [
-            AIMessage(content=f"Review {review.verdict}: {review.reason}")
+            AIMessage(
+                content=f"Learning {learning.verdict}: {learning.reason}"
+            )
         ],
     }

@@ -71,18 +71,27 @@ def get_executor_tools(thread_id: str) -> list[BaseTool]:
 
 
 def get_learner_tools(thread_id: str) -> list[BaseTool]:
-    """Tools the learner may call (read; run added in script_tools task)."""
+    """Tools the learner may call (read + sandboxed run only)."""
+    from tools.script_tools import make_run_thread_script
     from tools.thread_files import make_read_thread_file
 
-    return [make_read_thread_file(thread_id)]
+    return [
+        make_read_thread_file(thread_id),
+        make_run_thread_script(thread_id),
+    ]
 
 
 def get_tool_by_name(name: str, thread_id: str | None = None) -> BaseTool:
     """Look up a tool by name. Thread tools require ``thread_id``."""
-    if name in _THREAD_TOOL_NAMES:
+    if name in _THREAD_TOOL_NAMES or name == "run_thread_script":
         if not thread_id:
             raise PermissionError(f"tool {name!r} requires thread_id")
-        for tool in get_executor_tools(thread_id):
+        tools = (
+            get_learner_tools(thread_id)
+            if name == "run_thread_script"
+            else get_executor_tools(thread_id)
+        )
+        for tool in tools:
             if tool.name == name:
                 return tool
         raise KeyError(f"tool {name!r} is not registered")

@@ -17,7 +17,8 @@ RAG, skills, tools, and configuration. Each section includes a concrete example.
 | Loop quality scoring + action-review HITL gate | Implemented | `agent/actioner.py` |
 | RAG (hybrid retrieve, memory ingest, rerank, inject) | Implemented | `rag/`, `context/` |
 | FastAPI `/run`, `/resume`, `/stream`, `/health` | Implemented | `app/api/` |
-| Skill distillation + save eligibility gate | Implemented | `skills/`, `app/api/skills.py` |
+| Skill distillation + save eligibility gate | Implemented | `skills/`, `app/api/skills.py`, `app/skills/` |
+| Thread run artifacts (stage markdown) | Implemented | `app/services/thread_artifacts.py`, `app/threads/` |
 | MCP executor tools | Implemented | `harness_mcp/` |
 | SQLite checkpoints (default) / Postgres (optional) | Implemented | `memory/checkpoint.py` |
 | React developer console | Implemented | `app/frontend/` |
@@ -46,10 +47,12 @@ harness_template/
 │   └── ingest/memory_extract.py  # extract_memory_candidates / commit_approved_memories
 ├── app/             # FastAPI + React frontend
 │   ├── api/         # /health, /run, /resume, /stream, /skills
-│   ├── services/    # harness, snapshot, state
+│   ├── services/    # harness, snapshot, state, thread_artifacts, resume_overrides
+│   ├── skills/      # distilled playbooks (`<slug>/SKILL.md`); tracked
+│   ├── threads/     # per-thread stage markdown (gitignored; created at runtime)
 │   └── frontend/    # developer console (Vite :5173)
 ├── harness_mcp/     # MCP client for executor tools
-├── skills/          # distill, store, eligibility
+├── skills/          # distill, store, eligibility (library code; not the on-disk store)
 ├── memory/          # checkpointer lifespan
 ├── docs/            # knowledge base (this file)
 └── tests/           # pytest suite
@@ -614,7 +617,7 @@ data: {"error": "graph run timed out"}
 **Eligibility** (`skills/eligibility.py`):
 
 - `rounds >= 1` (one full loop completed)
-- `execution` and `review` present
+- `execution` and/or `learning` present
 - `skill_preview_ready` (`loop_score >= 80`)
 
 **Example — distill preview (no write):**
@@ -663,32 +666,70 @@ Writes to `app/skills/<slug>/SKILL.md` (override with `HARNESS_SKILLS_DIR`).
 
 ### Thread run artifacts
 
-On `POST /run` or `POST /stream`, the harness creates a local folder keyed by the
-Command → Task text (slugified):
+On `POST /run` or `POST /stream` (Start thread / skill-run),
+`app/services/harness.py` calls `app/services/thread_artifacts.py` to create a
+local folder keyed by the Command → Task text (slugified via
+`skills.store.slugify`). Skill-only starts with an empty task use `skill_slug`
+as the label.
 
 ```text
 app/threads/
   .index.json                 # thread_id → slug
   <task-slug>/
-    meta.json
+    meta.json                 # thread_id, task, slug, started_at, plan
     planner.md
     executor.md
     learner.md
     actioner.md
 ```
 
-Each stage markdown records **status** (`pending` | `running` | `paused` |
-`complete` | `error`) and **contents** for that node; multi-round runs append
-`## Round N` sections. Resume looks up the folder via `app/threads/.index.json`
-and refreshes the stage files. Disk failures are logged and never fail the run.
+Collision: if `<task-slug>/` already exists, the folder becomes
+`<task-slug>-<thread_id[:8]>` (hyphens stripped from the id prefix).
 
-| Env | Purpose |
-|-----|---------|
-| `HARNESS_THREADS_DIR` | Override artifact root (tests / custom path) |
-| `HARNESS_SKILLS_DIR` | Override distilled skills root (default `app/skills`) |
+Each stage markdown records **status** (`pending` | `running` | `paused` |
+`complete` | `error`) and **contents** for that node. Multi-round runs append
+`## Round N` sections (same round rewritten; older rounds preserved).
+
+**Example — `planner.md` after round 1:**
+
+```markdown
+# planner
+
+- status: complete
+- round: 1
+- updated_at: 2026-07-14T06:12:00+00:00
+
+## Round 1
+
+### Contents
+
+- plan:
+  - read IMPLEMENTATION.md
+  - summarize API
+- memory_context:
+  _(none)_
+```
+
+| Event | Write |
+|-------|--------|
+| Start `/run` or `/stream` | mkdir + `meta.json` + four `.md` (`pending`) + index entry |
+| Stream `updates` chunk for a stage node | update that node's `.md` |
+| Final snapshot / `/run` return | refresh all four from response fields |
+| `/resume` | lookup via `.index.json`; refresh (skip quietly if no index entry) |
+
+Disk failures are logged and **never** fail the graph run. There is no public
+artifact API in v1 — inspect files under `app/threads/` (or
+`HARNESS_THREADS_DIR`) directly.
+
+| Env | Default | Purpose |
+|-----|---------|---------|
+| `HARNESS_THREADS_DIR` | `app/threads` | Artifact root (tests / custom path) |
+| `HARNESS_SKILLS_DIR` | `app/skills` | Distilled skills root |
 
 The whole `app/threads/` tree is gitignored (local pickup only). Distilled
-skills under `app/skills/` are tracked.
+skills under `app/skills/<slug>/SKILL.md` (+ `harness.json`) are tracked.
+Do not add `app/skills/__init__.py` — it is a data directory, not a package.
+Cursor agent skills under `.cursor/skills/` (e.g. impeccable) are unrelated.
 
 ---
 
@@ -987,10 +1028,11 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 # 1. Health
 curl -s http://localhost:8000/health
 
-# 2. Auto run
+# 2. Auto run (also writes app/threads/<task-slug>/ stage markdown)
 curl -s -X POST http://localhost:8000/run \
   -H "Content-Type: application/json" \
   -d '{"thread_id":"w1","task":"Summarize docs/IMPLEMENTATION.md API section","max_rounds":2}'
+ls app/threads/*/planner.md
 
 # 3. HITL run + node-boundary resume (planner/executor/learner pause)
 curl -s -X POST http://localhost:8000/run \
@@ -1018,7 +1060,7 @@ curl -N -X POST http://localhost:8000/stream \
   -H "Content-Type: application/json" \
   -d '{"thread_id":"w3","task":"List agent nodes"}'
 
-# 5. Skills
+# 5. Skills (library under app/skills/)
 curl -s http://localhost:8000/skills
 curl -s http://localhost:8000/skills/my-skill-slug
 ```
@@ -1046,6 +1088,9 @@ pytest tests/test_graph.py -v
 | `test_clarification.py` | clarification helper unit tests (helper not wired into agents yet) |
 | `test_mcp.py` | MCP tool registration |
 | `test_skills_*.py` | distill, inject, eligibility |
+| `test_skills_store_root.py` | default `skills_root()` → `app/skills` |
+| `test_thread_artifacts.py` | init, collision slug, stage markdown write, disk-error soft-fail |
+| `test_harness_thread_artifacts.py` | run / stream / resume wiring into `app/threads/` |
 
 **Example — HITL memory path:**
 

@@ -12,6 +12,8 @@
 - Area: harness services, skills store, docs
 - Key actions: `app/threads/<slug>/` stage notes on run/stream/resume; default
   skills root → `app/skills/`; gitignore threads; docs sync
+- Follow-up: expanded `docs/IMPLEMENTATION.md` (status, layout, eligibility
+  `learning`, artifact write table, tests, curl)
 
 ### Design Intent
 

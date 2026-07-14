@@ -75,7 +75,7 @@ async def test_planner_writes_plan_to_state(
 
 
 @pytest.mark.asyncio
-async def test_planner_includes_review_feedback_in_prompt(
+async def test_planner_includes_learning_feedback_in_prompt(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Planner must pass prior review reason into the human message."""
@@ -99,7 +99,7 @@ async def test_planner_includes_review_feedback_in_prompt(
 
     await planner_module.planner_agent(
         _state(
-            review={
+            learning={
                 "verdict": "fail",
                 "reason": "missing tests",
                 "suggested_step": "planner",

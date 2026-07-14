@@ -53,3 +53,18 @@ class ActionScoreResult(BaseModel):
 
     score: int = Field(ge=0, le=100, description="Loop quality from 0-100")
     rationale: str = Field(min_length=1)
+
+
+class ClarificationQuestion(BaseModel):
+    """One clarification prompt surfaced during HITL."""
+
+    id: str = Field(min_length=1)
+    prompt: str = Field(min_length=1)
+    why: str = ""
+
+
+class ClarificationAnswer(BaseModel):
+    """Operator answer returned through Command(resume=...)."""
+
+    question_id: str = Field(min_length=1)
+    answer: str = Field(min_length=1)

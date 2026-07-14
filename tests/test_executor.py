@@ -202,7 +202,7 @@ async def test_executor_records_tool_error_without_aborting(
 
 
 @pytest.mark.asyncio
-async def test_executor_includes_review_feedback_in_prompt(
+async def test_executor_includes_learning_feedback_in_prompt(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Executor must pass prior review reason, task, and plan into the prompt."""
@@ -227,10 +227,10 @@ async def test_executor_includes_review_feedback_in_prompt(
 
     await executor_module.executor_agent(
         _state(
-            review={
+            learning={
                 "verdict": "fail",
                 "reason": "missing tests",
-                "suggested_step": "executor",
+                "suggested_step": "planner",
             },
         ),
     )

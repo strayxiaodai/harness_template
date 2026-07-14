@@ -13,7 +13,7 @@ RAG, skills, tools, and configuration. Each section includes a concrete example.
 
 | Area | Status | Location |
 |------|--------|----------|
-| Agent loop (planner → executor → reviewer → actioner → memorize) | Implemented | `agent/`, `graph/` |
+| Agent loop (planner → executor → learner → actioner) | Implemented | `agent/`, `graph/` |
 | Loop quality scoring + action-review HITL gate | Implemented | `agent/actioner.py` |
 | RAG (hybrid retrieve, memory ingest, rerank, inject) | Implemented | `rag/`, `context/` |
 | FastAPI `/run`, `/resume`, `/stream`, `/health` | Implemented | `app/api/` |
@@ -71,13 +71,14 @@ Source modules live at the repository root. Tests register namespace aliases in
 ### Agent loop
 
 ```text
-planner → executor → reviewer → actioner → memorize → (route)
+planner → executor → learner → actioner → (route)
                 ↑___________________|
 ```
 
-One **round** = all five nodes. The actioner increments `rounds`, sets
-`refine_from` from the reviewer, scores the loop, and prepares memory
-candidates. Memorize only commits `approved_memories` before routing.
+One **round** = planner → executor → learner → actioner. The actioner increments
+`rounds`, sets `refine_from` from the learner, and on pass scores / HITL /
+commits memories before routing to `planner` or `END`. On fail it soft-skips
+(score 0, no commit) and still routes.
 
 **Example — round 1 walkthrough:**
 
@@ -85,17 +86,16 @@ candidates. Memorize only commits `approved_memories` before routing.
 |------|------|-----------------|
 | 1 | `planner` | `plan: ["read IMPLEMENTATION.md", "summarize API"]` |
 | 2 | `executor` | `execution`, `tool_calls`, `result` |
-| 3 | `reviewer` | `approved: false`, `review.verdict: "fail"` |
-| 4 | `actioner` | `rounds: 1`, `loop_score: 72`, `refine_from: "executor"` |
-| 5 | `memorize` | `memory_cursor` advanced |
-| 6 | route | → `executor` (same plan, new attempt) |
+| 3 | `learner` | `approved: false`, `learning.verdict: "fail"`, lessons |
+| 4 | `actioner` | soft-skip or score+HITL+commit; `refine_from: "planner"` or `"finish"` |
+| 5 | route | → `planner` or `END` |
 
 ### Human-in-the-loop (HITL)
 
 Two interrupt mechanisms:
 
 1. **Node interrupts** — `interrupt_after` on `planner`, `executor`, and
-   `reviewer` when `human_in_the_loop: true`. `memorize` is not a pause node;
+   `learner` when `human_in_the_loop: true`. Memory commit runs inside actioner;
    it commits approved memories after the actioner returns.
 2. **Action-review interrupt** — actioner calls in-node `interrupt()` when HITL
    is on and either pending memories exist or `loop_score >= 80`, so the
@@ -154,15 +154,15 @@ from graph.builder import compile_with_checkpointer
 # Auto-run graph (no per-node pause)
 graph_auto = compile_with_checkpointer(MemorySaver())
 
-# HITL graph (pause after planner, executor, reviewer)
+# HITL graph (pause after planner, executor, learner)
 graph_step = compile_with_checkpointer(
     MemorySaver(),
     human_in_the_loop=True,
 )
 ```
 
-`HITL_PAUSE_NODES`: `planner`, `executor`, `reviewer`. Actioner uses in-node
-`interrupt()` for `action_review`; memorize always runs through without
+`HITL_PAUSE_NODES`: `planner`, `executor`, `learner`. Actioner uses in-node
+`interrupt()` for `action_review` on the pass path; soft-skips on fail without
 `interrupt_after`.
 
 ---
@@ -178,17 +178,18 @@ Defined in `graph/state.py` as `AgentState`.
 | `plan` | Current plan steps (`list[str]`) |
 | `rounds` / `max_rounds` | Completed loops vs budget |
 | `execution` | Serialized `ExecutorResult` |
-| `review` | Serialized `ReviewResult` |
+| `learning` | Serialized `LearningResult` verdict + lessons |
+| `learning_candidates` | Learner-proposed memory rows for actioner merge |
 | `tool_calls` | Compact executor tool records |
-| `approved` | Reviewer pass/fail |
-| `refine_from` | `planner` \| `executor` \| `finish` |
+| `approved` | Learner pass/fail |
+| `refine_from` | `planner` \| `finish` |
 | `loop_score` | 0–100 quality score from actioner |
 | `skill_preview_ready` | `loop_score >= 80` |
 | `skill_slug` / `skill_context` | Loaded skill playbook |
 | `memory_cursor` | RAG ingest bookmark in `messages` |
 | `memory_context` | Formatted recall block for prompts |
 | `pending_memories` | Actioner-extracted candidates awaiting HITL review |
-| `approved_memories` | Candidate memories approved for the memorize commit node |
+| `approved_memories` | Candidate memories approved for actioner commit |
 
 **Example — checkpoint values mid-run:**
 
@@ -203,7 +204,7 @@ Defined in `graph/state.py` as `AgentState`.
   ],
   "rounds": 1,
   "max_rounds": 3,
-  "role": "reviewer",
+  "role": "learner",
   "approved": false,
   "execution": {
     "summary": "Read runs.py; tracing not present yet.",
@@ -211,10 +212,10 @@ Defined in `graph/state.py` as `AgentState`.
     "risks": ["No test for trace header propagation"],
     "verification": ["curl /health still returns 200"]
   },
-  "review": {
+  "learning": {
     "verdict": "fail",
     "reason": "No tracing middleware implemented",
-    "suggested_step": "executor"
+    "suggested_step": "planner"
   },
   "tool_calls": [
     {
@@ -284,7 +285,7 @@ Pydantic models in `graph/schemas.py`. Nodes use `llm.with_structured_output(...
 
 ## Routing
 
-`graph/routing.py` — `route_after_action` runs after `memorize`.
+`graph/routing.py` — `route_after_action` runs after `actioner` (`planner`|`finish`).
 
 ```python
 def route_after_action(state: AgentState) -> ActionRoute:
@@ -320,9 +321,9 @@ def route_after_action(state: AgentState) -> ActionRoute:
 |------|------|-------------|
 | `planner_agent` | Yes | `plan`, `memory_context`, messages |
 | `executor_agent` | Yes | `execution`, `result`, `tool_calls` |
-| `reviewer_agent` | Yes | `approved`, `review` |
-| `actioner_agent` | Yes (score + extract) | `rounds`, `refine_from`, `loop_score`, `skill_preview_ready`, `pending_memories`, `approved_memories` |
-| `memorize_agent` | No | Commit approved memories, advance `memory_cursor`, clear memory review state |
+| `learner_agent` | Yes | `approved`, `learning`, `learning_candidates` |
+| `actioner_agent` | Yes (score + extract + commit) | soft-skip on fail; on pass: score, HITL, `commit_round_memories` |
+| `commit_round_memories` | No (helper) | Called by actioner after approve; advances cursor, clears lists |
 
 **Example — planner return patch:**
 
@@ -340,7 +341,7 @@ def route_after_action(state: AgentState) -> ActionRoute:
 
 ```json
 {
-  "suggested_step": "executor",
+  "suggested_step": "planner",
   "approved": false,
   "loop_score": 85,
   "skill_preview_ready": true,
@@ -419,7 +420,7 @@ Either `task` or `skill_slug` is required.
   "needs_human": false,
   "result": "Tracing plan documented in docs/IMPLEMENTATION.md",
   "next_action": null,
-  "last_role": "memorize",
+  "last_role": "actioner",
   "rounds": 1,
   "max_rounds": 3,
   "skill_eligible": true,
@@ -448,7 +449,7 @@ Resume a HITL thread. Optional `overrides` patch checkpoint state first.
 
 **Node-boundary resume** — omit `interrupt_resume` (or pass `null`). The graph
 continues from the last `interrupt_after` pause on planner, executor, or
-reviewer.
+learner.
 
 **Dynamic interrupt resume** — when the thread is paused on an actioner
 `action_review` interrupt, pass `interrupt_resume` with the operator's memory
@@ -474,7 +475,7 @@ pending memories.
   "timeout_seconds": 120,
   "overrides": {
     "plan": ["clarify requirements", "add tracing middleware"],
-    "review": {
+    "learning": {
       "verdict": "fail",
       "reason": "Operator override: replan before execution",
       "suggested_step": "planner"
@@ -629,23 +630,22 @@ Writes to `.cursor/skills/<slug>/SKILL.md`.
 ```text
 Relevant memories:
 - [thread demo-1] Prior run documented RunRequest fields in docs/IMPLEMENTATION.md
-- [thread demo-1] Reviewer flagged missing trace ID in response
+- [thread demo-1] Learner flagged missing trace ID in response
 
 Task: Add request tracing...
 ```
 
-### Write path (actioner → memorize)
+### Write path (actioner commit)
 
-Actioner extracts candidates from `messages[memory_cursor:]`, applies the
-memory importance filter, and assigns stable ids (`m0`, `m1`, ...). With HITL
-off, candidates are auto-approved. With HITL on, actioner emits one
-`action_review` interrupt when there are pending memories or the loop score is
-high enough for skill preview. The resume payload maps pending candidates to
-`approved_memories`; memorize then embeds and stores only those approved rows.
-
-Memorize is commit-only: it does not run extraction, does not pause for HITL,
-advances `memory_cursor`, and clears `pending_memories` / `approved_memories`
-after the commit attempt.
+Actioner (pass path) scores the loop, merges `learning_candidates` with extract
+from `messages[memory_cursor:]`, applies the memory importance filter, and
+assigns stable ids (`m0`, `m1`, ...). With HITL off, candidates are
+auto-approved. With HITL on, actioner emits one `action_review` interrupt when
+there are pending memories or the loop score is high enough for skill preview.
+The resume payload maps pending candidates to `approved_memories`; actioner
+then embeds and stores only those approved rows via `commit_round_memories`,
+advances `memory_cursor`, and clears `pending_memories` / `approved_memories`.
+Fail path soft-skips (no score HITL/commit).
 
 **Example — action-review resume keeps one edited memory and drops one:**
 
@@ -746,7 +746,7 @@ Apply `migrations/002_rag_memory.sql` when using pgvector memory.
 {"path": "agent"}
 ```
 
-→ `["actioner.py", "executor.py", "memorize.py", "planner.py", "reviewer.py"]`
+→ `["actioner.py", "executor.py", "learner.py", "memorize.py", "planner.py"]`
 
 Registry: `tools/registry.py`. Max tool iterations per executor pass: `5`.
 
@@ -925,7 +925,7 @@ pytest tests/test_graph.py -v
 | `test_api.py` | `/health`, `/run`, `/resume`, `/stream`, skill eligibility |
 | `test_graph.py` | routing, workflow compile |
 | `test_actioner.py` | rounds, loop score, action-review interrupt and memory approval |
-| `test_planner.py` / `test_executor.py` / `test_reviewer.py` | node outputs |
+| `test_planner.py` / `test_executor.py` / `test_learner.py` | node outputs |
 | `test_memory_review.py` | action-review resume mapping and pending cache |
 | `test_rag_*.py` / `test_memory_pipeline.py` | RAG read/write and approved-memory commit |
 | `test_mcp.py` | MCP tool registration |

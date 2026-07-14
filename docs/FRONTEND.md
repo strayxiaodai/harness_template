@@ -92,7 +92,7 @@ Narrow (&lt;1024px): spine → workplace → timeline drawer → inspector → c
 | `CenterColumn` | Spine + workplace + timeline drawer shell | `timelineOpen`, `useResumeDraft` |
 | `Workplace` | Clarification HITL, action-review memory HITL, step payloads, or idle hint | `interrupt`, `selectedStep`, `useResumeDraft` |
 | `CommandColumn` | Thin control bar: task, run, skills, HITL toggle, secondary Continue | `useConsole`, `useSkills` |
-| `GraphSpine` | Five nodes: planner → executor → reviewer → actioner → memorize | `GRAPH_NODES`, `completedNodes`, `activeNode` |
+| `GraphSpine` | Four nodes: planner → executor → learner → actioner | `GRAPH_NODES`, `completedNodes`, `activeNode` |
 | `TraceTimeline` | Bottom drawer; collapsed by default; chronological steps | `timeline`, `selectStep`, `timelineOpen` |
 | `InspectorStack` | Collapsible rail; secondary RAG/audit when open | `mode="secondary"`, `collapsed`, `memory_context` |
 | `StatusBar` | API health, round counter, errors | `useHealth`, `runResponse` |

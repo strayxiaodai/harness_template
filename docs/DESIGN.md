@@ -54,7 +54,7 @@ CSS implementation: `app/frontend/src/styles/tokens.css`.
 
 The center column is the primary workplace. `CenterColumn` stacks three regions:
 
-1. **GraphSpine** — graph-native node strip (planner → memorize); unchanged behavior
+1. **GraphSpine** — graph-native node strip (planner → actioner)
 2. **Workplace** — flex middle: clarification HITL, selected-step payloads, or idle hint
 3. **TraceTimeline drawer** — bottom dock; **collapsed by default** (label + step count). Expands upward (~160–240px) without permanently displacing the workplace
 
@@ -103,7 +103,7 @@ The center column is the primary workplace. `CenterColumn` stacks three regions:
 | Principle | Implementation |
 | --- | --- |
 | Instrument panel | Dense layout, monospace payloads, no chat bubbles |
-| Graph-native | `GraphSpine` follows planner → memorize order |
+| Graph-native | `GraphSpine` follows planner → executor → learner → actioner |
 | Amber = HITL only | `--accent` for interrupts; `--primary` for active trace |
 | Payload visibility | `Workplace` shows primary plan/tools/review; `InspectorStack` secondary RAG/audit |
 | Local-first honesty | `StatusBar` reflects API health and capability gaps |

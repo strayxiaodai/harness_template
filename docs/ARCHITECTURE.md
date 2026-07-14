@@ -9,7 +9,7 @@ Flat Python packages at the repository root for graph logic; HTTP serving under
 
 ```text
 harness_template/
-├── agent/           # LangGraph nodes (planner, executor, reviewer, …)
+├── agent/           # LangGraph nodes (planner, executor, learner, actioner, …)
 ├── graph/           # StateGraph builder, routing, state, schemas
 ├── rag/             # Document + memory retrieval, ingest, stores
 ├── context/         # Memory recall pipeline for planner injection
@@ -52,7 +52,7 @@ Client (curl / React console)
         │
         ▼
   LangGraph (graph/builder.py)
-  planner → executor → reviewer → actioner → memorize → route
+  planner → executor → learner → actioner → route (planner|END)
         │
         ├── SQLite / Postgres checkpoints (memory/checkpoint.py)
         ├── RAG service (rag/service.py)
@@ -65,7 +65,7 @@ Client (curl / React console)
 | App state field | `human_in_the_loop` | Use |
 | --- | --- | --- |
 | `graph_auto` | `false` | `/run` default; runs to completion or max rounds |
-| `graph_step` | `true` | `/resume`; pauses after planner, executor, reviewer |
+| `graph_step` | `true` | `/resume`; pauses after planner, executor, learner |
 
 Actioner may also call `interrupt()` for action review when HITL is on and
 there are pending memories or `loop_score >= 80`.
@@ -82,7 +82,7 @@ Vite (see [`FRONTEND.md`](FRONTEND.md)).
 | `GraphSpine` | `GRAPH_NODES` + `timeline` from SSE updates |
 | `Workplace` | Selected timeline payloads; clarification and `action_review` HITL interrupts |
 | `TraceTimeline` | SSE `stream_mode=updates` chunks per node |
-| `InspectorStack` | Accumulated state: `plan`, `execution`, `review`, `tool_calls`, `memory_context` |
+| `InspectorStack` | Accumulated state: `plan`, `execution`, `learning`, `tool_calls`, `memory_context` |
 | Skill distill/save | `POST /api/skills/distill`, `/api/skills/save` |
 
 **Example — what the operator sees after a HITL pause:**

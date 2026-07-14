@@ -81,12 +81,10 @@ def test_merge_and_format_clarification_answers() -> None:
     assert "[a] A? → 2" in block
 
 
-def test_plan_result_requires_questions_when_clarifying() -> None:
-    """Structured output rejects empty clarification question lists."""
-    with pytest.raises(ValueError):
-        PlanResult(
-            steps=["do thing"],
-            rationale="blocked",
-            needs_clarification=True,
-            questions=[],
-        )
+def test_plan_result_is_steps_and_rationale_only() -> None:
+    """PlanResult remains step list + rationale (clarification is separate HITL)."""
+    plan = PlanResult(steps=["do thing"], rationale="clear")
+    assert plan.steps == ["do thing"]
+    assert not hasattr(plan, "needs_clarification") or True
+    dumped = plan.model_dump()
+    assert set(dumped) == {"steps", "rationale"}

@@ -36,6 +36,34 @@ load_dotenv()
 MAX_TOOL_ITERATIONS = 5
 
 
+def _format_tool_evidence(history: list[BaseMessage]) -> str:
+    """Render tool-loop history as plain text for structured summarize.
+
+    Avoids feeding live tool-call messages into ``with_structured_output``,
+    which breaks Ollama ``json_schema`` parsing after a tool loop.
+    """
+    lines: list[str] = []
+    for message in history:
+        if isinstance(message, ToolMessage):
+            lines.append(f"Tool result ({message.tool_call_id}): {message.content}")
+            continue
+        if isinstance(message, AIMessage) and message.tool_calls:
+            for call in message.tool_calls:
+                lines.append(
+                    f"Tool call: {call.get('name')}({json.dumps(call.get('args', {}), default=str)})"
+                )
+            if message.content:
+                lines.append(f"Assistant: {message.content}")
+            continue
+        if isinstance(message, (SystemMessage, HumanMessage)):
+            continue
+        if isinstance(message, AIMessage) and message.content:
+            lines.append(f"Assistant: {message.content}")
+    if not lines:
+        return "(no tool calls)"
+    return "\n".join(lines)
+
+
 def _format_tool_calls(tool_calls: list[ToolCallRecord] | None) -> str:
     """Format compact tool call records for the learner prompt."""
     if not tool_calls:
@@ -178,16 +206,24 @@ async def learner_agent(state: AgentState) -> dict[str, object]:
     history = await _run_tool_loop(state, trajectory, records, tool_contents)
 
     structured = get_llm().with_structured_output(LearningResult)
+    evidence = _format_tool_evidence(history)
+    # Reuse the tool-loop task brief (first HumanMessage) without live tool rows.
+    task_brief = next(
+        (m.content for m in history if isinstance(m, HumanMessage)),
+        f"Task: {state['task']}",
+    )
     learning: LearningResult = await call_llm(
         structured,
-        history
-        + [
+        [
+            SystemMessage(content=PROMPTS["learner"]["system"].strip()),
             HumanMessage(
                 content=(
+                    f"{task_brief}\n\n"
+                    f"Tool evidence:\n{evidence}\n\n"
                     "Now produce the LearningResult verdict using the evidence "
                     "above (including any script run outputs)."
                 )
-            )
+            ),
         ],
     )
 

@@ -32,6 +32,36 @@ def _tool_output_to_content(output: Any) -> str:
     return str(output)
 
 
+def _format_tool_evidence(history: list[BaseMessage]) -> str:
+    """Render tool-loop history as plain text for the summarize phase.
+
+    Live ``ToolMessage`` / tool-call ``AIMessage`` rows must not be fed into
+    ``with_structured_output``: Ollama's default ``json_schema`` method then
+    keeps emitting tool calls (empty content) and fails with
+    ``OUTPUT_PARSING_FAILURE``.
+    """
+    lines: list[str] = []
+    for message in history:
+        if isinstance(message, ToolMessage):
+            lines.append(f"Tool result ({message.tool_call_id}): {message.content}")
+            continue
+        if isinstance(message, AIMessage) and message.tool_calls:
+            for call in message.tool_calls:
+                lines.append(
+                    f"Tool call: {call.get('name')}({json.dumps(call.get('args', {}), default=str)})"
+                )
+            if message.content:
+                lines.append(f"Assistant: {message.content}")
+            continue
+        if isinstance(message, (SystemMessage, HumanMessage)):
+            continue
+        if isinstance(message, AIMessage) and message.content:
+            lines.append(f"Assistant: {message.content}")
+    if not lines:
+        return "(no tool calls)"
+    return "\n".join(lines)
+
+
 async def _run_tool_loop(
     state: AgentState,
     trajectory: list[BaseMessage],
@@ -134,13 +164,19 @@ async def executor_agent(state: AgentState) -> dict[str, object]:
     history = await _run_tool_loop(state, trajectory, records)
 
     structured = get_llm().with_structured_output(ExecutorResult)
+    evidence = _format_tool_evidence(history)
     execution: ExecutorResult = await call_llm(
         structured,
-        history
-        + [
+        [
+            SystemMessage(content=PROMPTS["executor"]["system"].strip()),
             HumanMessage(
-                content=PROMPTS["executor"]["summarize"].strip()
-            )
+                content=(
+                    f"Task: {state['task']}\n"
+                    f"Plan: {state['plan']}\n"
+                    f"Tool evidence:\n{evidence}\n\n"
+                    f"{PROMPTS['executor']['summarize'].strip()}"
+                )
+            ),
         ],
     )
 

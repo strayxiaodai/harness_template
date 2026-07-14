@@ -247,6 +247,65 @@ async def test_executor_includes_learning_feedback_in_prompt(
 
 
 @pytest.mark.asyncio
+async def test_executor_summarize_phase_excludes_tool_messages(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Structured summarize must not reuse live tool-call history.
+
+    Ollama's default json_schema structured output otherwise keeps emitting
+    tool calls (empty content) and raises OUTPUT_PARSING_FAILURE.
+    """
+    from app.agents import executor as executor_module
+
+    _patch_llm_and_tools(monkeypatch, executor_module)
+    monkeypatch.setattr(executor_module, "write_audit_event", AsyncMock())
+
+    fake_tool = MagicMock()
+    fake_tool.name = "read_file"
+    fake_tool.ainvoke = AsyncMock(return_value="file contents")
+    monkeypatch.setattr(
+        executor_module,
+        "get_executor_tools",
+        lambda _thread_id: [fake_tool],
+    )
+
+    summarize_messages: list[Any] = []
+    response = AIMessage(
+        content="",
+        tool_calls=[_tool_call("read_file", {"path": "README.md"}, "call_1")],
+    )
+    follow_up = AIMessage(content="done reading")
+    execution = ExecutorResult(summary="read the file")
+    phase = {"count": 0}
+
+    async def fake_call_llm(runnable: Any, messages: list[Any]) -> Any:
+        del runnable
+        phase["count"] += 1
+        if phase["count"] == 1:
+            return response
+        if phase["count"] == 2:
+            return follow_up
+        summarize_messages.extend(messages)
+        return execution
+
+    monkeypatch.setattr(executor_module, "call_llm", fake_call_llm)
+
+    await executor_module.executor_agent(_state())
+
+    assert summarize_messages, "expected a structured summarize call"
+    assert not any(isinstance(m, ToolMessage) for m in summarize_messages)
+    assert not any(
+        isinstance(m, AIMessage) and getattr(m, "tool_calls", None)
+        for m in summarize_messages
+    )
+    joined = " ".join(
+        m.content for m in summarize_messages if hasattr(m, "content")
+    )
+    assert "read_file" in joined
+    assert "README.md" in joined
+    assert "file contents" in joined
+
+@pytest.mark.asyncio
 @pytest.mark.integration
 async def test_executor_produces_summary_live() -> None:
     """Live smoke: run the planner, then execute its plan end-to-end."""

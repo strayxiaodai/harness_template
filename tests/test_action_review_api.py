@@ -40,17 +40,24 @@ def _seed_values(**overrides: object) -> dict[str, Any]:
         "plan": ["extract", "review", "store"],
         "rounds": 0,
         "max_rounds": 3,
-        "role": "reviewer",
-        "approved": False,
+        "role": "learner",
+        "approved": True,
         "human_in_the_loop": True,
         "memory_cursor": 0,
         "pending_memories": [],
         "approved_memories": [],
-        "review": {
+        "learning": {
             "verdict": "pass",
             "reason": "ok",
             "suggested_step": "finish",
+            "lessons": {
+                "worked": [],
+                "failed": [],
+                "risks": [],
+                "next_time": [],
+            },
         },
+        "learning_candidates": [],
         "execution": {
             "summary": "done",
             "changes": [],
@@ -67,12 +74,12 @@ async def seed_action_review_interrupt(
     *,
     thread_id: str,
 ) -> Any:
-    """Seed past reviewer and run until actioner's action_review interrupt."""
+    """Seed past learner and run until actioner's action_review interrupt."""
     config = {"configurable": {"thread_id": thread_id}}
     await graph.aupdate_state(
         config,
         _seed_values(thread_id=thread_id),
-        as_node="reviewer",
+        as_node="learner",
     )
     await graph.ainvoke(None, config)
     return await graph.aget_state(config)

@@ -16,7 +16,7 @@ def _state(**overrides: object) -> dict[str, object]:
         "plan": [],
         "rounds": 0,
         "max_rounds": 3,
-        "role": "memorize",
+        "role": "actioner",
         "approved": False,
         "human_in_the_loop": False,
     }
@@ -68,7 +68,7 @@ def test_route_honors_finish_suggestion() -> None:
 
 
 def test_create_workflow_has_expected_nodes() -> None:
-    """Workflow includes planner through memorize."""
+    """Workflow includes planner through actioner (no memorize)."""
     pytest.importorskip("langgraph")
     from graph.builder import HITL_PAUSE_NODES, create_workflow
 
@@ -76,14 +76,13 @@ def test_create_workflow_has_expected_nodes() -> None:
     assert set(workflow.nodes) == {
         "planner",
         "executor",
-        "reviewer",
+        "learner",
         "actioner",
-        "memorize",
     }
     assert HITL_PAUSE_NODES == [
         "planner",
         "executor",
-        "reviewer",
+        "learner",
     ]
 
 

@@ -19,6 +19,18 @@ PENDING_MEMORY = {
     "importance": 0.8,
 }
 
+PASS_LEARNING = {
+    "verdict": "pass",
+    "reason": "looks good",
+    "suggested_step": "finish",
+    "lessons": {
+        "worked": ["verification ran"],
+        "failed": [],
+        "risks": [],
+        "next_time": [],
+    },
+}
+
 
 @pytest.fixture(autouse=True)
 def clear_pending_cache() -> Iterator[None]:
@@ -42,14 +54,11 @@ def _state(**overrides: object) -> dict[str, Any]:
         "rounds": 0,
         "max_rounds": 3,
         "role": "actioner",
-        "approved": False,
+        "approved": True,
         "human_in_the_loop": False,
         "memory_cursor": 0,
-        "review": {
-            "verdict": "pass",
-            "reason": "looks good",
-            "suggested_step": "finish",
-        },
+        "learning": dict(PASS_LEARNING),
+        "learning_candidates": [],
         "execution": {
             "summary": "implemented feature",
             "changes": ["added tests"],
@@ -59,6 +68,65 @@ def _state(**overrides: object) -> dict[str, Any]:
     }
     base.update(overrides)
     return base
+
+
+def _stub_commit(monkeypatch: pytest.MonkeyPatch, actioner_module: Any) -> AsyncMock:
+    """Stub commit to echo approved/pending clear."""
+    commit = AsyncMock(
+        side_effect=lambda state: {
+            "memory_cursor": len(state.get("messages") or []),
+            "pending_memories": [],
+            "approved_memories": [],
+            "_seen_approved": list(state.get("approved_memories") or []),
+            "_seen_pending": list(state.get("pending_memories") or []),
+        },
+    )
+    monkeypatch.setattr(actioner_module, "commit_round_memories", commit)
+    return commit
+
+
+@pytest.mark.asyncio
+async def test_actioner_soft_skips_when_not_approved(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Fail path skips score, extract, interrupt, and commit."""
+    from app.agents import actioner as actioner_module
+
+    score = AsyncMock()
+    extract = AsyncMock()
+    commit = AsyncMock()
+    interrupt = MagicMock()
+    monkeypatch.setattr(actioner_module, "write_audit_event", AsyncMock())
+    monkeypatch.setattr(actioner_module, "score_loop", score)
+    monkeypatch.setattr(actioner_module, "extract_memory_candidates", extract)
+    monkeypatch.setattr(actioner_module, "commit_round_memories", commit)
+    monkeypatch.setattr(actioner_module, "interrupt", interrupt)
+
+    result = await actioner_module.actioner_agent(
+        _state(
+            approved=False,
+            learning={
+                "verdict": "fail",
+                "reason": "incomplete",
+                "suggested_step": "planner",
+                "lessons": {
+                    "worked": [],
+                    "failed": ["missing tests"],
+                    "risks": [],
+                    "next_time": [],
+                },
+            },
+        ),
+    )
+
+    score.assert_not_awaited()
+    extract.assert_not_awaited()
+    commit.assert_not_awaited()
+    interrupt.assert_not_called()
+    assert result["loop_score"] == 0
+    assert result["skill_preview_ready"] is False
+    assert result["refine_from"] == "planner"
+    assert result["rounds"] == 1
 
 
 @pytest.mark.asyncio
@@ -79,6 +147,7 @@ async def test_actioner_increments_rounds(
         "extract_memory_candidates",
         AsyncMock(return_value=[]),
     )
+    _stub_commit(monkeypatch, actioner_module)
 
     result = await actioner_module.actioner_agent(_state(rounds=1))
 
@@ -89,61 +158,60 @@ async def test_actioner_increments_rounds(
 
 
 @pytest.mark.asyncio
-async def test_actioner_sets_refine_from_from_review(
+async def test_actioner_maps_legacy_executor_suggest_to_planner(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Actioner copies the reviewer's suggested_step into refine_from."""
+    """Legacy executor suggested_step normalizes to planner on soft-skip."""
     from app.agents import actioner as actioner_module
 
     monkeypatch.setattr(actioner_module, "write_audit_event", AsyncMock())
-    monkeypatch.setattr(
-        actioner_module,
-        "score_loop",
-        AsyncMock(return_value=ActionScoreResult(score=55, rationale="needs work")),
-    )
-    monkeypatch.setattr(
-        actioner_module,
-        "extract_memory_candidates",
-        AsyncMock(return_value=[]),
-    )
 
     result = await actioner_module.actioner_agent(
         _state(
-            review={
+            approved=False,
+            learning={
                 "verdict": "fail",
                 "reason": "needs more tests",
                 "suggested_step": "executor",
+                "lessons": {
+                    "worked": [],
+                    "failed": [],
+                    "risks": [],
+                    "next_time": [],
+                },
             },
         ),
     )
 
-    assert result["refine_from"] == "executor"
-    assert result["skill_preview_ready"] is False
+    assert result["refine_from"] == "planner"
+    assert result["loop_score"] == 0
 
 
 @pytest.mark.asyncio
-async def test_actioner_defaults_to_finish_when_no_review(
+async def test_actioner_defaults_to_finish_when_approved_without_learning(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Missing review should default refine_from to finish."""
+    """Missing learning with approved=True defaults refine_from to finish."""
     from app.agents import actioner as actioner_module
 
     monkeypatch.setattr(actioner_module, "write_audit_event", AsyncMock())
     monkeypatch.setattr(
         actioner_module,
         "score_loop",
-        AsyncMock(return_value=ActionScoreResult(score=0, rationale="no review")),
+        AsyncMock(return_value=ActionScoreResult(score=40, rationale="no learning")),
     )
     monkeypatch.setattr(
         actioner_module,
         "extract_memory_candidates",
         AsyncMock(return_value=[]),
     )
+    _stub_commit(monkeypatch, actioner_module)
 
-    result = await actioner_module.actioner_agent(_state(review=None))
+    result = await actioner_module.actioner_agent(
+        _state(learning=None, approved=True),
+    )
 
     assert result["refine_from"] == "finish"
-    assert result["skill_preview_ready"] is False
 
 
 @pytest.mark.asyncio
@@ -214,6 +282,7 @@ async def test_actioner_interrupts_for_pending_memories_when_hitl(
         },
     )
     monkeypatch.setattr(actioner_module, "interrupt", interrupt)
+    commit = _stub_commit(monkeypatch, actioner_module)
 
     result = await actioner_module.actioner_agent(_state(human_in_the_loop=True))
 
@@ -222,8 +291,10 @@ async def test_actioner_interrupts_for_pending_memories_when_hitl(
     assert payload["kind"] == "action_review"
     assert payload["skill_preview_ready"] is False
     assert payload["memories"] == [PENDING_MEMORY]
-    assert result["pending_memories"] == [PENDING_MEMORY]
-    assert result["approved_memories"] == [
+    assert result["pending_memories"] == []
+    assert result["approved_memories"] == []
+    seen_approved = commit.await_args.args[0]["approved_memories"]
+    assert seen_approved == [
         {
             "content": "User prefers focused pytest verification.",
             "memory_type": "preference",
@@ -268,6 +339,7 @@ async def test_actioner_reuses_pending_memories_after_interrupt_resume(
     )
     monkeypatch.setattr(actioner_module, "extract_memory_candidates", extract)
     monkeypatch.setattr(actioner_module, "interrupt", interrupt)
+    commit = _stub_commit(monkeypatch, actioner_module)
 
     state = _state(human_in_the_loop=True, memory_cursor=7)
 
@@ -278,8 +350,10 @@ async def test_actioner_reuses_pending_memories_after_interrupt_resume(
 
     assert extract.await_count == 1
     assert interrupt.call_count == 2
-    assert result["pending_memories"] == [PENDING_MEMORY]
-    assert result["approved_memories"] == [
+    assert result["pending_memories"] == []
+    assert result["approved_memories"] == []
+    seen_approved = commit.await_args.args[0]["approved_memories"]
+    assert seen_approved == [
         {
             "content": "User prefers pytest -v for targeted checks.",
             "memory_type": "preference",
@@ -287,6 +361,58 @@ async def test_actioner_reuses_pending_memories_after_interrupt_resume(
         },
     ]
     assert audit.await_args.kwargs["payload"]["approved_memory_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_actioner_merges_learning_candidates_and_commits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Pass path merges learner candidates with extract then commits."""
+    from app.agents import actioner as actioner_module
+
+    monkeypatch.setattr(actioner_module, "write_audit_event", AsyncMock())
+    monkeypatch.setattr(
+        actioner_module,
+        "score_loop",
+        AsyncMock(return_value=ActionScoreResult(score=70, rationale="ok")),
+    )
+    monkeypatch.setattr(
+        actioner_module,
+        "extract_memory_candidates",
+        AsyncMock(
+            return_value=[
+                {
+                    "id": "ignore",
+                    "content": "Project uses FastAPI",
+                    "memory_type": "fact",
+                    "importance": 0.6,
+                },
+            ],
+        ),
+    )
+    commit = _stub_commit(monkeypatch, actioner_module)
+
+    result = await actioner_module.actioner_agent(
+        _state(
+            learning_candidates=[
+                {
+                    "id": "old",
+                    "content": "User prefers pytest",
+                    "memory_type": "preference",
+                    "importance": 0.9,
+                },
+            ],
+        ),
+    )
+
+    commit.assert_awaited_once()
+    pending = commit.await_args.args[0]["pending_memories"]
+    assert {row["content"] for row in pending} == {
+        "User prefers pytest",
+        "Project uses FastAPI",
+    }
+    assert result["pending_memories"] == []
+    assert result["approved_memories"] == []
 
 
 @pytest.mark.asyncio
@@ -309,12 +435,14 @@ async def test_actioner_auto_approves_when_hitl_off(
     )
     interrupt = MagicMock()
     monkeypatch.setattr(actioner_module, "interrupt", interrupt)
+    commit = _stub_commit(monkeypatch, actioner_module)
 
     result = await actioner_module.actioner_agent(_state())
 
     interrupt.assert_not_called()
-    assert result["pending_memories"] == [PENDING_MEMORY]
-    assert result["approved_memories"] == [
+    assert result["pending_memories"] == []
+    assert result["approved_memories"] == []
+    assert commit.await_args.args[0]["approved_memories"] == [
         {
             "content": PENDING_MEMORY["content"],
             "memory_type": PENDING_MEMORY["memory_type"],
@@ -343,6 +471,7 @@ async def test_actioner_skips_interrupt_when_score_below_threshold(
     )
     interrupt = MagicMock()
     monkeypatch.setattr(actioner_module, "interrupt", interrupt)
+    _stub_commit(monkeypatch, actioner_module)
 
     result = await actioner_module.actioner_agent(_state(human_in_the_loop=True))
 
@@ -371,6 +500,7 @@ async def test_actioner_writes_audit_event(
         "extract_memory_candidates",
         AsyncMock(return_value=[]),
     )
+    _stub_commit(monkeypatch, actioner_module)
 
     await actioner_module.actioner_agent(
         _state(
@@ -389,21 +519,43 @@ async def test_actioner_writes_audit_event(
     assert kwargs["payload"]["approved"] is True
     assert kwargs["payload"]["loop_score"] == 90
     assert kwargs["payload"]["skill_preview_ready"] is True
+    assert kwargs["payload"]["score_rationale"] == "excellent"
     assert kwargs["payload"]["pending_memory_count"] == 0
     assert kwargs["payload"]["approved_memory_count"] == 0
     assert kwargs["payload"]["action_review_interrupted"] is False
+    assert kwargs["payload"]["soft_skip"] is False
 
 
-def test_heuristic_loop_score_pass_verdict_scores_high() -> None:
-    """Heuristic scoring should reach the preview threshold on strong loops."""
-    from app.agents import actioner as actioner_module
+def test_merge_learning_and_extract_dedupes_by_content() -> None:
+    """Merge assigns m0.. ids and drops duplicate normalized content."""
+    from agent.actioner import merge_learning_and_extract
 
-    score = actioner_module._heuristic_loop_score(_state())
-    assert score >= SKILL_PREVIEW_SCORE_THRESHOLD
-
-
-def test_heuristic_loop_score_without_review_is_zero() -> None:
-    """Missing review should score zero."""
-    from app.agents import actioner as actioner_module
-
-    assert actioner_module._heuristic_loop_score(_state(review=None)) == 0
+    merged = merge_learning_and_extract(
+        [
+            {
+                "id": "a",
+                "content": " Prefer Pytest ",
+                "memory_type": "preference",
+                "importance": 0.9,
+            },
+        ],
+        [
+            {
+                "id": "b",
+                "content": "prefer pytest",
+                "memory_type": "fact",
+                "importance": 0.2,
+            },
+            {
+                "id": "c",
+                "content": "Uses FastAPI",
+                "memory_type": "fact",
+                "importance": 0.5,
+            },
+        ],
+    )
+    assert len(merged) == 2
+    assert merged[0]["id"] == "m0"
+    assert merged[0]["content"] == "Prefer Pytest"
+    assert merged[1]["id"] == "m1"
+    assert merged[1]["content"] == "Uses FastAPI"

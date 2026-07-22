@@ -32,4 +32,19 @@ def get_llm() -> Any:
             temperature=0.2,
         )
 
+    if provider == "vllm":
+        from langchain_openai import ChatOpenAI
+
+        return ChatOpenAI(
+            model=os.getenv(
+                "VLLM_MODEL",
+                "RedHatAI/Qwen3.6-35B-A3B-NVFP4",
+            ),
+            base_url=os.getenv(
+                "VLLM_BASE_URL",
+                "http://127.0.0.1:8000/v1",
+            ),
+            api_key=os.getenv("VLLM_API_KEY", "EMPTY"),
+        )
+
     raise ValueError(f"Unsupported LLM_PROVIDER: {provider}")

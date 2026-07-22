@@ -969,12 +969,17 @@ Migration: `migrations/001_create_agent_audit_log.sql`.
 ### LLM
 
 ```bash
-export LLM_PROVIDER=openai          # openai | anthropic | ollama
+export LLM_PROVIDER=openai          # openai | anthropic | ollama | vllm
 export OPENAI_API_KEY=sk-...
 # Ollama local:
 export LLM_PROVIDER=ollama
 export OLLAMA_BASE_URL=http://127.0.0.1:11434
 export OLLAMA_MODEL=qwen3.6:27b
+# vLLM OpenAI-compatible:
+export LLM_PROVIDER=vllm
+export VLLM_BASE_URL=http://127.0.0.1:8000/v1
+export VLLM_MODEL=RedHatAI/Qwen3.6-35B-A3B-NVFP4
+export VLLM_API_KEY=EMPTY           # optional; defaults to EMPTY
 ```
 
 ### Checkpoints

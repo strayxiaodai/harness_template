@@ -35,6 +35,10 @@ def test_get_llm_vllm_uses_openai_compatible_client(
     assert captured["model"] == "RedHatAI/Qwen3.6-35B-A3B-NVFP4"
     assert captured["base_url"] == "http://192.168.1.102:8000/v1"
     assert captured["api_key"] == "test-key"
+    assert captured["max_tokens"] == 4096
+    assert captured["extra_body"] == {
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
 
 
 def test_get_llm_vllm_defaults_api_key_to_empty(
@@ -59,3 +63,31 @@ def test_get_llm_vllm_defaults_api_key_to_empty(
     providers.get_llm()
 
     assert captured["api_key"] == "EMPTY"
+
+
+def test_get_llm_vllm_respects_max_tokens_and_thinking(
+    monkeypatch: Any,
+) -> None:
+    """VLLM_MAX_TOKENS and VLLM_ENABLE_THINKING should pass through."""
+    captured: dict[str, Any] = {}
+
+    class FakeChatOpenAI:
+        def __init__(self, **kwargs: Any) -> None:
+            captured.update(kwargs)
+
+    monkeypatch.setenv("LLM_PROVIDER", "vllm")
+    monkeypatch.setenv("VLLM_BASE_URL", "http://127.0.0.1:8000/v1")
+    monkeypatch.setenv("VLLM_MODEL", "some-model")
+    monkeypatch.setenv("VLLM_MAX_TOKENS", "2048")
+    monkeypatch.setenv("VLLM_ENABLE_THINKING", "true")
+    monkeypatch.setattr(
+        "langchain_openai.ChatOpenAI",
+        FakeChatOpenAI,
+    )
+
+    providers.get_llm()
+
+    assert captured["max_tokens"] == 2048
+    assert captured["extra_body"] == {
+        "chat_template_kwargs": {"enable_thinking": True},
+    }

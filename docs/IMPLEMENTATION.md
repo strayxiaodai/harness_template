@@ -980,7 +980,10 @@ export LLM_PROVIDER=vllm
 export VLLM_BASE_URL=http://127.0.0.1:8000/v1
 export VLLM_MODEL=RedHatAI/Qwen3.6-35B-A3B-NVFP4
 export VLLM_API_KEY=EMPTY           # optional; defaults to EMPTY
+export VLLM_MAX_TOKENS=4096         # optional; caps completion length
+export VLLM_ENABLE_THINKING=false   # optional; Qwen3 thinking off by default
 ```
+
 
 ### Checkpoints
 

@@ -35,6 +35,14 @@ def get_llm() -> Any:
     if provider == "vllm":
         from langchain_openai import ChatOpenAI
 
+        # Qwen3 thinking can fill the context window and break
+        # with_structured_output (LengthFinishReasonError). Cap tokens and
+        # disable thinking by default for harness JSON schemas.
+        enable_thinking = os.getenv(
+            "VLLM_ENABLE_THINKING",
+            "false",
+        ).lower() in ("1", "true", "yes")
+
         return ChatOpenAI(
             model=os.getenv(
                 "VLLM_MODEL",
@@ -45,6 +53,12 @@ def get_llm() -> Any:
                 "http://127.0.0.1:8000/v1",
             ),
             api_key=os.getenv("VLLM_API_KEY", "EMPTY"),
+            max_tokens=int(os.getenv("VLLM_MAX_TOKENS", "4096")),
+            extra_body={
+                "chat_template_kwargs": {
+                    "enable_thinking": enable_thinking,
+                },
+            },
         )
 
     raise ValueError(f"Unsupported LLM_PROVIDER: {provider}")

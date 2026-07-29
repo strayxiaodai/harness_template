@@ -37,12 +37,14 @@ def _env_float(name: str, default: float) -> float:
 
 @dataclass(frozen=True)
 class HybridSettings:
-    """Hybrid BM25 + dense retrieval settings."""
+    """Hybrid Elasticsearch + dense retrieval settings."""
 
     enabled: bool = True
     retrieve_k: int = 30
     rrf_k: int = 60
     fusion_top_n: int = 50
+    elasticsearch_url: str = "http://localhost:9200"
+    elasticsearch_index: str = "rag_documents"
 
 
 @dataclass(frozen=True)
@@ -172,6 +174,14 @@ def load_rag_settings() -> RagSettings:
             fusion_top_n=_env_int(
                 "RAG_FUSION_TOP_N",
                 int(hybrid_raw.get("fusion_top_n", 50)),
+            ),
+            elasticsearch_url=os.getenv(
+                "ELASTICSEARCH_URL",
+                str(hybrid_raw.get("elasticsearch_url", "http://localhost:9200")),
+            ),
+            elasticsearch_index=os.getenv(
+                "ELASTICSEARCH_INDEX",
+                str(hybrid_raw.get("elasticsearch_index", "rag_documents")),
             ),
         ),
         memory=MemoryRetrieveSettings(

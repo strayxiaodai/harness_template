@@ -135,7 +135,7 @@ from app.graph.routing import route_after_action
 | Concern | Default | Optional |
 | --- | --- | --- |
 | Graph checkpoints | SQLite `data/checkpoints/langgraph.db` | Postgres |
-| Document RAG index | FAISS + BM25 under `data/rag/` | — |
+| Document RAG index | FAISS + Elasticsearch | — |
 | Memory store | FAISS under `data/rag/memory/` | pgvector via Postgres |
 | Audit log | No-op (debug skip) | `agent_audit_log` table |
 | Distilled skills | `app/skills/<slug>/SKILL.md` | — |

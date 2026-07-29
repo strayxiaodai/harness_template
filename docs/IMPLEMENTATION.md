@@ -751,7 +751,7 @@ Cursor agent skills under `.cursor/skills/` (e.g. impeccable) are unrelated.
 
 | Corpus | Index (default) | Index (postgres) |
 |--------|-------------------|------------------|
-| Documents | FAISS + BM25 under `data/rag/` | unchanged |
+| Documents | FAISS + Elasticsearch | unchanged |
 | Memories | FAISS under `data/rag/memory/` | `memory_entries` + pgvector |
 
 ### Read path (planner)
@@ -849,6 +849,8 @@ Retrieved documents:
 | `RAG_INDEX_DIR` | Index directory | `data/rag` |
 | `EMBEDDING_PROVIDER` | `openai` or `ollama` | `ollama` |
 | `EMBEDDING_MODEL` | Model name | `BGE-M3:latest` |
+| `ELASTICSEARCH_URL` | Elasticsearch connection | `http://localhost:9200` |
+| `ELASTICSEARCH_INDEX` | ES index name | `rag_documents` |
 | `RAG_MEMORY_BACKEND` | `faiss` or `postgres` | `faiss` |
 | `DATABASE_URL` | Postgres memory + audit | `postgresql://...` |
 | `EXECUTOR_TOOLS` | Tool allow-list | `read_file,list_dir,write_thread_file,read_thread_file` |

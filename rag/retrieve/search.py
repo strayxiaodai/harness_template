@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import logging
 
-from langchain_community.retrievers import BM25Retriever
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_elasticsearch import ElasticsearchStore
 
 from rag.config import HybridSettings, MemoryRetrieveSettings, RagSettings
 from rag.retrieve.fusion import reciprocal_rank_fusion
 from rag.retrieve.rerank.pipeline import TwoStageReranker
 from rag.schemas import RewrittenQueries
 from rag.stores.memory import MemoryStore
+from rag.stores.sparse import search_es
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ async def search_documents(
     query: str,
     *,
     vectorstore: FAISS | None,
-    bm25: BM25Retriever | None,
+    es_store: ElasticsearchStore | None,
     embeddings: Embeddings,
     settings: RagSettings,
     reranker: TwoStageReranker | None,
@@ -32,7 +33,7 @@ async def search_documents(
     Args:
         query: Search query.
         vectorstore: FAISS store.
-        bm25: BM25 retriever.
+        es_store: Elasticsearch store for sparse retrieval.
         embeddings: Embedding model.
         settings: RAG settings.
         reranker: Optional two-stage reranker.
@@ -43,10 +44,9 @@ async def search_documents(
     hybrid = settings.hybrid
     ranked_lists: list[list[Document]] = []
 
-    if hybrid.enabled and bm25 is not None:
-        bm25.k = hybrid.retrieve_k
-        sparse = await bm25.ainvoke(query)
-        ranked_lists.append(list(sparse))
+    if hybrid.enabled and es_store is not None:
+        sparse = await search_es(es_store, query, hybrid.retrieve_k)
+        ranked_lists.append(sparse)
 
     if vectorstore is not None:
         dense = await vectorstore.asimilarity_search(query, k=hybrid.retrieve_k)

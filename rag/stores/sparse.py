@@ -1,65 +1,55 @@
-"""BM25 sparse retriever for static documents."""
+"""Elasticsearch sparse retriever for static documents."""
 
 from __future__ import annotations
 
 import logging
-import pickle
-from pathlib import Path
 
-from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
+from langchain_elasticsearch import ElasticsearchStore
 
 logger = logging.getLogger(__name__)
 
 
-def bm25_path(index_dir: Path) -> Path:
-    """Return the BM25 pickle path."""
-    return index_dir / "bm25" / "retriever.pkl"
-
-
-def build_bm25(documents: list[Document]) -> BM25Retriever:
-    """Build a BM25 retriever from documents.
+def get_es_store(url: str, index_name: str) -> ElasticsearchStore:
+    """Create an ElasticsearchStore for sparse BM25 retrieval.
 
     Args:
-        documents: Chunked documents.
+        url: Elasticsearch connection URL.
+        index_name: Target index name.
 
     Returns:
-        Configured BM25 retriever.
+        Configured ElasticsearchStore.
     """
-    retriever = BM25Retriever.from_documents(documents)
-    retriever.k = 1
-    return retriever
+    return ElasticsearchStore(
+        es_url=url,
+        index_name=index_name,
+        strategy=ElasticsearchStore.BM25RetrievalStrategy(),
+    )
 
 
-def save_bm25(retriever: BM25Retriever, index_dir: Path) -> None:
-    """Persist BM25 retriever to disk.
+def index_documents(store: ElasticsearchStore, documents: list[Document]) -> None:
+    """Bulk-index chunked documents into Elasticsearch.
 
     Args:
-        retriever: BM25 retriever to save.
-        index_dir: Root RAG data directory.
+        store: ElasticsearchStore instance.
+        documents: Chunked documents to index.
     """
-    target = index_dir / "bm25"
-    target.mkdir(parents=True, exist_ok=True)
-    path = bm25_path(index_dir)
-    tmp = path.with_suffix(".tmp")
-    with tmp.open("wb") as handle:
-        pickle.dump(retriever, handle)
-    tmp.rename(path)
-    logger.info("Saved BM25 retriever")
+    store.add_documents(documents)
+    logger.info("Indexed %d documents into Elasticsearch", len(documents))
 
 
-def load_bm25(index_dir: Path) -> BM25Retriever | None:
-    """Load BM25 retriever if present.
+async def search_es(
+    store: ElasticsearchStore, query: str, k: int
+) -> list[Document]:
+    """Run a BM25 text-match query and return ranked documents.
 
     Args:
-        index_dir: Root RAG data directory.
+        store: ElasticsearchStore instance.
+        query: Search query string.
+        k: Number of results to return.
 
     Returns:
-        BM25 retriever or None if missing.
+        Ranked document list.
     """
-    path = bm25_path(index_dir)
-    if not path.is_file():
-        return None
-    with path.open("rb") as handle:
-        retriever: BM25Retriever = pickle.load(handle)
-    return retriever
+    retriever = store.as_retriever(search_kwargs={"k": k})
+    return await retriever.ainvoke(query)

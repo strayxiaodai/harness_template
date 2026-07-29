@@ -12,7 +12,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from rag.config import RagSettings, load_rag_settings
 from rag.embeddings import get_embeddings
 from rag.schemas import RagManifest
-from rag.stores.sparse import build_bm25, save_bm25
+from rag.stores.sparse import get_es_store, index_documents
 from rag.stores.vectorstore import build_vectorstore, save_vectorstore
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ def ingest_documents(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
 ) -> RagManifest:
-    """Ingest static documents into FAISS and BM25 indexes.
+    """Ingest static documents into FAISS and Elasticsearch indexes.
 
     Args:
         source_dir: Directory containing documents.
@@ -102,7 +102,12 @@ def ingest_documents(
     embeddings = get_embeddings(cfg)
 
     vectorstore = build_vectorstore(chunks, embeddings)
-    bm25 = build_bm25(chunks)
+
+    es_store = get_es_store(
+        cfg.hybrid.elasticsearch_url,
+        cfg.hybrid.elasticsearch_index,
+    )
+    index_documents(es_store, chunks)
 
     manifest = RagManifest(
         embedding_provider=cfg.embedding_provider,
@@ -114,6 +119,5 @@ def ingest_documents(
 
     cfg.index_dir.mkdir(parents=True, exist_ok=True)
     save_vectorstore(vectorstore, cfg.index_dir, manifest)
-    save_bm25(bm25, cfg.index_dir)
     logger.info("Ingested %d chunks from %s", len(chunks), source_dir)
     return manifest

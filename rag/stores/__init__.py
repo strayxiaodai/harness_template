@@ -1,1 +1,1 @@
-"""Vector, sparse, and memory stores for RAG."""
+"""Vector, Elasticsearch, and memory stores for RAG."""

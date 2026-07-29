@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import logging
 
-from langchain_community.retrievers import BM25Retriever
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_elasticsearch import ElasticsearchStore
 
 from rag.config import RagSettings, load_rag_settings
 from rag.embeddings import get_embeddings
@@ -15,7 +15,7 @@ from rag.inject.formatter import format_document_context
 from rag.retrieve.rerank.pipeline import TwoStageReranker, build_reranker
 from rag.retrieve.search import search_documents
 from rag.stores.memory_factory import MemoryStoreBackend, load_memory_store
-from rag.stores.sparse import load_bm25
+from rag.stores.sparse import get_es_store
 from rag.stores.vectorstore import load_vectorstore, validate_manifest
 
 logger = logging.getLogger(__name__)
@@ -31,14 +31,14 @@ class RagService:
         settings: RagSettings,
         embeddings: Embeddings,
         vectorstore: FAISS | None,
-        bm25: BM25Retriever | None,
+        es_store: ElasticsearchStore | None,
         memory_store: MemoryStoreBackend,
         reranker: TwoStageReranker | None,
     ) -> None:
         self._settings = settings
         self._embeddings = embeddings
         self._vectorstore = vectorstore
-        self._bm25 = bm25
+        self._es_store = es_store
         self._memory_store = memory_store
         self._reranker = reranker
 
@@ -76,7 +76,7 @@ class RagService:
         embeddings = get_embeddings(cfg)
 
         vectorstore: FAISS | None = None
-        bm25: BM25Retriever | None = None
+        es_store: ElasticsearchStore | None = None
         if cfg.index_dir.exists():
             try:
                 validate_manifest(
@@ -85,14 +85,22 @@ class RagService:
                     embedding_model=cfg.embedding_model,
                 )
                 vectorstore = load_vectorstore(cfg.index_dir, embeddings)
-                bm25 = load_bm25(cfg.index_dir)
             except RuntimeError as exc:
                 logger.warning("RAG document index not ready: %s", exc)
+
+        if cfg.hybrid.enabled:
+            try:
+                es_store = get_es_store(
+                    cfg.hybrid.elasticsearch_url,
+                    cfg.hybrid.elasticsearch_index,
+                )
+            except Exception as exc:
+                logger.warning("Elasticsearch not available: %s", exc)
 
         memory_store = load_memory_store(cfg, embeddings)
         reranker = build_reranker(embeddings, cfg.rerank)
 
-        return cls(cfg, embeddings, vectorstore, bm25, memory_store, reranker)
+        return cls(cfg, embeddings, vectorstore, es_store, memory_store, reranker)
 
     async def search_documents(self, query: str) -> list[Document]:
         """Search static documents.
@@ -106,7 +114,7 @@ class RagService:
         return await search_documents(
             query,
             vectorstore=self._vectorstore,
-            bm25=self._bm25,
+            es_store=self._es_store,
             embeddings=self._embeddings,
             settings=self._settings,
             reranker=self._reranker,

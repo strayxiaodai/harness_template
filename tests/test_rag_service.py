@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from langchain_community.embeddings import FakeEmbeddings
@@ -14,7 +15,6 @@ from rag.retrieve.search import search_documents
 from rag.schemas import ExtractedMemory, RagManifest
 from rag.service import RagService, init_rag_service
 from rag.stores.memory import MemoryStore
-from rag.stores.sparse import build_bm25, save_bm25
 from rag.stores.vectorstore import build_vectorstore, save_vectorstore
 
 
@@ -49,10 +49,9 @@ def _build_indexes(
     settings: RagSettings,
     docs: list[Document],
     embeddings: FakeEmbeddings,
-) -> tuple[object, object]:
+) -> tuple[object, MagicMock]:
     settings.index_dir.mkdir(parents=True, exist_ok=True)
     vectorstore = build_vectorstore(docs, embeddings)
-    bm25 = build_bm25(docs)
     manifest = RagManifest(
         embedding_provider=settings.embedding_provider,
         embedding_model=settings.embedding_model,
@@ -61,8 +60,12 @@ def _build_indexes(
         doc_count=len(docs),
     )
     save_vectorstore(vectorstore, settings.index_dir, manifest)
-    save_bm25(bm25, settings.index_dir)
-    return vectorstore, bm25
+
+    mock_es = MagicMock()
+    mock_retriever = AsyncMock()
+    mock_retriever.ainvoke = AsyncMock(return_value=docs)
+    mock_es.as_retriever.return_value = mock_retriever
+    return vectorstore, mock_es
 
 
 @pytest.mark.asyncio
@@ -72,12 +75,12 @@ async def test_hybrid_search_returns_documents(
 ) -> None:
     """Hybrid search returns ranked documents from built indexes."""
     embeddings = FakeEmbeddings(size=32)
-    vectorstore, bm25 = _build_indexes(rag_settings, sample_docs, embeddings)
+    vectorstore, mock_es = _build_indexes(rag_settings, sample_docs, embeddings)
     service = RagService(
         rag_settings,
         embeddings,
         vectorstore,
-        bm25,
+        mock_es,
         MemoryStore(),
         build_reranker(embeddings, rag_settings.rerank),
     )
@@ -122,13 +125,19 @@ async def test_search_documents_direct(
     rag_settings: RagSettings,
     sample_docs: list[Document],
 ) -> None:
-    """search_documents helper fuses BM25 and dense results."""
+    """search_documents helper fuses ES and dense results."""
     embeddings = FakeEmbeddings(size=32)
-    vectorstore, bm25 = _build_indexes(rag_settings, sample_docs, embeddings)
+    vectorstore = build_vectorstore(sample_docs, embeddings)
+
+    mock_es = MagicMock()
+    mock_retriever = AsyncMock()
+    mock_retriever.ainvoke = AsyncMock(return_value=sample_docs)
+    mock_es.as_retriever.return_value = mock_retriever
+
     docs = await search_documents(
         "asyncio",
         vectorstore=vectorstore,
-        bm25=bm25,
+        es_store=mock_es,
         embeddings=embeddings,
         settings=rag_settings,
         reranker=None,

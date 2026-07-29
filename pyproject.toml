@@ -9,7 +9,7 @@ dependencies = [
     "langchain-openai",
     "langchain-ollama",
     "faiss-cpu",
-    "rank-bm25",
+    "langchain-elasticsearch",
     "tenacity",
     "pyyaml",
     "python-dotenv",

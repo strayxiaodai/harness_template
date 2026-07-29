@@ -83,6 +83,16 @@ class InjectSettings:
 
 
 @dataclass(frozen=True)
+class MetadataSettings:
+    """Metadata enrichment settings for taxonomy-aware retrieval."""
+
+    enabled: bool = True
+    extract_topics: bool = True
+    extract_entities: bool = False
+    boost_weight: float = 1.5
+
+
+@dataclass(frozen=True)
 class ExtractSettings:
     """Memory extraction ingest settings."""
 
@@ -115,6 +125,7 @@ class RagSettings:
     rewrite: RewriteSettings = field(default_factory=RewriteSettings)
     inject: InjectSettings = field(default_factory=InjectSettings)
     extract: ExtractSettings = field(default_factory=ExtractSettings)
+    metadata: MetadataSettings = field(default_factory=MetadataSettings)
 
 
 def _load_yaml() -> dict[str, object]:
@@ -141,6 +152,7 @@ def load_rag_settings() -> RagSettings:
     rewrite_raw = _section(raw, "rewrite")
     inject_raw = _section(raw, "inject")
     extract_raw = _section(raw, "extract")
+    metadata_raw = _section(raw, "metadata")
 
     index_dir = Path(
         os.getenv("RAG_INDEX_DIR", str(raw.get("index_dir", "data/rag")))
@@ -260,6 +272,24 @@ def load_rag_settings() -> RagSettings:
             dedup_threshold=_env_float(
                 "RAG_EXTRACT_DEDUP_THRESHOLD",
                 float(extract_raw.get("dedup_threshold", 0.92)),
+            ),
+        ),
+        metadata=MetadataSettings(
+            enabled=_env_bool(
+                "RAG_METADATA_ENABLED",
+                bool(metadata_raw.get("enabled", True)),
+            ),
+            extract_topics=_env_bool(
+                "RAG_METADATA_EXTRACT_TOPICS",
+                bool(metadata_raw.get("extract_topics", True)),
+            ),
+            extract_entities=_env_bool(
+                "RAG_METADATA_EXTRACT_ENTITIES",
+                bool(metadata_raw.get("extract_entities", False)),
+            ),
+            boost_weight=_env_float(
+                "RAG_METADATA_BOOST_WEIGHT",
+                float(metadata_raw.get("boost_weight", 1.5)),
             ),
         ),
     )

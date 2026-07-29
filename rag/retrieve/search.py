@@ -11,6 +11,7 @@ from langchain_elasticsearch import ElasticsearchStore
 
 from rag.config import HybridSettings, MemoryRetrieveSettings, RagSettings
 from rag.retrieve.fusion import reciprocal_rank_fusion
+from rag.retrieve.metadata_filter import extract_metadata_hints
 from rag.retrieve.rerank.pipeline import TwoStageReranker
 from rag.schemas import RewrittenQueries
 from rag.stores.memory import MemoryStore
@@ -45,7 +46,12 @@ async def search_documents(
     ranked_lists: list[list[Document]] = []
 
     if hybrid.enabled and es_store is not None:
-        sparse = await search_es(es_store, query, hybrid.retrieve_k)
+        metadata_filter = None
+        if settings.metadata.enabled:
+            metadata_filter = extract_metadata_hints(query)
+        sparse = await search_es(
+            es_store, query, hybrid.retrieve_k, metadata_filter=metadata_filter
+        )
         ranked_lists.append(sparse)
 
     if vectorstore is not None:

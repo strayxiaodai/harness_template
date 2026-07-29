@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from rag.config import RagSettings, load_rag_settings
+from rag.config import MetadataSettings, RagSettings, load_rag_settings
 from rag.embeddings import get_embeddings
 from rag.schemas import RagManifest
 from rag.stores.sparse import get_es_store, index_documents
@@ -71,6 +72,65 @@ def chunk_documents(
     return chunks
 
 
+_HEADING_RE = re.compile(r"^#{1,3}\s+(.+)$", re.MULTILINE)
+_DOCSTRING_RE = re.compile(r'"""(.+?)"""', re.DOTALL)
+
+
+def _extract_topics_from_content(content: str, file_type: str) -> list[str]:
+    """Extract topic keywords from chunk content using heuristics."""
+    topics: list[str] = []
+    if file_type == "md":
+        headings = _HEADING_RE.findall(content)
+        topics.extend(h.strip().lower() for h in headings[:5])
+    elif file_type == "py":
+        docstrings = _DOCSTRING_RE.findall(content)
+        for ds in docstrings[:3]:
+            first_line = ds.strip().split("\n")[0].strip().lower()
+            if first_line:
+                topics.append(first_line)
+    return topics
+
+
+def enrich_metadata(
+    chunks: list[Document],
+    settings: MetadataSettings,
+) -> list[Document]:
+    """Enrich document chunks with structured metadata fields.
+
+    Adds file_type, module, and optionally topics to each chunk's metadata.
+
+    Args:
+        chunks: Chunked documents with source metadata.
+        settings: Metadata extraction settings.
+
+    Returns:
+        The same chunks with enriched metadata (mutated in place).
+    """
+    if not settings.enabled:
+        return chunks
+
+    for chunk in chunks:
+        source = chunk.metadata.get("source", "")
+        source_path = Path(source)
+
+        # file_type from extension
+        ext = source_path.suffix.lstrip(".")
+        chunk.metadata["file_type"] = ext or "unknown"
+
+        # module from first meaningful directory component
+        parts = source_path.parts
+        chunk.metadata["module"] = parts[0] if parts else "root"
+
+        # topics from content heuristics
+        if settings.extract_topics:
+            topics = _extract_topics_from_content(
+                chunk.page_content, chunk.metadata["file_type"]
+            )
+            chunk.metadata["topics"] = topics
+
+    return chunks
+
+
 def ingest_documents(
     source_dir: Path,
     settings: RagSettings | None = None,
@@ -99,6 +159,7 @@ def ingest_documents(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
     )
+    enrich_metadata(chunks, cfg.metadata)
     embeddings = get_embeddings(cfg)
 
     vectorstore = build_vectorstore(chunks, embeddings)

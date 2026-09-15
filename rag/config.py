@@ -66,6 +66,7 @@ class RerankSettings:
     batch_size: int = 16
 
 
+
 @dataclass(frozen=True)
 class RewriteSettings:
     """Query rewrite settings."""

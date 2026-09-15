@@ -143,3 +143,4 @@ async def test_search_documents_direct(
         reranker=None,
     )
     assert docs
+

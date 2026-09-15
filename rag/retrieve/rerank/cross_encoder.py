@@ -54,9 +54,11 @@ class CrossEncoderReranker:
 
         pairs = [(query, doc.page_content) for doc in docs]
         scores = await asyncio.to_thread(self._predict, pairs)
+
         ranked = sorted(
             zip(docs, scores, strict=True),
             key=lambda pair: pair[1],
             reverse=True,
         )
         return [doc for doc, _ in ranked[: self._top_n]]
+

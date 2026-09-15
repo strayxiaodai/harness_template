@@ -191,6 +191,80 @@ graph_step = compile_with_checkpointer(
 `interrupt()` for `action_review` on the pass path; soft-skips on fail without
 `interrupt_after`.
 
+### State transitions between nodes
+
+`graph/builder.py` wires a linear loop with one conditional exit:
+
+```text
+START → planner → executor → learner → actioner → route_after_action
+                                                      ├─ planner (loop)
+                                                      └─ END (finish)
+```
+
+LangGraph merges each node's return dict into the checkpointed `AgentState`.
+Most fields are **replaced** by the latest node output; `messages` uses the
+`add_messages` reducer (append). Fields marked *optional* depend on RAG inject,
+HITL, or the pass/fail path.
+
+```mermaid
+flowchart TD
+    START([START]) --> planner
+
+    planner["planner<br/><b>reads</b> task, plan, learning.reason, rounds<br/><b>writes</b> role=planner, plan, memory_context*,<br/>memory_context_round*, messages+"]
+
+    planner --> executor
+
+    executor["executor<br/><b>reads</b> task, plan, learning.reason, memory_context<br/><b>writes</b> role=executor, execution, result,<br/>tool_calls, messages+"]
+
+    executor --> learner
+
+    learner["learner<br/><b>reads</b> task, plan, execution, tool_calls, manifest<br/><b>writes</b> role=learner, approved, learning,<br/>learning_candidates, learner_tool_calls,<br/>script_runs, messages+"]
+
+    learner --> actioner
+
+    actioner["actioner<br/><b>reads</b> learning, approved, rounds,<br/>human_in_the_loop, learning_candidates,<br/>memory_cursor, messages<br/><b>writes (fail)</b> role=actioner, rounds+1,<br/>refine_from, loop_score=0, skill_preview_ready=false<br/><b>writes (pass)</b> role=actioner, rounds+1,<br/>refine_from, loop_score, skill_preview_ready,<br/>memory_cursor, clear pending/approved lists"]
+
+    actioner --> route{"route_after_action<br/>(graph/routing.py)"}
+
+    route -->|"learning_passed<br/>OR rounds ≥ max_rounds<br/>OR refine_from=finish"| END([END])
+    route -->|"else → planner"| planner
+```
+
+| Node | Primary reads | State patch (return dict) |
+|------|---------------|---------------------------|
+| `planner` | `task`, `plan`, `learning.reason`, `rounds` | `role`, `plan`, `memory_context`* , `memory_context_round`* , `messages`+ |
+| `executor` | `task`, `plan`, `learning.reason`, `memory_context` | `role`, `execution`, `result`, `tool_calls`, `messages`+ |
+| `learner` | `task`, `plan`, `execution`, `tool_calls`, thread manifest | `role`, `approved`, `learning`, `learning_candidates`, `learner_tool_calls`, `script_runs`, `messages`+ |
+| `actioner` (fail) | `learning`, `approved`, `rounds` | `role`, `rounds` (+1), `refine_from`, `loop_score=0`, `skill_preview_ready=false` |
+| `actioner` (pass) | above + `human_in_the_loop`, `learning_candidates`, `memory_cursor`, `messages` | `role`, `rounds` (+1), `refine_from`, `loop_score`, `skill_preview_ready`, `memory_cursor`, clears `pending_memories` / `approved_memories` |
+| `route_after_action` | `learning.verdict`, `approved`, `rounds`, `max_rounds`, `refine_from` | *(no state write — picks next node only)* |
+
+\* `memory_context` / `memory_context_round` only when RAG inject is enabled for
+planner (`rag.config.inject.planner`).
+
+`messages+` = appended via `add_messages`, not replaced.
+
+**HITL checkpoints on the graph above:**
+
+| Pause | Mechanism | State at pause |
+|-------|-----------|----------------|
+| After `planner`, `executor`, `learner` | `interrupt_after=HITL_PAUSE_NODES` | Full checkpoint; `next` points at the following node |
+| Inside `actioner` (pass path) | in-node `interrupt(kind=action_review)` | Pending memories + loop score stashed; resume merges `approved_memories` then commit runs |
+
+**Example — state after each node in round 1 (fail path):**
+
+| After node | Notable state delta |
+|------------|---------------------|
+| `planner` | `plan: ["read IMPLEMENTATION.md", "summarize API"]`, `role: "planner"` |
+| `executor` | `execution: {summary, changes, risks, verification}`, `tool_calls: [...]`, `result: "..."` |
+| `learner` | `approved: false`, `learning: {verdict: "fail", reason, suggested_step, lessons}`, `learning_candidates: [...]` |
+| `actioner` | `rounds: 1`, `refine_from: "planner"`, `loop_score: 0` (soft-skip; no memory commit) |
+| route | → `planner` (round 2) |
+
+On a **pass** path, `actioner` also sets `loop_score`, may interrupt for
+`action_review`, and `commit_round_memories` advances `memory_cursor` before
+routing to `finish` or back to `planner`.
+
 ---
 
 ## Core State

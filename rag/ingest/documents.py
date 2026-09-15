@@ -21,27 +21,96 @@ logger = logging.getLogger(__name__)
 DEFAULT_CHUNK_SIZE = 512
 DEFAULT_CHUNK_OVERLAP = 64
 SOURCE_GLOBS = ("**/*.md", "**/*.txt", "**/*.py", "**/*.yaml", "**/*.yml")
+PDF_GLOBS = ("**/*.pdf",)
 
 
-def load_documents(source_dir: Path) -> list[Document]:
-    """Load text documents from a directory.
+def load_pdf_document(pdf_path: Path) -> Document | None:
+    """Load a PDF document using Docling layout parsing with pypdf fallback.
 
     Args:
-        source_dir: Directory containing source files.
+        pdf_path: Path to the PDF file.
+
+    Returns:
+        Document containing extracted Markdown or text, or None on failure.
+    """
+    if not pdf_path.is_file():
+        return None
+
+    # Try Docling layout-aware Markdown extraction
+    try:
+        from docling.document_converter import DocumentConverter  # type: ignore[import-not-found]
+
+        converter = DocumentConverter()
+        result = converter.convert(str(pdf_path))
+        markdown_text = result.document.export_to_markdown()
+        logger.info("Successfully converted %s using Docling", pdf_path)
+        return Document(
+            page_content=markdown_text,
+            metadata={"source": str(pdf_path), "file_type": "pdf", "loader": "docling"},
+        )
+    except Exception as exc:
+        logger.debug("Docling conversion unavailable or failed for %s: %s", pdf_path, exc)
+
+    # Fallback to PyPDF
+    try:
+        import pypdf
+
+        reader = pypdf.PdfReader(str(pdf_path))
+        pages_text = [
+            page.extract_text() for page in reader.pages if page.extract_text()
+        ]
+        full_text = "\n\n".join(pages_text)
+        logger.info("Loaded %s using pypdf fallback (%d pages)", pdf_path, len(reader.pages))
+        return Document(
+            page_content=full_text,
+            metadata={"source": str(pdf_path), "file_type": "pdf", "loader": "pypdf"},
+        )
+    except Exception as exc:
+        logger.warning("Failed to load PDF %s with pypdf fallback: %s", pdf_path, exc)
+        return None
+
+
+def load_documents(source_path: Path) -> list[Document]:
+    """Load text and PDF documents from a directory or single file.
+
+    Args:
+        source_path: Directory or single file path containing source files.
 
     Returns:
         Loaded documents.
     """
     documents: list[Document] = []
-    for glob_pattern in SOURCE_GLOBS:
-        loader = DirectoryLoader(
-            str(source_dir),
-            glob=glob_pattern,
-            loader_cls=TextLoader,
-            show_progress=False,
-            silent_errors=True,
-        )
-        documents.extend(loader.load())
+
+    if source_path.is_file():
+        if source_path.suffix.lower() == ".pdf":
+            doc = load_pdf_document(source_path)
+            if doc:
+                documents.append(doc)
+        else:
+            try:
+                loader = TextLoader(str(source_path), encoding="utf-8")
+                documents.extend(loader.load())
+            except Exception as exc:
+                logger.warning("Failed to load text file %s: %s", source_path, exc)
+        return documents
+
+    if source_path.is_dir():
+        for glob_pattern in SOURCE_GLOBS:
+            loader = DirectoryLoader(
+                str(source_path),
+                glob=glob_pattern,
+                loader_cls=TextLoader,
+                show_progress=False,
+                silent_errors=True,
+            )
+            documents.extend(loader.load())
+
+        for pdf_glob in PDF_GLOBS:
+            for pdf_file in source_path.glob(pdf_glob):
+                doc = load_pdf_document(pdf_file)
+                if doc:
+                    documents.append(doc)
+
     return documents
 
 
@@ -79,7 +148,7 @@ _DOCSTRING_RE = re.compile(r'"""(.+?)"""', re.DOTALL)
 def _extract_topics_from_content(content: str, file_type: str) -> list[str]:
     """Extract topic keywords from chunk content using heuristics."""
     topics: list[str] = []
-    if file_type == "md":
+    if file_type in ("md", "pdf"):
         headings = _HEADING_RE.findall(content)
         topics.extend(h.strip().lower() for h in headings[:5])
     elif file_type == "py":

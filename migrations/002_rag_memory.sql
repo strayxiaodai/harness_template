@@ -9,10 +9,12 @@ CREATE TABLE IF NOT EXISTS memory_entries (
     content       TEXT NOT NULL,
     memory_type   TEXT NOT NULL,
     importance    REAL NOT NULL DEFAULT 0.5,
-    embedding     vector(1536),
+    embedding     vector(1024),
     source_ids    JSONB DEFAULT '[]',
     created_at    TIMESTAMPTZ DEFAULT now(),
     superseded_by UUID REFERENCES memory_entries(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_memory_thread ON memory_entries(thread_id);
+CREATE INDEX IF NOT EXISTS idx_memory_embedding_hnsw ON memory_entries USING hnsw (embedding vector_cosine_ops);
+

@@ -1,0 +1,33 @@
+Metadata-Version: 2.4
+Name: harness-template
+Version: 0.1.0
+Requires-Python: >=3.12
+License-File: LICENSE
+Requires-Dist: langchain-core
+Requires-Dist: langchain-community
+Requires-Dist: langchain-text-splitters
+Requires-Dist: langchain-openai
+Requires-Dist: langchain-ollama
+Requires-Dist: faiss-cpu
+Requires-Dist: langchain-elasticsearch
+Requires-Dist: tenacity
+Requires-Dist: pyyaml
+Requires-Dist: python-dotenv
+Requires-Dist: pydantic
+Requires-Dist: langgraph
+Requires-Dist: fastapi
+Requires-Dist: uvicorn[standard]
+Provides-Extra: rerank
+Requires-Dist: sentence-transformers; extra == "rerank"
+Provides-Extra: postgres
+Requires-Dist: psycopg[binary]; extra == "postgres"
+Requires-Dist: psycopg_pool; extra == "postgres"
+Requires-Dist: pgvector; extra == "postgres"
+Requires-Dist: langgraph-checkpoint-postgres; extra == "postgres"
+Provides-Extra: dev
+Requires-Dist: httpx; extra == "dev"
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-asyncio; extra == "dev"
+Provides-Extra: mcp
+Requires-Dist: mcp; extra == "mcp"
+Dynamic: license-file

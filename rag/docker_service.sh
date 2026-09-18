@@ -62,5 +62,14 @@ docker run -d \
   ollama/ollama
 
 echo "=========================================="
+echo " 5. Pulling Ollama Models                 "
+echo "=========================================="
+echo "Waiting for Ollama service to start..."
+sleep 3
+docker exec ollama ollama pull qwen3.8:27b
+docker exec ollama ollama pull bge-m3:latest
+
+echo "=========================================="
 echo " All containers launched successfully!    "
 echo "=========================================="
+

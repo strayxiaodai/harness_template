@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import logging
 
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage
+from pydantic_ai import Agent
 
 from config.prompts import PROMPTS
-from llm.providers import get_llm
-from llm.retry import call_llm
+from llm.providers import get_model
+from llm.retry import run_agent
 from rag.schemas import RewrittenQueries
 
 logger = logging.getLogger(__name__)
@@ -46,11 +47,10 @@ async def rewrite_for_memory(
     Returns:
         Primary and alternate search queries.
     """
-    llm = get_llm().with_structured_output(RewrittenQueries)
-    return await call_llm(
-        llm,
-        [
-            SystemMessage(content=PROMPTS["rag"]["rewrite"].strip()),
-            HumanMessage(content=format_rewrite_input(task, recent_messages)),
-        ],
+    agent = Agent(
+        get_model(),
+        output_type=RewrittenQueries,
+        system_prompt=PROMPTS["rag"]["rewrite"].strip(),
     )
+    prompt = format_rewrite_input(task, recent_messages)
+    return await run_agent(agent, prompt)

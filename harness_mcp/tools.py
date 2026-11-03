@@ -1,9 +1,9 @@
-"""Expose MCP tools as LangChain executor tools."""
+"""Expose MCP tools as LangChain executor tools and PydanticAI toolsets."""
 
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import Field, create_model
@@ -17,9 +17,13 @@ from harness_mcp.client import (
 from harness_mcp.config import load_mcp_server_configs
 from harness_mcp.schemas import McpToolDescriptor
 
+if TYPE_CHECKING:
+    from pydantic_ai.mcp import MCPToolset
+
 logger = logging.getLogger(__name__)
 
 _cached_tools: list[BaseTool] = []
+_cached_toolsets: list[MCPToolset] = []
 _cached_by_name: dict[str, BaseTool] = {}
 
 
@@ -84,27 +88,34 @@ def _build_langchain_tool(
 
 
 async def init_mcp_tools() -> list[BaseTool]:
-    """Discover MCP tools and cache LangChain wrappers for the executor."""
-    global _cached_tools, _cached_by_name
+    """Discover MCP tools and cache LangChain and PydanticAI wrappers for the executor."""
+    global _cached_tools, _cached_by_name, _cached_toolsets
 
     servers = load_mcp_server_configs()
     manager = await init_mcp_manager(servers)
     if manager is None:
         _cached_tools = []
         _cached_by_name = {}
+        _cached_toolsets = []
         return []
 
     descriptors = await manager.list_tools()
     tools = [_build_langchain_tool(manager, descriptor) for descriptor in descriptors]
     _cached_tools = tools
     _cached_by_name = {tool.name: tool for tool in tools}
-    logger.info("Registered %d MCP tool(s) for executor", len(tools))
+    _cached_toolsets = manager.get_toolsets()
+    logger.info("Registered %d MCP tool(s) via PydanticAI for executor", len(tools))
     return tools
 
 
 def get_cached_mcp_tools() -> list[BaseTool]:
     """Return MCP tools registered at startup."""
     return list(_cached_tools)
+
+
+def get_cached_mcp_toolsets() -> list[MCPToolset]:
+    """Return PydanticAI MCP toolset instances registered at startup."""
+    return list(_cached_toolsets)
 
 
 def get_cached_mcp_tool(name: str) -> BaseTool | None:

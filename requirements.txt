@@ -12,3 +12,6 @@ python-dotenv
 pydantic
 fastapi
 uvicorn[standard]
+pydantic-ai
+langchain
+langfuse

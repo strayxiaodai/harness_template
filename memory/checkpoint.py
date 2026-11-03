@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from langgraph.checkpoint.memory import MemorySaver
 
 from audit.logger import set_audit_pool
+from audit.tracing import init_tracing
 from graph.builder import compile_with_checkpointer
 from memory.checkpoint_config import resolve_checkpoint_backend, sqlite_checkpoint_path
 from rag.service import init_rag_service
@@ -31,8 +32,8 @@ async def _startup_mcp() -> None:
 
     try:
         await init_mcp_tools()
-    except Exception:
-        logger.exception("MCP tool registration failed")
+    except Exception as exc:
+        logger.warning("MCP tool registration skipped: %s", exc)
 
 
 async def _shutdown_mcp() -> None:
@@ -63,6 +64,7 @@ def _compile_graphs(app: FastAPI, saver: object) -> None:
 @asynccontextmanager
 async def graph_lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Open checkpointer, pools, RAG service, and compile both graphs."""
+    init_tracing()
     init_rag_service()
     backend = resolve_checkpoint_backend()
 

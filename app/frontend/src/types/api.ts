@@ -79,6 +79,9 @@ export interface ClarificationQuestion {
   id: string
   prompt: string
   why?: string
+  options?: string[]
+  default?: string
+  is_multi_select?: boolean
 }
 
 export interface ClarificationAnswer {

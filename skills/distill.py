@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic_ai import Agent
 
 from config.prompts import PROMPTS
-from llm.providers import get_llm
-from llm.retry import call_llm
+from llm.providers import get_model
+from llm.retry import run_agent
 from skills.context import format_thread_context
 from skills.eligibility import thread_eligible_for_skill
 from skills.schemas import DistillSkillResponse, SkillDraft
@@ -70,21 +70,18 @@ async def _draft_skill(
     existing_description: str | None = None,
     existing_body: str | None = None,
 ) -> SkillDraft:
-    llm = get_llm().with_structured_output(SkillDraft)
-    return await call_llm(
-        llm,
-        [
-            SystemMessage(content=PROMPTS["skills"]["distill"].strip()),
-            HumanMessage(
-                content=_build_user_prompt(
-                    context=context,
-                    existing_name=existing_name,
-                    existing_description=existing_description,
-                    existing_body=existing_body,
-                ),
-            ),
-        ],
+    agent = Agent(
+        get_model(),
+        output_type=SkillDraft,
+        system_prompt=PROMPTS["skills"]["distill"].strip(),
     )
+    prompt = _build_user_prompt(
+        context=context,
+        existing_name=existing_name,
+        existing_description=existing_description,
+        existing_body=existing_body,
+    )
+    return await run_agent(agent, prompt)
 
 
 async def distill_skill_from_thread(

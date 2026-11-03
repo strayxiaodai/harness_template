@@ -116,6 +116,38 @@ async def test_planner_includes_learning_feedback_in_prompt(
 
 
 @pytest.mark.asyncio
+async def test_planner_includes_openspec_explore_stance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Planner includes OpenSpec explore principles in prompt."""
+    from app.agents import planner as planner_module
+
+    plan = PlanResult(steps=["inspect code", "verify"], rationale="trade-offs weighed")
+    captured_messages: list[Any] = []
+
+    async def fake_call_llm(
+        runnable: Any,
+        messages: list[Any],
+    ) -> PlanResult:
+        del runnable
+        captured_messages.extend(messages)
+        return plan
+
+    fake_llm = MagicMock()
+    fake_llm.with_structured_output.return_value = MagicMock()
+    monkeypatch.setattr(planner_module, "get_llm", lambda: fake_llm)
+    monkeypatch.setattr(planner_module, "call_llm", fake_call_llm)
+
+    await planner_module.planner_agent(_state())
+
+    system_msgs = [m for m in captured_messages if m.type == "system"]
+    human_msgs = [m for m in captured_messages if m.type == "human"]
+
+    assert any("OpenSpec" in m.content for m in system_msgs)
+    assert any("Explore" in m.content for m in human_msgs)
+
+
+@pytest.mark.asyncio
 @pytest.mark.integration
 async def test_planner_generates_interview_plan_live() -> None:
     """Live smoke: planner returns a non-empty structured plan for a task."""

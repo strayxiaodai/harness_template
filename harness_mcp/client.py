@@ -1,15 +1,13 @@
-"""MCP client session manager and tool invocation."""
+"""MCP client session manager and tool invocation using PydanticAI MCP."""
 
 from __future__ import annotations
 
 import asyncio
 import json
 import logging
-from contextlib import AsyncExitStack
 from typing import Any
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from pydantic_ai.mcp import MCPToolset, StdioTransport
 
 from harness_mcp.schemas import McpStdioServerConfig, McpToolDescriptor
 
@@ -26,8 +24,11 @@ def qualify_tool_name(server: str, tool_name: str) -> str:
 
 
 def format_call_tool_result(result: object) -> str:
-    """Serialize an MCP CallToolResult for LLM tool messages."""
-    is_error = bool(getattr(result, "isError", False))
+    """Serialize an MCP CallToolResult or string for LLM tool messages."""
+    if isinstance(result, str):
+        return result
+
+    is_error = bool(getattr(result, "isError", getattr(result, "is_error", False)))
     content_blocks = getattr(result, "content", []) or []
     parts: list[str] = []
     for block in content_blocks:
@@ -37,7 +38,11 @@ def format_call_tool_result(result: object) -> str:
         else:
             parts.append(str(block))
 
-    structured = getattr(result, "structuredContent", None)
+    structured = getattr(
+        result,
+        "structuredContent",
+        getattr(result, "structured_content", None),
+    )
     if structured is not None and not parts:
         parts.append(json.dumps(structured, default=str))
 
@@ -52,12 +57,12 @@ def format_call_tool_result(result: object) -> str:
 
 
 class McpClientManager:
-    """Maintain stdio MCP sessions for configured servers."""
+    """Maintain stdio MCP toolsets for configured servers via PydanticAI."""
 
     def __init__(self, servers: dict[str, McpStdioServerConfig]) -> None:
         self._servers = servers
-        self._sessions: dict[str, ClientSession] = {}
-        self._stack = AsyncExitStack()
+        self._toolsets: dict[str, MCPToolset] = {}
+        self._sessions: dict[str, Any] = {}
         self._lock = asyncio.Lock()
         self._connected = False
 
@@ -66,52 +71,86 @@ class McpClientManager:
         """Return configured server names."""
         return sorted(self._servers)
 
+    def get_toolsets(self) -> list[MCPToolset]:
+        """Return all active PydanticAI MCP toolset instances."""
+        return list(self._toolsets.values())
+
     async def connect(self) -> None:
-        """Open stdio sessions for all configured servers."""
+        """Open PydanticAI MCP toolset connections for all configured servers."""
         async with self._lock:
             if self._connected:
                 return
 
             for name, cfg in self._servers.items():
-                params = StdioServerParameters(
+                transport = StdioTransport(
                     command=cfg.command,
                     args=cfg.args,
                     env=cfg.env,
                     cwd=cfg.cwd,
                 )
-                read, write = await self._stack.enter_async_context(
-                    stdio_client(params),
-                )
-                session = await self._stack.enter_async_context(
-                    ClientSession(read, write),
-                )
-                await session.initialize()
-                self._sessions[name] = session
-                logger.info("Connected MCP server %s", name)
+                toolset = MCPToolset(client=transport, id=name)
+                self._toolsets[name] = toolset
+                logger.info("Connected PydanticAI MCP toolset for server %s", name)
 
             self._connected = True
 
     async def shutdown(self) -> None:
-        """Close all MCP sessions."""
+        """Close all MCP toolset clients."""
         async with self._lock:
+            for name, ts in self._toolsets.items():
+                try:
+                    await ts.client.close()
+                except Exception:
+                    logger.debug("Error closing MCP client %s", name, exc_info=True)
+            self._toolsets.clear()
             self._sessions.clear()
-            await self._stack.aclose()
             self._connected = False
 
     async def list_tools(self) -> list[McpToolDescriptor]:
         """List tools from every connected MCP server."""
         await self.connect()
         descriptors: list[McpToolDescriptor] = []
-        for server, session in self._sessions.items():
-            listed = await session.list_tools()
-            for tool in listed.tools:
+
+        # Support injected legacy sessions (e.g. from unit test mocks)
+        if self._sessions:
+            for server, session in self._sessions.items():
+                listed = await session.list_tools()
+                for tool in getattr(listed, "tools", []):
+                    descriptors.append(
+                        McpToolDescriptor(
+                            server=server,
+                            name=tool.name,
+                            qualified_name=qualify_tool_name(server, tool.name),
+                            description=getattr(tool, "description", "") or "",
+                            input_schema=dict(
+                                getattr(
+                                    tool,
+                                    "input_schema",
+                                    getattr(tool, "inputSchema", {}),
+                                )
+                                or {}
+                            ),
+                        ),
+                    )
+            return descriptors
+
+        for server, toolset in self._toolsets.items():
+            tools = await toolset.list_tools()
+            for tool in tools:
                 descriptors.append(
                     McpToolDescriptor(
                         server=server,
                         name=tool.name,
                         qualified_name=qualify_tool_name(server, tool.name),
-                        description=tool.description or "",
-                        input_schema=dict(tool.inputSchema or {}),
+                        description=getattr(tool, "description", "") or "",
+                        input_schema=dict(
+                            getattr(
+                                tool,
+                                "input_schema",
+                                getattr(tool, "inputSchema", {}),
+                            )
+                            or {}
+                        ),
                     ),
                 )
         return descriptors
@@ -125,12 +164,17 @@ class McpClientManager:
     ) -> str:
         """Invoke a tool on a connected MCP server."""
         await self.connect()
-        if server not in self._sessions:
+        if self._sessions and server in self._sessions:
+            session = self._sessions[server]
+            result = await session.call_tool(tool_name, arguments=arguments or {})
+            return format_call_tool_result(result)
+
+        if server not in self._toolsets:
             msg = f"Unknown MCP server: {server}"
             raise KeyError(msg)
 
-        session = self._sessions[server]
-        result = await session.call_tool(tool_name, arguments=arguments or {})
+        toolset = self._toolsets[server]
+        result = await toolset.direct_call_tool(tool_name, arguments or {})
         return format_call_tool_result(result)
 
 

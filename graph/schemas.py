@@ -61,6 +61,9 @@ class ClarificationQuestion(BaseModel):
     id: str = Field(min_length=1)
     prompt: str = Field(min_length=1)
     why: str = ""
+    options: list[str] = Field(default_factory=list)
+    default: str | None = None
+    is_multi_select: bool = False
 
 
 class ClarificationAnswer(BaseModel):

@@ -17,6 +17,9 @@ dependencies = [
     "langgraph",
     "fastapi",
     "uvicorn[standard]",
+    "pydantic-ai",
+    "langchain",
+    "langfuse",
 ]
 
 [project.optional-dependencies]

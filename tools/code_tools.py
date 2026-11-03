@@ -1,8 +1,11 @@
 # app/tools/code_tools.py
+from __future__ import annotations
+
 from pathlib import Path
 
-from langchain_core.tools import tool
 from pydantic import BaseModel, Field
+
+from tools.base import harness_tool
 
 
 class ReadFileInput(BaseModel):
@@ -20,7 +23,7 @@ class ReadFileInput(BaseModel):
     )
 
 
-@tool("read_file", args_schema=ReadFileInput)
+@harness_tool("read_file", args_schema=ReadFileInput)
 async def read_file(path: str, max_bytes: int = 8192) -> str:
     """Read up to ``max_bytes`` bytes from a workspace file."""
     workspace = Path.cwd().resolve()
@@ -41,7 +44,7 @@ class ListDirInput(BaseModel):
     )
 
 
-@tool("list_dir", args_schema=ListDirInput)
+@harness_tool("list_dir", args_schema=ListDirInput)
 async def list_dir(path: str = ".") -> list[str]:
     """List entries inside a workspace directory."""
     workspace = Path.cwd().resolve()
@@ -49,3 +52,4 @@ async def list_dir(path: str = ".") -> list[str]:
     if not target.is_relative_to(workspace) or not target.is_dir():
         raise ValueError("invalid directory")
     return sorted(p.name for p in target.iterdir())
+

@@ -1,21 +1,24 @@
-# app/tools/registry.py
 import os
+from typing import Any
 
 from langchain_core.tools import BaseTool
 
+from tools.base import HarnessTool
 from tools.code_tools import list_dir, read_file
 from tools.rag_tools import search_knowledge_base
+
+ToolType = Any
 
 try:
     from harness_mcp.tools import get_cached_mcp_tool, get_cached_mcp_tools
 except ImportError:  # pragma: no cover - optional dependency
-    def get_cached_mcp_tools() -> list[BaseTool]:
+    def get_cached_mcp_tools() -> list[ToolType]:
         return []
 
-    def get_cached_mcp_tool(name: str) -> BaseTool | None:
+    def get_cached_mcp_tool(name: str) -> ToolType | None:
         return None
 
-_ALL_TOOLS: dict[str, BaseTool] = {
+_ALL_TOOLS: dict[str, ToolType] = {
     read_file.name: read_file,
     list_dir.name: list_dir,
     search_knowledge_base.name: search_knowledge_base,
@@ -39,12 +42,12 @@ def _allowlist() -> set[str]:
     return allowed
 
 
-def _builtin_tools() -> dict[str, BaseTool]:
+def _builtin_tools() -> dict[str, ToolType]:
     """Return built-in static executor tools keyed by name."""
     return dict(_ALL_TOOLS)
 
 
-def _executor_tool_map() -> dict[str, BaseTool]:
+def _executor_tool_map() -> dict[str, ToolType]:
     """Merge built-in and MCP tools for the current process."""
     tools = _builtin_tools()
     for tool in get_cached_mcp_tools():
@@ -52,7 +55,7 @@ def _executor_tool_map() -> dict[str, BaseTool]:
     return tools
 
 
-def get_executor_tools(thread_id: str) -> list[BaseTool]:
+def get_executor_tools(thread_id: str) -> list[ToolType]:
     """Return executor tools; thread-scoped tools bound to ``thread_id``."""
     from tools.thread_files import make_read_thread_file, make_write_thread_file
 
@@ -70,7 +73,7 @@ def get_executor_tools(thread_id: str) -> list[BaseTool]:
     return [available[name] for name in sorted(allowed)]
 
 
-def get_learner_tools(thread_id: str) -> list[BaseTool]:
+def get_learner_tools(thread_id: str) -> list[ToolType]:
     """Tools the learner may call (read + sandboxed run only)."""
     from tools.script_tools import make_run_thread_script
     from tools.thread_files import make_read_thread_file
@@ -81,7 +84,7 @@ def get_learner_tools(thread_id: str) -> list[BaseTool]:
     ]
 
 
-def get_tool_by_name(name: str, thread_id: str | None = None) -> BaseTool:
+def get_tool_by_name(name: str, thread_id: str | None = None) -> ToolType:
     """Look up a tool by name. Thread tools require ``thread_id``."""
     if name in _THREAD_TOOL_NAMES or name == "run_thread_script":
         if not thread_id:

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
 from rag.config import load_rag_settings
 from rag.service import get_rag_service
+from tools.base import harness_tool
 
 
 class SearchKbInput(BaseModel):
@@ -18,7 +18,7 @@ class SearchKbInput(BaseModel):
     )
 
 
-@tool("search_knowledge_base", args_schema=SearchKbInput)
+@harness_tool("search_knowledge_base", args_schema=SearchKbInput)
 async def search_knowledge_base(query: str) -> str:
     """Search indexed documents. Read-only."""
     settings = load_rag_settings()

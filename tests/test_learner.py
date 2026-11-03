@@ -218,7 +218,9 @@ async def test_learner_returns_structured_verdict_live() -> None:
         pytest.skip("LLM credentials not configured for live learner test")
 
     from app.agents import learner as learner_module
+    from app.services.thread_artifacts import safe_init_thread_artifacts
 
+    safe_init_thread_artifacts("test-thread", "task")
     result = await learner_module.learner_agent(_state())
 
     assert result["role"] == "learner"

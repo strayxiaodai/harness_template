@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
 from app.services.thread_artifacts import lookup_thread_dir
+from tools.base import HarnessTool, harness_tool
 
 _MAX_BYTES = 131072
 
@@ -59,10 +59,10 @@ class ReadThreadFileInput(BaseModel):
     max_bytes: int = Field(default=8192, ge=1, le=_MAX_BYTES)
 
 
-def make_write_thread_file(thread_id: str) -> BaseTool:
+def make_write_thread_file(thread_id: str) -> HarnessTool:
     """Build write_thread_file closed over ``thread_id``."""
 
-    @tool("write_thread_file", args_schema=WriteThreadFileInput)
+    @harness_tool("write_thread_file", args_schema=WriteThreadFileInput)
     async def write_thread_file(path: str, content: str) -> str:
         """Write a Python module or manifest.json under this thread's scripts/."""
         target = resolve_scripts_path(thread_id, path)
@@ -82,15 +82,18 @@ def make_write_thread_file(thread_id: str) -> BaseTool:
     return write_thread_file
 
 
-def make_read_thread_file(thread_id: str) -> BaseTool:
+def make_read_thread_file(thread_id: str) -> HarnessTool:
     """Build read_thread_file closed over ``thread_id``."""
 
-    @tool("read_thread_file", args_schema=ReadThreadFileInput)
+    @harness_tool("read_thread_file", args_schema=ReadThreadFileInput)
     async def read_thread_file(path: str, max_bytes: int = 8192) -> str:
         """Read a file from this thread's artifact directory."""
-        target = resolve_thread_path(thread_id, path)
-        if not target.is_file():
-            raise FileNotFoundError(path)
-        return target.read_bytes()[:max_bytes].decode("utf-8", errors="replace")
+        try:
+            target = resolve_thread_path(thread_id, path)
+            if not target.is_file():
+                return f"error: file not found: {path}"
+            return target.read_bytes()[:max_bytes].decode("utf-8", errors="replace")
+        except Exception as exc:
+            return f"error: {exc}"
 
     return read_thread_file

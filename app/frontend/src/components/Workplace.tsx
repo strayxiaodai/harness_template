@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import type {
   ClarificationQuestion,
   InterruptPayload,
@@ -118,23 +120,60 @@ export function Workplace({
         <h2 className="panel-title">Clarification</h2>
         <div className="workplace__body">
           {reason ? <p className="workplace__reason">{reason}</p> : null}
-          {questions.map((q) => (
-            <div key={q.id} className="workplace__field">
-              <label className="field-label" htmlFor={`wp-clarify-${q.id}`}>
-                {q.prompt}
-              </label>
-              {q.why ? <p className="workplace__hint">{q.why}</p> : null}
-              <textarea
-                id={`wp-clarify-${q.id}`}
-                className="field-textarea"
-                rows={3}
-                value={answerDrafts[q.id] ?? ''}
-                onChange={(e) => onAnswerChange(q.id, e.target.value)}
-                placeholder="Your answer"
-                disabled={streaming}
-              />
-            </div>
-          ))}
+          {questions.map((q) => {
+            const currentAnswer = answerDrafts[q.id] ?? q.default ?? ''
+            const hasOptions = Array.isArray(q.options) && q.options.length > 0
+            return (
+              <div key={q.id} className="workplace__field">
+                <label className="field-label" htmlFor={`wp-clarify-${q.id}`}>
+                  {q.prompt}
+                </label>
+                {q.why ? (
+                  <div className="workplace__hint workplace__markdown">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {q.why}
+                    </ReactMarkdown>
+                  </div>
+                ) : null}
+                {hasOptions ? (
+                  <div
+                    className="workplace__options-grid"
+                    role="radiogroup"
+                    aria-label={q.prompt}
+                  >
+                    {q.options!.map((opt) => {
+                      const isSelected = currentAnswer === opt
+                      const isRecommended = opt.startsWith('(Recommended)')
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          className={`btn-option ${isSelected ? 'btn-option--selected' : ''} ${
+                            isRecommended ? 'btn-option--recommended' : ''
+                          }`}
+                          onClick={() => onAnswerChange(q.id, opt)}
+                          disabled={streaming}
+                        >
+                          {isSelected ? '✓ ' : ''}
+                          {opt}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <textarea
+                    id={`wp-clarify-${q.id}`}
+                    className="field-textarea"
+                    rows={3}
+                    value={currentAnswer}
+                    onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                    placeholder="Your answer"
+                    disabled={streaming}
+                  />
+                )}
+              </div>
+            )
+          })}
           <details className="workplace__overrides">
             <summary>Overrides before continue</summary>
             <label className="field-label" htmlFor="wp-override-plan">
@@ -191,7 +230,11 @@ export function Workplace({
         <h2 className="panel-title">Action review</h2>
         <div className="workplace__body">
           {actionReviewMeta.message ? (
-            <p className="workplace__reason">{actionReviewMeta.message}</p>
+            <div className="workplace__reason workplace__markdown">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {actionReviewMeta.message}
+              </ReactMarkdown>
+            </div>
           ) : null}
           {actionReviewMeta.score !== undefined ? (
             <p className="workplace__hint">

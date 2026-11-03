@@ -14,6 +14,10 @@ if str(_ROOT) not in sys.path:
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.types import interrupt
 
+from agent.clarification import (
+    ask_clarification,
+    merge_clarification_answers,
+)
 from agent.memorize import commit_round_memories
 from agent.memory_review import (
     action_review_message,
@@ -26,7 +30,7 @@ from agent.memory_review import (
 from audit.logger import write_audit_event
 from config.prompts import PROMPTS
 from graph.routing import learning_passed
-from graph.schemas import ActionScoreResult
+from graph.schemas import ActionScoreResult, ClarificationQuestion
 from graph.state import AgentState
 from llm.providers import get_llm
 from llm.retry import call_llm
@@ -225,6 +229,8 @@ async def actioner_agent(state: AgentState) -> dict[str, object]:
                 "message": action_review_message(
                     has_memories=bool(pending),
                     skill_preview_ready=skill_preview_ready,
+                    score=score,
+                    threshold=SKILL_PREVIEW_SCORE_THRESHOLD,
                 ),
                 "memories": pending,
             },

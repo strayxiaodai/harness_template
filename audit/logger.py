@@ -43,6 +43,18 @@ async def write_audit_event(
         event_type: Event category (e.g. tool_call, route_decision).
         payload: JSON-serializable event body.
     """
+    from audit.tracing import trace_event
+
+    trace_event(
+        event_type,
+        {
+            "thread_id": thread_id,
+            "round_number": round_number,
+            "node": node,
+            **payload,
+        },
+    )
+
     if _audit_pool is None:
         logger.debug(
             "audit pool not configured; skipping event %s for %s",

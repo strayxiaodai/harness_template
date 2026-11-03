@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import logging
 
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage
+from pydantic_ai import Agent
 
 from config.prompts import PROMPTS
 from graph.state import AgentState
-from llm.providers import get_llm
-from llm.retry import call_llm
+from llm.providers import get_model
+from llm.retry import run_agent
 from rag.config import RagSettings, load_rag_settings
 from rag.embeddings import get_embeddings
 from rag.schemas import ExtractionResult
@@ -62,14 +63,13 @@ async def extract_memories(messages: list[BaseMessage]) -> ExtractionResult:
     Returns:
         Structured extraction result.
     """
-    llm = get_llm().with_structured_output(ExtractionResult)
-    return await call_llm(
-        llm,
-        [
-            SystemMessage(content=PROMPTS["rag"]["extract"].strip()),
-            HumanMessage(content=format_messages_for_extraction(messages)),
-        ],
+    agent = Agent(
+        get_model(),
+        output_type=ExtractionResult,
+        system_prompt=PROMPTS["rag"]["extract"].strip(),
     )
+    prompt = format_messages_for_extraction(messages)
+    return await run_agent(agent, prompt)
 
 
 async def run_memory_ingest(

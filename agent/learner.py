@@ -21,13 +21,18 @@ from langchain_core.messages import (
     ToolMessage,
 )
 
-from app.services.thread_artifacts import lookup_thread_dir
+from agent.clarification import (
+    ask_clarification,
+    format_learner_clarification,
+    merge_clarification_answers,
+)
 from audit.logger import write_audit_event
 from config.prompts import PROMPTS
-from graph.schemas import LearningResult
+from graph.schemas import ClarificationQuestion, LearningResult
 from graph.state import AgentState, ToolCallRecord
 from llm.providers import get_llm
 from llm.retry import call_llm
+from tools.base import execute_tool
 from tools.manifest import load_manifest
 from tools.registry import get_learner_tools
 
@@ -75,6 +80,13 @@ def _format_tool_calls(tool_calls: list[ToolCallRecord] | None) -> str:
             f"args={record['args']} status={record['status']}"
         )
     return "\n".join(lines)
+
+
+def lookup_thread_dir(thread_id: str) -> Any:
+    """Resolve thread directory on-demand to avoid startup circular imports."""
+    from app.services.thread_artifacts import lookup_thread_dir as _lookup
+
+    return _lookup(thread_id)
 
 
 def _format_manifest(thread_id: str) -> str:
@@ -163,7 +175,7 @@ async def _run_tool_loop(
             args = call.get("args", {}) or {}
             try:
                 tool = tool_by_name[name]
-                output = await tool.ainvoke(args)
+                output = await execute_tool(tool, args)
                 content = _tool_output_to_content(output)
                 status = "ok"
             except Exception as exc:
@@ -228,6 +240,63 @@ async def learner_agent(state: AgentState) -> dict[str, object]:
     )
 
     script_runs = _parse_script_runs(records, tool_contents)
+
+    clarification_updates: dict[str, object] = {}
+    if state.get("human_in_the_loop"):
+        verdict_upper = learning.verdict.upper()
+        questions = [
+            ClarificationQuestion(
+                id="learner_verdict",
+                prompt=f"Confirm learner evaluation verdict ({verdict_upper}):",
+                why=format_learner_clarification(
+                    learning.verdict,
+                    learning.reason,
+                    learning.suggested_step,
+                    learning.lessons,
+                ),
+                options=[
+                    f"(Recommended) Accept {verdict_upper}",
+                    "Override to PASS",
+                    "Override to FAIL (force re-plan)",
+                ],
+                default=f"(Recommended) Accept {verdict_upper}",
+            )
+        ]
+        answers = ask_clarification(
+            state, questions, reason="Verification review", node="learner"
+        )
+        for ans in answers:
+            chosen = ans.get("answer", "")
+            if "Override to PASS" in chosen:
+                learning.verdict = "pass"
+            elif "Override to FAIL" in chosen:
+                learning.verdict = "fail"
+        all_answers = merge_clarification_answers(
+            state.get("clarification_answers"),
+            answers,
+        )
+        clarification_updates["clarification_answers"] = all_answers
+
+    flow = (
+        "[Execution Done] ──> [Evaluation: PASS ✓] ──> [Actioner: Finish & Store]"
+        if learning.verdict.lower() == "pass"
+        else "[Execution Done] ──> [Evaluation: FAIL ✗] ──> [Planner: Re-plan & Fix]"
+    )
+    learn_message_parts = [
+        f"```text\n{flow}\n```",
+        f"Learning {learning.verdict}: {learning.reason}",
+        f"Suggested next step: {learning.suggested_step}",
+    ]
+    if learning.lessons.worked:
+        learn_message_parts.append("Worked: " + "; ".join(learning.lessons.worked))
+    if learning.lessons.failed:
+        learn_message_parts.append("Failed: " + "; ".join(learning.lessons.failed))
+    if learning.lessons.risks:
+        learn_message_parts.append("Risks: " + "; ".join(learning.lessons.risks))
+    if learning.lessons.next_time:
+        learn_message_parts.append("Next time: " + "; ".join(learning.lessons.next_time))
+    learn_content = "\n\n".join(learn_message_parts)
+
     return {
         "role": "learner",
         "approved": learning.verdict == "pass",
@@ -242,10 +311,6 @@ async def learner_agent(state: AgentState) -> dict[str, object]:
         ],
         "learner_tool_calls": records,
         "script_runs": script_runs,
-        "messages": trajectory
-        + [
-            AIMessage(
-                content=f"Learning {learning.verdict}: {learning.reason}"
-            )
-        ],
+        **clarification_updates,
+        "messages": trajectory + [AIMessage(content=learn_content)],
     }

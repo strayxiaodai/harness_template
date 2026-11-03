@@ -68,3 +68,4 @@ class AgentState(TypedDict):
     skill_context: NotRequired[str]
     loop_score: NotRequired[int]
     skill_preview_ready: NotRequired[bool]
+    clarification_answers: NotRequired[list[dict[str, str]]]

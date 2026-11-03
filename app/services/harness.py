@@ -22,6 +22,7 @@ from app.services.thread_artifacts import (
     refresh_from_snapshot,
     safe_init_thread_artifacts,
 )
+from audit.tracing import flush_tracing, get_langfuse_handler
 
 logger = logging.getLogger(__name__)
 
@@ -111,30 +112,49 @@ def _record_stream_chunk(thread_dir: Path | None, chunk: Any) -> None:
             logger.warning("failed to record thread artifact for %s: %s", node, exc)
 
 
+def _graph_config(thread_id: str, task: str | None = None) -> dict[str, object]:
+    """Build LangGraph config with thread id, metadata, and optional Langfuse tracing."""
+    config: dict[str, object] = {
+        "configurable": {"thread_id": thread_id},
+        "metadata": {"thread_id": thread_id},
+    }
+    if task:
+        cast_meta = config.get("metadata")
+        if isinstance(cast_meta, dict):
+            cast_meta["task"] = task
+    handler = get_langfuse_handler(thread_id=thread_id, task=task)
+    if handler is not None:
+        config["callbacks"] = [handler]
+    return config
+
+
 async def run_harness(request: Request, body: RunRequest) -> RunResponse:
     """Start a new harness thread and return the latest checkpoint snapshot."""
     graph = graph_for_request(request, human_in_the_loop=body.human_in_the_loop)
-    config: dict[str, object] = {"configurable": {"thread_id": body.thread_id}}
+    config = _graph_config(body.thread_id, task=_task_label(body))
     thread_dir = safe_init_thread_artifacts(
         _task_label(body),
         body.thread_id,
         body.plan,
     )
 
-    await invoke_with_timeout(
-        graph,
-        initial_state(body),
-        config,
-        timeout_seconds=body.timeout_seconds,
-    )
-    response = await snapshot_to_response(graph, body.thread_id)
-    _refresh_artifacts(thread_dir, response)
-    return response
+    try:
+        await invoke_with_timeout(
+            graph,
+            initial_state(body),
+            config,
+            timeout_seconds=body.timeout_seconds,
+        )
+        response = await snapshot_to_response(graph, body.thread_id)
+        _refresh_artifacts(thread_dir, response)
+        return response
+    finally:
+        flush_tracing()
 
 
 async def resume_harness(request: Request, body: ResumeRequest) -> RunResponse:
     """Resume a human-in-the-loop harness thread."""
-    config: dict[str, object] = {"configurable": {"thread_id": body.thread_id}}
+    config = _graph_config(body.thread_id)
     graph = request.app.state.graph_step
     snapshot = await graph.aget_state(config)
     values = snapshot.values or {}
@@ -149,15 +169,18 @@ async def resume_harness(request: Request, body: ResumeRequest) -> RunResponse:
             patch = apply_resume_overrides(values, patch)
             await graph.aupdate_state(config, patch)
 
-    await invoke_with_timeout(
-        graph,
-        _resume_input(snapshot, body),
-        config,
-        timeout_seconds=body.timeout_seconds,
-    )
-    response = await snapshot_to_response(graph, body.thread_id)
-    _refresh_artifacts(lookup_thread_dir(body.thread_id), response)
-    return response
+    try:
+        await invoke_with_timeout(
+            graph,
+            _resume_input(snapshot, body),
+            config,
+            timeout_seconds=body.timeout_seconds,
+        )
+        response = await snapshot_to_response(graph, body.thread_id)
+        _refresh_artifacts(lookup_thread_dir(body.thread_id), response)
+        return response
+    finally:
+        flush_tracing()
 
 
 def serialize_stream_chunk(chunk: Any) -> str:
@@ -171,7 +194,7 @@ async def stream_harness(
 ) -> AsyncIterator[str]:
     """Yield Server-Sent Events for a harness graph run."""
     graph = graph_for_request(request, human_in_the_loop=body.human_in_the_loop)
-    config: dict[str, object] = {"configurable": {"thread_id": body.thread_id}}
+    config = _graph_config(body.thread_id, task=_task_label(body))
     initial = initial_state(body)
     thread_dir = safe_init_thread_artifacts(
         _task_label(body),
@@ -193,3 +216,6 @@ async def stream_harness(
     except Exception as exc:
         logger.exception("graph stream failed for thread %s", body.thread_id)
         yield f"data: {serialize_stream_chunk({'error': str(exc)})}\n\n"
+    finally:
+        flush_tracing()
+

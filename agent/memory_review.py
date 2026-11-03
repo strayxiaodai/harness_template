@@ -91,31 +91,47 @@ def clear_pending(thread_id: str, cursor: int | None) -> None:
     _PENDING_CACHE.pop((thread_id, cursor), None)
 
 
+def format_ascii_score_bar(score: int, total: int = 100, width: int = 10) -> str:
+    """Render a simple ASCII progress bar for loop quality score."""
+    clamped = max(0, min(total, int(score)))
+    filled = int(round((clamped / total) * width))
+    empty = width - filled
+    return "[" + "█" * filled + "░" * empty + "]"
+
+
 def action_review_message(
     *,
     has_memories: bool,
     skill_preview_ready: bool,
+    score: int | None = None,
+    threshold: int = 80,
 ) -> str:
-    """Pick interrupt message copy from the design matrix.
+    """Pick interrupt message copy with ASCII flow and score bar."""
+    flow = "Loop Flow: [Plan] ──> [Execute] ──> [Learn] ──> [Action Review]"
+    status_line = ""
+    if score is not None:
+        bar = format_ascii_score_bar(score, width=10)
+        ready_tag = (
+            " (Skill preview ready)"
+            if skill_preview_ready
+            else f" (Needs {threshold}+ for skill preview)"
+        )
+        status_line = f"\nQuality Score: {bar} {score}/100{ready_tag}"
 
-    Args:
-        has_memories: Whether pending memory candidates exist.
-        skill_preview_ready: Whether the loop score qualifies for skill preview.
-
-    Returns:
-        Human-readable interrupt message for the action review panel.
-    """
     if has_memories and skill_preview_ready:
-        return (
-            "Review memories before they are stored. "
+        body = (
+            "Review candidate memories before they are stored. "
             "Skill preview is available."
         )
-    if has_memories:
-        return "Review memories before they are stored."
-    return (
-        "Loop score qualifies for skill preview. "
-        "Nothing to store this round."
-    )
+    elif has_memories:
+        body = "Review candidate memories before they are stored."
+    else:
+        body = (
+            "Loop score qualifies for skill preview. "
+            "Nothing to store this round."
+        )
+
+    return f"```text\n{flow}{status_line}\n```\n\n{body}"
 
 
 def map_resume_to_approved(

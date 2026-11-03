@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _DEFAULT_PATHS = (
     _REPO_ROOT / "mcp" / "servers.json",
-    _REPO_ROOT / "mcp_config" / "servers.example.json",
     _REPO_ROOT / ".cursor" / "mcp.json",
 )
 
@@ -55,14 +54,28 @@ def load_mcp_server_configs() -> dict[str, McpStdioServerConfig]:
         return {}
 
     if inline:
-        return _parse_servers_payload(json.loads(inline))
+        try:
+            return _parse_servers_payload(json.loads(inline))
+        except Exception as exc:
+            logger.warning("Failed to parse inline MCP config: %s", exc)
+            return {}
 
     path = Path(config_path).expanduser() if config_path else default_path
     if path is None or not path.is_file():
-        logger.warning("MCP enabled but no servers config file found")
+        logger.warning("MCP server config file not found; skipping MCP tools")
         return {}
 
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    servers = _parse_servers_payload(payload)
+    try:
+        raw_text = path.read_text(encoding="utf-8").strip()
+        if not raw_text:
+            logger.warning("MCP config file %s is empty; skipping MCP tools", path)
+            return {}
+        payload = json.loads(raw_text)
+        servers = _parse_servers_payload(payload)
+    except Exception as exc:
+        logger.warning("Failed to load MCP servers from %s: %s", path, exc)
+        return {}
+
     logger.info("Loaded %d MCP server(s) from %s", len(servers), path)
     return servers
+

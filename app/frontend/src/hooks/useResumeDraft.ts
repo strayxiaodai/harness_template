@@ -52,7 +52,7 @@ export function useResumeDraft(
     }
     const next: Record<string, string> = {}
     for (const question of questions) {
-      next[question.id] = ''
+      next[question.id] = question.default ?? ''
     }
     setAnswerDrafts(next)
     const nextMemoryDrafts: Record<string, MemoryResumeRow> = {}

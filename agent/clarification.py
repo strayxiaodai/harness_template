@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import textwrap
 from typing import Any
 
 from langgraph.types import interrupt
@@ -90,7 +91,22 @@ def normalize_clarification_answers(
                 "answer": answer,
             }
         )
+
+    answered_ids = {row["question_id"] for row in normalized}
+    for item in question_dicts:
+        qid = str(item.get("id", ""))
+        default_val = item.get("default")
+        if qid and default_val and qid not in answered_ids:
+            normalized.append(
+                {
+                    "question_id": qid,
+                    "question": prompts_by_id.get(qid, ""),
+                    "answer": str(default_val),
+                }
+            )
+
     return normalized
+
 
 
 def ask_clarification(
@@ -152,3 +168,154 @@ def merge_clarification_answers(
         if qid:
             merged[qid] = item
     return list(merged.values())
+
+
+def format_ascii_pipeline(steps: list[str], max_width: int = 70) -> str:
+    """Render a clean vertical execution tree with full readable text (zero truncation)."""
+    if not steps:
+        return ""
+    lines: list[str] = []
+    total = len(steps)
+    for i, s in enumerate(steps, 1):
+        clean = " ".join(s.strip().split())
+        if total == 1:
+            branch = "●"
+            sub_prefix = "  "
+        elif i == 1:
+            branch = "┌──"
+            sub_prefix = "│   "
+        elif i == total:
+            branch = "└──"
+            sub_prefix = "    "
+        else:
+            branch = "├──"
+            sub_prefix = "│   "
+
+        first_prefix = f"{branch} [{i}] "
+        available_width = max(30, max_width - len(first_prefix))
+        wrapped = textwrap.wrap(clean, width=available_width)
+        if not wrapped:
+            lines.append(first_prefix)
+        else:
+            lines.append(first_prefix + wrapped[0])
+            for follow_line in wrapped[1:]:
+                lines.append(sub_prefix + "    " + follow_line)
+    return "\n".join(lines)
+
+
+def format_planner_clarification(steps: list[str], rationale: str) -> str:
+    """Format planner clarification details into a readable vertical tree with sectioned rationale."""
+    flow = format_ascii_pipeline(steps)
+
+    formatted_rationale = rationale.strip()
+    keywords = [
+        "Goal:",
+        "Assumptions surfaced:",
+        "Format assumption:",
+        "Assumptions:",
+        "Trade-offs:",
+        "Spec-driven vs exploratory:",
+        "Risk:",
+        "Risks:",
+        "Risks & Mitigations:",
+        "Verification:",
+    ]
+    for kw in keywords:
+        formatted_rationale = formatted_rationale.replace(f" {kw}", f"\n- **{kw.rstrip(':')}:**")
+        if formatted_rationale.startswith(kw):
+            formatted_rationale = f"- **{kw.rstrip(':')}:** {formatted_rationale[len(kw):].strip()}"
+
+    parts = []
+    if flow:
+        parts.append(f"```text\n{flow}\n```")
+    if formatted_rationale:
+        parts.append(f"### Rationale\n{formatted_rationale}")
+
+    return "\n\n".join(parts)
+
+
+def format_executor_clarification(
+    summary: str,
+    changes: list[str] | None = None,
+    verification: list[str] | None = None,
+    risks: list[str] | None = None,
+) -> str:
+    """Format executor clarification details into a readable ASCII-diagrammed block."""
+    flow = "[Inspect Context] ──> [Apply Changes] ──> [Verify Output] ──> [DONE ✓]"
+    parts = [f"```text\n{flow}\n```"]
+    if summary:
+        parts.append(f"### Summary\n{summary.strip()}")
+    if changes:
+        changes_list = "\n".join(f"- {c.strip()}" for c in changes if c.strip())
+        if changes_list:
+            parts.append(f"### Changes\n{changes_list}")
+    if verification:
+        verify_list = "\n".join(f"- {v.strip()}" for v in verification if v.strip())
+        if verify_list:
+            parts.append(f"### Verification\n{verify_list}")
+    if risks:
+        risks_list = "\n".join(f"- {r.strip()}" for r in risks if r.strip())
+        if risks_list:
+            parts.append(f"### Risks & Watchpoints\n{risks_list}")
+    return "\n\n".join(parts)
+
+
+def format_learner_clarification(
+    verdict: str,
+    reason: str,
+    suggested_step: str,
+    lessons: Any = None,
+) -> str:
+    """Format learner evaluation clarification details with decision flow."""
+    is_pass = str(verdict).lower() == "pass"
+    if is_pass:
+        flow = "[Execution Done] ──> [Evaluation: PASS ✓] ──> [Actioner: Finish & Store]"
+    else:
+        flow = "[Execution Done] ──> [Evaluation: FAIL ✗] ──> [Planner: Re-plan & Fix]"
+
+    parts = [f"```text\n{flow}\n```"]
+    if reason:
+        parts.append(f"### Evaluation Reason\n{reason.strip()}")
+
+    if lessons is not None:
+        worked = (
+            getattr(lessons, "worked", None)
+            or (lessons.get("worked") if isinstance(lessons, dict) else [])
+        )
+        failed = (
+            getattr(lessons, "failed", None)
+            or (lessons.get("failed") if isinstance(lessons, dict) else [])
+        )
+        risks = (
+            getattr(lessons, "risks", None)
+            or (lessons.get("risks") if isinstance(lessons, dict) else [])
+        )
+        next_time = (
+            getattr(lessons, "next_time", None)
+            or (lessons.get("next_time") if isinstance(lessons, dict) else [])
+        )
+
+        lesson_items = []
+        if worked:
+            lesson_items.append("- **What worked:** " + "; ".join(str(w) for w in worked))
+        if failed:
+            lesson_items.append("- **What failed:** " + "; ".join(str(f) for f in failed))
+        if risks:
+            lesson_items.append("- **Risks noted:** " + "; ".join(str(r) for r in risks))
+        if next_time:
+            lesson_items.append("- **Next time:** " + "; ".join(str(n) for n in next_time))
+
+        if lesson_items:
+            parts.append("### Lessons Learned\n" + "\n".join(lesson_items))
+
+    parts.append(f"**Suggested Next Step:** `{suggested_step}`")
+    return "\n\n".join(parts)
+
+
+def format_ascii_score_bar(score: int, total: int = 100, width: int = 10) -> str:
+    """Render a simple ASCII progress bar for loop quality score."""
+    clamped = max(0, min(total, int(score)))
+    filled = int(round((clamped / total) * width))
+    empty = width - filled
+    return "[" + "█" * filled + "░" * empty + "]"
+

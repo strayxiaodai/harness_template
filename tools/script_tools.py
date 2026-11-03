@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import json
 
-from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
 from app.services.thread_artifacts import lookup_thread_dir
+from tools.base import HarnessTool, harness_tool
 from tools.manifest import require_entry
 from tools.sandbox_docker import run_python_in_docker
 
@@ -20,10 +20,10 @@ class RunThreadScriptInput(BaseModel):
     )
 
 
-def make_run_thread_script(thread_id: str) -> BaseTool:
+def make_run_thread_script(thread_id: str) -> HarnessTool:
     """Build run_thread_script closed over ``thread_id``."""
 
-    @tool("run_thread_script", args_schema=RunThreadScriptInput)
+    @harness_tool("run_thread_script", args_schema=RunThreadScriptInput)
     async def run_thread_script(path: str) -> str:
         """Run a manifest-listed script in Docker; return exit/stdout/stderr."""
         root = lookup_thread_dir(thread_id)

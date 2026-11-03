@@ -13,11 +13,11 @@ harness_template/
 ├── graph/           # StateGraph builder, routing, state, schemas
 ├── rag/             # Document + memory retrieval, ingest, stores
 ├── context/         # Memory recall pipeline for planner injection
-├── llm/             # Provider adapters and retry
+├── llm/             # PydanticAI model providers and retry runner
 ├── tools/           # Executor tool registry (read_file, list_dir, RAG, MCP)
 ├── audit/           # Postgres audit logger (no-op without pool)
 ├── skills/          # Thread → Cursor SKILL.md distillation
-├── harness_mcp/     # MCP client: external tools in executor
+├── harness_mcp/     # PydanticAI MCP toolsets: external tools in executor
 ├── memory/          # Checkpointer lifespan and backend config
 ├── config/          # prompts.yaml, settings.yaml
 ├── migrations/      # Postgres SQL for audit + pgvector memory
@@ -60,7 +60,7 @@ Client (curl / React console)
         ├── SQLite / Postgres checkpoints (memory/checkpoint.py)
         ├── Thread artifacts (app/services/thread_artifacts.py → app/threads/)
         ├── RAG service (rag/service.py)
-        ├── Audit pool (audit/logger.py, optional Postgres)
+        ├── Audit & Observability (audit/logger.py, audit/tracing.py with Langfuse, optional Postgres)
         └── MCP tools (harness_mcp/, optional)
 ```
 

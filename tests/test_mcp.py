@@ -120,3 +120,53 @@ async def test_build_langchain_tool_invokes_manager(
     result = await tool.ainvoke({"message": "hi"})
     assert result == "ok"
     manager.call_tool.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_mcp_client_manager_toolsets_lifecycle() -> None:
+    """Manager initializes and shuts down PydanticAI MCP toolsets."""
+    manager = McpClientManager(
+        {
+            "srv1": McpStdioServerConfig(command="python", args=["srv1.py"]),
+            "srv2": McpStdioServerConfig(command="python", args=["srv2.py"]),
+        },
+    )
+    await manager.connect()
+    toolsets = manager.get_toolsets()
+    assert len(toolsets) == 2
+    assert {ts.id for ts in toolsets} == {"srv1", "srv2"}
+
+    # Mock toolset clients to verify close is called
+    for ts in toolsets:
+        ts.client.close = AsyncMock()
+
+    await manager.shutdown()
+    assert len(manager.get_toolsets()) == 0
+
+
+def test_load_mcp_server_configs_empty_file_warns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Empty MCP config file logs warning and returns empty dict."""
+    empty_file = tmp_path / "servers.json"
+    empty_file.write_text("", encoding="utf-8")
+    monkeypatch.setenv("HARNESS_MCP_ENABLED", "true")
+    monkeypatch.setenv("HARNESS_MCP_CONFIG", str(empty_file))
+
+    configs = load_mcp_server_configs()
+    assert configs == {}
+
+
+def test_load_mcp_server_configs_invalid_json_warns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Corrupted JSON MCP config logs warning and returns empty dict."""
+    bad_file = tmp_path / "servers.json"
+    bad_file.write_text("{bad json", encoding="utf-8")
+    monkeypatch.setenv("HARNESS_MCP_ENABLED", "true")
+    monkeypatch.setenv("HARNESS_MCP_CONFIG", str(bad_file))
+
+    configs = load_mcp_server_configs()
+    assert configs == {}
+
+

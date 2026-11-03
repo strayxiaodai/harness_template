@@ -52,7 +52,7 @@ harness_template/
 │   ├── skills/      # distilled playbooks (`<slug>/SKILL.md`); tracked
 │   ├── threads/     # per-thread stage markdown (gitignored; created at runtime)
 │   └── frontend/    # developer console (Vite :5173)
-├── harness_mcp/     # MCP client for executor tools
+├── harness_mcp/     # PydanticAI MCP toolset integration for executor tools
 ├── skills/          # distill, store, eligibility (library code; not the on-disk store)
 ├── memory/          # checkpointer lifespan
 ├── docs/            # knowledge base (this file)
@@ -1003,10 +1003,23 @@ MCP tools are auto-included in the executor allow-list when
 
 ---
 
-## Audit Logging
+## Audit Logging & Observability
 
 `audit/logger.py` → `agent_audit_log` when a Postgres pool is set via
 `set_audit_pool(pool)`. Without a pool, events are skipped at debug level.
+
+`audit/tracing.py` integrates **Langfuse** with the LangGraph runner and agent workflows.
+When `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are present (or `LANGFUSE_ENABLED=true`),
+`get_langfuse_handler()` attaches a `CallbackHandler` to LangGraph runs, streams, and resumes.
+Agent graph executions, node transitions, token counts, model latency, and audit events stream directly to Langfuse.
+Lifespan initializes tracing automatically via `init_tracing()`.
+
+| Env | Default | Purpose |
+|-----|---------|---------|
+| `LANGFUSE_PUBLIC_KEY` | — | Langfuse project public key (`pk-lf-...`) |
+| `LANGFUSE_SECRET_KEY` | — | Langfuse project secret key (`sk-lf-...`) |
+| `LANGFUSE_HOST` / `LANGFUSE_BASE_URL` | `https://cloud.langfuse.com` | Langfuse server host or self-hosted endpoint |
+| `LANGFUSE_ENABLED` | auto | Explicitly enable or disable (`true`/`false`) |
 
 **Example — write from executor:**
 
@@ -1044,8 +1057,10 @@ Migration: `migrations/001_create_agent_audit_log.sql`.
 
 ### LLM
 
+Models are managed via PydanticAI (`pydantic_ai.models` and `pydantic_ai.Agent`), supporting OpenAI, Anthropic, Ollama, vLLM, and test models.
+
 ```bash
-export LLM_PROVIDER=openai          # openai | anthropic | ollama | vllm
+export LLM_PROVIDER=openai          # openai | anthropic | ollama | vllm | test
 export OPENAI_API_KEY=sk-...
 # Ollama local:
 export LLM_PROVIDER=ollama

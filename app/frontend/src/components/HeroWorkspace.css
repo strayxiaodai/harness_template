@@ -1,0 +1,352 @@
+.harness-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 16px 24px;
+  user-select: none;
+}
+
+.harness-hero__title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.harness-hero__logo {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.harness-hero__logo-svg {
+  width: 28px;
+  height: 28px;
+}
+
+.harness-hero__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #f1f2f5;
+  letter-spacing: -0.02em;
+}
+
+.harness-hero__pill {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: #2b3954;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 9999px;
+  color: #9ab3ec;
+  letter-spacing: 0.04em;
+}
+
+.harness-selectors-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  align-self: flex-start;
+}
+
+.harness-dropdown-anchor {
+  position: relative;
+}
+
+.harness-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #cfd2dc;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 120ms ease-out;
+}
+
+.harness-dropdown-btn:hover {
+  background: #24262c;
+  color: #ffffff;
+}
+
+.harness-dropdown-icon {
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+.harness-dropdown-caret {
+  font-size: 0.6875rem;
+  color: #8c909e;
+}
+
+.harness-mode-badge {
+  font-size: 0.6875rem;
+  padding: 3px 8px;
+  background: rgba(77, 108, 176, 0.2);
+  border: 1px solid rgba(77, 108, 176, 0.4);
+  border-radius: 999px;
+  color: #9fb7f0;
+}
+
+.harness-prompt-card {
+  width: 100%;
+  background: #1b1c20;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 16px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  transition: border-color 160ms ease-out;
+}
+
+.harness-prompt-card:focus-within {
+  border-color: rgba(99, 133, 206, 0.5);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+.harness-prompt-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #f1f2f5;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 90px;
+  outline: none;
+}
+
+.harness-prompt-textarea::placeholder {
+  color: #686c78;
+}
+
+.harness-prompt-plan-preview {
+  background: #151619;
+  border-radius: 6px;
+  padding: 8px 10px;
+  border-left: 2px solid #4d6cb0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.harness-plan-tag {
+  font-size: 0.6875rem;
+  color: #8a8e9b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.harness-plan-text {
+  font-size: 0.75rem;
+  color: #c9ccd6;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.harness-prompt-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.harness-prompt-card__tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.harness-tool-circle-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #25272e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a0a4b0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 120ms ease-out;
+}
+
+.harness-tool-circle-btn:hover,
+.harness-tool-circle-btn--active {
+  background: #30333c;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.harness-submit-circle-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #4162a8;
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 140ms ease-out;
+}
+
+.harness-submit-circle-btn:hover:not(:disabled) {
+  background: #4f74c7;
+  transform: translateY(-1px);
+}
+
+.harness-submit-circle-btn:disabled {
+  background: #282a32;
+  color: #555864;
+  cursor: not-allowed;
+}
+
+.harness-arrow-up-svg {
+  width: 18px;
+  height: 18px;
+}
+
+.harness-popover-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  background: #202227;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.harness-popover-menu--up {
+  top: auto;
+  bottom: calc(100% + 8px);
+  min-width: 260px;
+  padding: 10px;
+  gap: 8px;
+}
+
+.harness-popover-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #d1d4dc;
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease-out;
+}
+
+.harness-popover-item strong {
+  font-size: 0.8125rem;
+  color: #f1f2f5;
+  margin-bottom: 2px;
+}
+
+.harness-popover-item span {
+  font-size: 0.6875rem;
+  color: #8c909e;
+}
+
+.harness-popover-item:hover {
+  background: #292c34;
+}
+
+.harness-popover-item--active {
+  background: #2b303c;
+  color: #8bb2f8;
+}
+
+.harness-popover-item--active strong {
+  color: #8bb2f8;
+}
+
+.harness-popover-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #d0d3dc;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+
+.harness-popover-sublist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.harness-popover-subhead {
+  font-size: 0.6875rem;
+  color: #7b7f8d;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.harness-popover-skill-btn {
+  text-align: left;
+  background: #18191d;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  color: #cfd2dc;
+  cursor: pointer;
+}
+
+.harness-popover-skill-btn:hover {
+  background: #252830;
+}
+
+.harness-popover-skill-btn--active {
+  background: #283144;
+  border-color: #4d6cb0;
+  color: #9ec1ff;
+}
+
+.harness-popover-plan-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.harness-sub-textarea {
+  width: 100%;
+  background: #18191d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: #e2e4ec;
+  font-size: 0.75rem;
+  resize: vertical;
+}

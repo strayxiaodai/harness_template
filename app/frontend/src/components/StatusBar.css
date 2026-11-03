@@ -98,6 +98,27 @@
   font-weight: 500;
 }
 
+.status-bar__settings-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.status-bar__settings-btn:hover {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--primary);
+}
+
 .status-phase--interrupt {
   color: var(--accent);
 }

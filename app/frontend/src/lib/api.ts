@@ -11,6 +11,7 @@ import type {
   SkillDetail,
   SkillSummary,
   StreamPayload,
+  SystemSettingsResponse,
   ThreadSummary,
   TimelineStep,
 } from '../types/api'
@@ -261,4 +262,15 @@ export function isGraphNode(value: string): value is GraphNode {
 
 export function formatJson(value: unknown): string {
   return JSON.stringify(value, null, 2)
+}
+
+export async function fetchSettings(
+  signal?: AbortSignal,
+): Promise<SystemSettingsResponse> {
+  const res = await fetch(`${API_BASE}/settings`, { signal })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(formatApiError(res.status, body, 'Failed to fetch settings'))
+  }
+  return res.json()
 }

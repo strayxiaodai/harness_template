@@ -24,6 +24,8 @@ def initial_state(request: RunRequest) -> dict[str, object]:
         "approved": False,
         "human_in_the_loop": request.human_in_the_loop,
     }
+    if request.rewrite_task is not None:
+        state["rewrite_task"] = request.rewrite_task
 
     if request.skill_slug:
         slug = normalize_slug(request.skill_slug)

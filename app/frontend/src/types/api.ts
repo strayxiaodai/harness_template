@@ -67,6 +67,42 @@ export interface RunRequest {
   timeout_seconds?: number
   human_in_the_loop?: boolean
   skill_slug?: string
+  rewrite_task?: boolean
+}
+
+export interface McpServerDetail {
+  command?: string
+  args?: string[]
+  env?: Record<string, string>
+  transport?: string
+  url?: string
+}
+
+export interface McpInfo {
+  enabled: boolean
+  servers: Record<string, McpServerDetail>
+  tools: string[]
+}
+
+export interface SystemSettingsResponse {
+  task_rewrite_enabled: boolean
+  human_in_the_loop_default: boolean
+  mcp: McpInfo
+  llm_provider: string
+  checkpoint_backend: string
+  rag_enabled: boolean
+  rag_rewrite_enabled: boolean
+}
+
+export interface UserSettings {
+  taskRewriteEnabled: boolean
+  humanInTheLoop: boolean
+  maxRounds: number
+  timeoutSeconds: number
+  autoExpandTimeline: boolean
+  llmProvider?: string
+  llmModel?: string
+  llmBaseUrl?: string
 }
 
 export interface LearningOverride {

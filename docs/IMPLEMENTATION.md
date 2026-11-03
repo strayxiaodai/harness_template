@@ -288,6 +288,9 @@ Defined in `graph/state.py` as `AgentState`.
 | `skill_slug` / `skill_context` | Loaded skill playbook |
 | `memory_cursor` | RAG ingest bookmark in `messages` |
 | `memory_context` | Formatted recall block for prompts |
+| `raw_task` | Original user input prior to prompt rewrite (when enabled) |
+| `rewrite_task` | Optional boolean flag controlling task rewrite |
+| `task_rewritten` | Boolean marker indicating prompt rewrite has completed |
 | `pending_memories` | Actioner-extracted candidates awaiting HITL review |
 | `approved_memories` | Candidate memories approved for actioner commit |
 
@@ -1090,6 +1093,16 @@ export VLLM_ENABLE_THINKING=false   # optional; Qwen3 thinking off by default
 |-----|---------|---------|
 | `HARNESS_SKILLS_DIR` | `app/skills` | Distilled skill library root |
 | `HARNESS_THREADS_DIR` | `app/threads` | Per-thread stage markdown root (gitignored) |
+
+### Task Rewrite
+
+| Env | Default | Purpose |
+|-----|---------|---------|
+| `TASK_REWRITE_ENABLED` | `false` | Enable LLM prompt rewrite of raw user input into structured engineering specification before planner execution |
+
+Can also be enabled per run by supplying `"rewrite_task": true` in `RunRequest` (`POST /api/run`).
+When enabled, the planner rewrites `state["task"]` using the template defined in `config/prompts.yaml` (`task_rewrite.system`), records `state["raw_task"]`, and passes the structured specification to planner, executor, learner, and actioner.
+
 
 **Example — SQLite dev (default):**
 

@@ -16,6 +16,10 @@ class RunRequest(BaseModel):
     max_rounds: int = Field(default=3, ge=1, le=20)
     timeout_seconds: float = Field(default=120.0, ge=1.0, le=900.0)
     human_in_the_loop: bool = False
+    rewrite_task: bool | None = Field(
+        default=None,
+        description="Rewrite raw user input into a structured specification before planning",
+    )
     skill_slug: str | None = Field(
         default=None,
         description="Apply a saved harness skill playbook to this run",

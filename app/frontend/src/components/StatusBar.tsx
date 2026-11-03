@@ -21,6 +21,7 @@ interface StatusBarProps {
   threadsError: string | null
   onAttachThread: (thread: ThreadSummary) => void
   onRefreshThreads: () => void
+  onOpenSettings?: () => void
 }
 
 const PHASE_LABEL: Record<RunPhase, string> = {
@@ -45,6 +46,7 @@ export function StatusBar({
   threadsError,
   onAttachThread,
   onRefreshThreads,
+  onOpenSettings,
 }: StatusBarProps) {
   const known = threads.some((t) => t.thread_id === threadId)
   const disabled = shouldDisableThreadPicker(phase) || threadsLoading
@@ -110,6 +112,17 @@ export function StatusBar({
         )}
       </div>
       <div className="status-bar__cluster">
+        {onOpenSettings && (
+          <button
+            type="button"
+            className="status-bar__settings-btn"
+            onClick={onOpenSettings}
+            title="Open console settings"
+            aria-label="Open console settings"
+          >
+            ⚙ Settings
+          </button>
+        )}
         <span
           className={`status-phase ${
             phase === 'awaiting_human' ? 'status-phase--interrupt' : ''

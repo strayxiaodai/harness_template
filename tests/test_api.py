@@ -452,3 +452,17 @@ def test_get_skill_returns_detail(client: TestClient) -> None:
     body = response.json()
     assert body["slug"] == "demo-skill"
     assert body["body"] == "# Demo body"
+
+
+def test_get_settings(client: TestClient) -> None:
+    """GET /settings returns system configuration."""
+    response = client.get("/settings")
+    assert response.status_code == 200
+    body = response.json()
+    assert "task_rewrite_enabled" in body
+    assert "human_in_the_loop_default" in body
+    assert "mcp" in body
+    assert "enabled" in body["mcp"]
+    assert "llm_provider" in body
+    assert "checkpoint_backend" in body
+

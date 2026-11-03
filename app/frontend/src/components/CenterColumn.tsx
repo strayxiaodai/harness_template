@@ -1,6 +1,7 @@
 import { GraphSpine } from './GraphSpine'
 import { Workplace } from './Workplace'
 import { TraceTimeline } from './TraceTimeline'
+import type { HeroWorkspaceProps } from './HeroWorkspace'
 import type {
   ClarificationQuestion,
   GraphNode,
@@ -49,6 +50,7 @@ interface CenterColumnProps {
   onSelectStep: (id: string) => void
   timelineOpen: boolean
   onTimelineOpenChange: (open: boolean) => void
+  heroProps?: HeroWorkspaceProps
 }
 
 export function CenterColumn({
@@ -77,6 +79,7 @@ export function CenterColumn({
   onSelectStep,
   timelineOpen,
   onTimelineOpenChange,
+  heroProps,
 }: CenterColumnProps) {
   const handleSelectStep = (id: string) => {
     onSelectStep(id)
@@ -114,6 +117,7 @@ export function CenterColumn({
         onRefineOverrideChange={onRefineOverrideChange}
         onContinue={onContinue}
         streaming={streaming}
+        heroProps={heroProps}
       />
       <TraceTimeline
         steps={steps}

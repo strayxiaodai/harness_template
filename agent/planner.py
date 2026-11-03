@@ -23,6 +23,7 @@ from llm.providers import get_llm
 from llm.retry import call_llm
 from rag.config import load_rag_settings
 from skills.inject import skill_prompt_prefix
+from agent.task_rewrite import is_task_rewrite_enabled, rewrite_task_input
 
 load_dotenv()
 
@@ -36,6 +37,21 @@ async def planner_agent(state: AgentState) -> dict[str, object]:
     """
     llm = get_llm()
     structured = llm.with_structured_output(PlanResult)
+
+    task_updates: dict[str, object] = {}
+    current_task = state["task"]
+    if is_task_rewrite_enabled(state) and not state.get("task_rewritten"):
+        rewritten_task = await rewrite_task_input(
+            current_task,
+            state.get("messages", []),
+        )
+        if rewritten_task and rewritten_task != current_task:
+            task_updates = {
+                "raw_task": current_task,
+                "task": rewritten_task,
+                "task_rewritten": True,
+            }
+            current_task = rewritten_task
 
     learning = state.get("learning")
     feedback = learning["reason"] if learning else "(none)"
@@ -64,7 +80,7 @@ async def planner_agent(state: AgentState) -> dict[str, object]:
                 content=(
                     f"{skill_prompt_prefix(state)}"
                     f"{memory_block}"
-                    f"Task: {state['task']}\n"
+                    f"Task: {current_task}\n"
                     f"Current plan: {state['plan']}\n"
                     f"Prior learning feedback: {feedback}\n"
                     f"{explore_directive}"
@@ -107,6 +123,7 @@ async def planner_agent(state: AgentState) -> dict[str, object]:
     return {
         "role": "planner",
         "plan": plan.steps,
+        **task_updates,
         **memory_updates,
         **clarification_updates,
         "messages": [

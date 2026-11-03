@@ -10,6 +10,7 @@ import './CommandColumn.css'
 
 interface CommandColumnProps {
   task: string
+  taskRewrite?: boolean
   planText: string
   maxRounds: number
   humanInTheLoop: boolean
@@ -28,6 +29,7 @@ interface CommandColumnProps {
   refineOverride: ResumeOverrides['refine_from'] | ''
   showSecondaryContinue: boolean
   onTaskChange: (value: string) => void
+  onTaskRewriteChange?: (value: boolean) => void
   onPlanChange: (value: string) => void
   onMaxRoundsChange: (value: number) => void
   onHitlChange: (value: boolean) => void
@@ -53,6 +55,7 @@ interface CommandColumnProps {
 
 export function CommandColumn({
   task,
+  taskRewrite = false,
   planText,
   maxRounds,
   humanInTheLoop,
@@ -71,6 +74,7 @@ export function CommandColumn({
   refineOverride,
   showSecondaryContinue,
   onTaskChange,
+  onTaskRewriteChange,
   onPlanChange,
   onMaxRoundsChange,
   onHitlChange,
@@ -123,6 +127,20 @@ export function CommandColumn({
           <p id="task-hint" className="command-column__hint">
             Required for Start thread. Optional when running a saved skill.
           </p>
+
+          {onTaskRewriteChange && (
+            <label className="command-column__check" htmlFor="command-task-rewrite">
+              <input
+                id="command-task-rewrite"
+                type="checkbox"
+                className="command-column__checkbox"
+                checked={taskRewrite}
+                onChange={(e) => onTaskRewriteChange(e.target.checked)}
+                disabled={isStreaming}
+              />
+              Rewrite task prompt before planning
+            </label>
+          )}
 
           <label className="field-label" htmlFor="plan-input">
             Plan steps (optional, one per line)

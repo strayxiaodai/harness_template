@@ -1,19 +1,19 @@
 :root {
   color-scheme: dark;
 
-  --bg: oklch(0.09 0.008 220);
-  --surface: oklch(0.13 0.012 220);
-  --surface-raised: oklch(0.16 0.014 220);
-  --ink: oklch(0.92 0.01 220);
-  --muted: oklch(0.68 0.015 220);
-  --primary: oklch(0.72 0.14 195);
-  --primary-on: oklch(0.98 0 0);
-  --accent: oklch(0.78 0.16 75);
-  --accent-on: oklch(0.12 0 0);
-  --success: oklch(0.65 0.14 150);
-  --border: oklch(0.28 0.02 220);
-  --focus-ring: oklch(0.72 0.14 195);
-  --danger: oklch(0.65 0.18 25);
+  --bg: #141518;
+  --surface: #1b1c20;
+  --surface-raised: #25262b;
+  --ink: #f0f1f4;
+  --muted: #8c909e;
+  --primary: #4d6cb0;
+  --primary-on: #ffffff;
+  --accent: #d89b3d;
+  --accent-on: #121214;
+  --success: #3fb950;
+  --border: rgba(255, 255, 255, 0.08);
+  --focus-ring: #4d6cb0;
+  --danger: #f85149;
 
   --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;

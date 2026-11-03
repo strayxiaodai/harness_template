@@ -14,10 +14,10 @@ import {
   clarificationReason,
   isClarificationInterrupt,
 } from '../lib/clarification'
-import {
-  isActionReviewInterrupt,
-} from '../lib/actionReview'
+import { isActionReviewInterrupt } from '../lib/actionReview'
 import { formatJson } from '../lib/api'
+import { HeroWorkspace } from './HeroWorkspace'
+import type { HeroWorkspaceProps } from './HeroWorkspace'
 import './Workplace.css'
 
 const MEMORY_TYPES: MemoryType[] = ['fact', 'preference', 'entity', 'summary']
@@ -49,6 +49,7 @@ interface WorkplaceProps {
   ) => void
   onContinue: () => void
   streaming: boolean
+  heroProps?: HeroWorkspaceProps
 }
 
 function phaseStatusCopy(
@@ -104,6 +105,7 @@ export function Workplace({
   onRefineOverrideChange,
   onContinue,
   streaming,
+  heroProps,
 }: WorkplaceProps) {
   const clarifying =
     phase === 'awaiting_human' && isClarificationInterrupt(interrupt)
@@ -493,6 +495,14 @@ export function Workplace({
         : phase === 'error'
           ? 'workplace__idle--error'
           : ''
+
+  if (phase === 'idle' && !selectedStep && heroProps) {
+    return (
+      <section className="workplace workplace--hero" aria-label="Workplace">
+        <HeroWorkspace {...heroProps} />
+      </section>
+    )
+  }
 
   return (
     <section className="workplace panel" aria-label="Workplace">

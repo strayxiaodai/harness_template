@@ -43,6 +43,8 @@ export function useConsole() {
   const [planText, setPlanText] = useState('')
   const [maxRounds, setMaxRoundsState] = useState(3)
   const [humanInTheLoop, setHumanInTheLoop] = useState(true)
+  const [taskRewrite, setTaskRewrite] = useState(false)
+  const [timeoutSeconds, setTimeoutSeconds] = useState(120)
   const [phase, setPhase] = useState<RunPhase>('idle')
   const [activeNode, setActiveNode] = useState<string | null>(null)
   const [accumulated, setAccumulated] = useState<AgentStateSnapshot>({})
@@ -159,6 +161,8 @@ export function useConsole() {
             max_rounds: maxRounds,
             human_in_the_loop: humanInTheLoop,
             skill_slug: params.skillSlug,
+            rewrite_task: taskRewrite,
+            timeout_seconds: timeoutSeconds,
           },
           (payload) => {
             if (!isNodePayload(payload)) {
@@ -209,7 +213,7 @@ export function useConsole() {
         busyRef.current = false
       }
     },
-    [humanInTheLoop, maxRounds, planText],
+    [humanInTheLoop, maxRounds, planText, taskRewrite, timeoutSeconds],
   )
 
   const run = useCallback(async () => {
@@ -399,6 +403,10 @@ export function useConsole() {
     setMaxRounds,
     humanInTheLoop,
     setHumanInTheLoop,
+    taskRewrite,
+    setTaskRewrite,
+    timeoutSeconds,
+    setTimeoutSeconds,
     phase,
     activeNode,
     accumulated,

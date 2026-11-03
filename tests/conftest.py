@@ -142,6 +142,18 @@ def _register_app_namespace() -> None:
     agents_mod.memorize = memorize
     memorize_spec.loader.exec_module(memorize)
 
+    rewrite_path = ROOT / "agent" / "task_rewrite.py"
+    if rewrite_path.exists():
+        rewrite_spec = importlib.util.spec_from_file_location(
+            "app.agents.task_rewrite",
+            rewrite_path,
+        )
+        if rewrite_spec is not None and rewrite_spec.loader is not None:
+            task_rewrite = importlib.util.module_from_spec(rewrite_spec)
+            sys.modules["app.agents.task_rewrite"] = task_rewrite
+            agents_mod.task_rewrite = task_rewrite
+            rewrite_spec.loader.exec_module(task_rewrite)
+
 
 _ensure_root_on_path()
 _register_app_namespace()

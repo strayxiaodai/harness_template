@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
 from app.api.runs import router as runs_router
+from app.api.settings import router as settings_router
 from app.api.skills import router as skills_router
 from app.api.threads import router as threads_router
 from app.core.config import API_TITLE, CORS_ALLOW_ORIGINS
@@ -29,6 +30,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(runs_router)
+    app.include_router(settings_router)
     app.include_router(skills_router)
     app.include_router(threads_router)
 
